@@ -4,33 +4,55 @@
 
 """Built-in 'man' command."""
 
+import readline
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt
+from devicetree.edtlib import Binding
+
+from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshError, DtshVt
 from dtsh.dtsh import DtshCommandUsageError, DtshCommandFailedError
-from dtsh.man import DtshBuiltinManPage
+from dtsh.man import DtshBuiltinManPage, DtshCompatibleManPage
 
 
 class DtshBuiltinMan(DtshCommand):
     """Print current working node's path.
 
 DESCRIPTION
-The `man` command opens the *reference* manual page `PAGE`.
+The `man` command opens the *reference* manual page `PAGE`,
+where `PAGES`:
 
-Currently, the only supported pages (aka man section) are devicetree
-shell command names.
+- is either a devicetree shell built-in (e.g. `tree`)
+- or a [*compatible*](https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#compatible)
+  specification if the **--compat** option is set
 
 By default, `man` will page its output: use the **--no-pager** option to
 disable the pager.
 
 EXAMPLES
-To open the `ls` manual page: `man ls`
+To open the `ls` shell built-in's manual page:
+
+```
+/
+❯ man --compat arm,v7m-nvic
+
+```
+
+To open a the manual page for a DT compatible (ARMv7-M NVIC):
+
+```
+/
+❯ man --compat arm,v7m-nvic
+
+```
 """
     def __init__(self, shell: Dtsh):
         super().__init__(
             'man',
             "open a manual page",
+            # Won't support the --pager option, since enabled by default for
+            # man pages (see --no-pager).
             False,
             [
+                DtshCommandOption("page for a DT compatible", None, 'compat', None),
                 DtshCommandOption('no pager', None, 'no-pager', None),
             ]
         )
@@ -41,6 +63,10 @@ To open the `ls` manual page: `man ls`
         """Overrides DtshCommand.usage().
         """
         return super().usage + ' [PAGE]'
+
+    @property
+    def with_compat(self) -> bool:
+        return self.with_flag('--compat')
 
     @property
     def with_no_pager(self) -> bool:
@@ -64,23 +90,59 @@ To open the `ls` manual page: `man ls`
 
         arg_page = self._params[0]
 
-        builtin = self._dtsh.builtin(arg_page)
-        if builtin:
-            view = DtshBuiltinManPage(builtin)
-            view.show(vt, self.with_no_pager)
-            return
+        man_page = None
+        if self.with_compat:
+            binding = self._dtsh.dt_bindings.get(arg_page)
+            if binding:
+                man_page = DtshCompatibleManPage(binding)
+        else:
+            builtin = self._dtsh.builtin(arg_page)
+            if builtin:
+                man_page = DtshBuiltinManPage(builtin)
 
-        raise DtshCommandFailedError(self, f'page not found: {arg_page}')
+        if man_page is not None:
+            man_page.show(vt, self.with_no_pager)
+        else:
+            raise DtshCommandFailedError(self, f'page not found: {arg_page}')
 
     def autocomplete_param(self, prefix: str) -> list:
         """Overrides DtshCommand.autocomplete_param().
         """
-        return self._autocomplete_command_name(prefix)
+        # 1st, complete according to flags.
+        cmdline = readline.get_line_buffer()
+        cmdline_vstr = cmdline.split()
+        if len(cmdline_vstr) > 1:
+            argv = cmdline_vstr[1:]
+            try:
+                self.parse_argv(argv)
+            except DtshError:
+                # Dry parsing of incomplete command line.
+                pass
+            completions = self._autocomplete_compat(prefix)
+            if completions:
+                return completions
+
+        # Then, try command name
+        completions = self._autocomplete_command_name(prefix)
+        if completions:
+            return completions
+
+        return []
 
     def _autocomplete_command_name(self, prefix: str) -> list[str]:
         completions = list[str]()
         if prefix.find('/') == -1:
             for cmd in self._dtsh.builtins:
-                if cmd.name.startswith(prefix) and (len(cmd.name) > len(prefix)):
+                if (not prefix) or (cmd.name.startswith(prefix) and (len(cmd.name) > len(prefix))):
                     completions.append(cmd.name)
+        return completions
+
+    def _autocomplete_compat(self, prefix: str) -> list[Binding]:
+        completions = list[Binding]()
+        for compat, binding in self._dtsh.dt_bindings.items():
+            if prefix:
+                if compat.startswith(prefix) and (len(compat) > len(prefix)):
+                    completions.append(binding)
+            else:
+                completions.append(binding)
         return completions
