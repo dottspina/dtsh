@@ -11,6 +11,7 @@ from devicetree.edtlib import Node
 
 from rich.color import Color
 from rich.style import Style
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
@@ -44,7 +45,7 @@ COLOR_NODE_STATUS_DIS = Color.default()
 COLOR_PATH_SEGMENT = Color.from_ansi(31)
 COLOR_PATH_ANCHOR = Color.from_ansi(39)
 
-COLOR_PROPERTY_NAME = Color.from_ansi(18)
+PYGMENTS_THEME = 'monokai'
 
 
 class DtshTheme(object):
@@ -55,6 +56,7 @@ class DtshTheme(object):
     STYLE_BOLD = Style(bold=True)
     STYLE_DIM = Style(dim=True)
     STYLE_ITALIC = Style(italic=True)
+    STYLE_STRIKE = Style(strike=True)
 
     # Apply to a render-able to style it as disabled node/path.
     STYLE_DISABLED = Style(color=COLOR_DISABLED, dim=True)
@@ -127,10 +129,28 @@ class DtshTheme(object):
         return Text(txt, DtshTheme.STYLE_BOLD)
 
     @staticmethod
+    def mk_italic(txt: str) -> Text:
+        """Create a rich text with italic style.
+        """
+        return Text(txt, DtshTheme.STYLE_ITALIC)
+
+    @staticmethod
     def conceal_txt(txt: Text) -> None:
         """
         """
         txt.stylize(DtshTheme.STYLE_DISABLED)
+
+    @staticmethod
+    def emphasize_txt(txt: Text) -> None:
+        """Apply italic style to rich text.
+        """
+        txt.stylize(DtshTheme.STYLE_ITALIC)
+
+    @staticmethod
+    def strike_txt(txt: Text) -> None:
+        """Apply italic style to rich text.
+        """
+        txt.stylize(DtshTheme.STYLE_STRIKE)
 
     @staticmethod
     def mk_ansi_prompt(has_error: bool = False) -> str:
@@ -281,9 +301,6 @@ class DtshTheme(object):
         Should:
         - expand to all horizontal space
         - define 3 columns justified as left, center, right.
-
-        Arguments:
-        expand -- if True, the layout will expand to the available space
         """
         tab = Table(
             box=None, # Default: Box.HEAVY_HEAD
@@ -309,7 +326,7 @@ class DtshTheme(object):
         Arguments:
         expand -- if True, the layout will expand to the available space
         """
-        return DtshTheme.mk_table(7)
+        return DtshTheme.mk_table(7, expand=expand)
 
     @staticmethod
     def mk_node_tree(anchor: Table | Text | str) -> Tree:
@@ -476,6 +493,11 @@ class DtshTheme(object):
         compat = DtshTheme.mk_node_compat(node, with_status,  with_holder=False)
         tab.add_row(addr, nick, compat)
         return tab
+
+    @staticmethod
+    def mk_yaml_view(path: str, theme: str = PYGMENTS_THEME) -> Syntax:
+        return Syntax.from_path(path, lexer='yaml', theme=theme,)
+
 
 class DtshRichView(object):
     """Abstract rich view.
