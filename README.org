@@ -1,0 +1,101 @@
+#+title: dtsh
+
+Shell-like interface to devicetrees.
+
+[[./doc/img/dtsh_home.png]]
+
+* Quick startup
+
+Install in /current Python environment/:
+
+#+begin_example
+$ git clone https://github.com/dottspina/dtsh.git
+$ cd dtsh
+$ pip install .
+#+end_example
+
+The ~dtsh~ command should now be available:
+
+#+begin_example
+dtsh [dt_source] [dt_bindings]
+
+where:
+
+- dt_source: is the path to a devicetree source file (.dts);
+             default to $PWD/build/zephyr/zephyr.dts if unset
+- dt_bindings: is a list of directories to search for bindings files (.yaml);
+               default to the bindings privided by the Zephyr projetc if ZEPHYR_BBASE is set
+#+end_example
+
+To open a devicetree shell for a Zephyr project ~foobar~ should be as simple as:
+
+#+begin_example
+$ cd foobar
+$ west build
+$ dtsh
+dtsh (0.1.0a1): Shell-like interface to a devicetree
+
+/
+❯ ls
+/chosen
+/aliases
+/soc
+/pin-controller
+/entropy_bt_hci
+/cpus
+/sw-pwm
+/leds
+/pwmleds
+/buttons
+/connector
+/analog-connector
+#+end_example
+
+** Virtual environment
+
+Quick-install in a dedicated Python virtual  environment (assuming Python 3.9 and above):
+
+#+begin_src sh
+git clone https://github.com/dottspina/dtsh.git
+cd dtsh
+python -m venv --upgrade-deps .venv
+. .venv/bin/activate
+pip install --upgrade pip setuptools
+pip install wheel
+pip install .
+#+end_src
+
+* Development
+
+** Virtual environment
+
+Dedicated virtual environment for /hacking/ ~dtsh~:
+
+#+begin_src sh
+git clone https://github.com/dottspina/dtsh.git
+cd dtsh
+# for Python 3.9 and above
+python -m venv --upgrade-deps .venv
+. .venv/bin/activate
+# for Python 3.7 and 3.8
+python -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip setuptools
+# pip will prefer wheels when installing from PyPI
+pip install wheel
+# install dtsh in development mode
+pip install --editable .
+#+end_src
+
+** Tests
+
+To run the unit tests:
+
+#+begin_src sh
+cd dtsh
+. .venv/bin/activate
+# install test requirements
+pip install ".[test]"
+# run unit tests
+pytest tests
+#+end_src
