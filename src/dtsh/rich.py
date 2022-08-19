@@ -7,7 +7,7 @@
 
 from abc import abstractmethod
 
-from devicetree.edtlib import Node, Binding
+from devicetree.edtlib import Node, Binding, PropertySpec
 
 from rich.color import Color
 from rich.style import Style
@@ -27,6 +27,8 @@ from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt
 COLOR_DEFAULT = Color.default()
 COLOR_GREY = Color.from_ansi(254)
 COLOR_DISABLED = Color.default()
+COLOR_DEPRECATED = Color.default()
+COLOR_REQUIRED = Color.default()
 
 COLOR_NODE_PATH = Color.default()
 COLOR_NODE_NICKNAME = Color.default()
@@ -45,6 +47,11 @@ COLOR_NODE_STATUS_DIS = Color.default()
 COLOR_PATH_SEGMENT = Color.from_ansi(31)
 COLOR_PATH_ANCHOR = Color.from_ansi(39)
 
+COLOR_BINDING_DESC = Color.from_ansi(97)
+COLOR_PROPERTY_DESC = Color.from_ansi(97)
+
+COLOR_BUS = Color.from_ansi(225)
+
 PYGMENTS_THEME = 'monokai'
 
 
@@ -60,6 +67,8 @@ class DtshTheme(object):
 
     # Apply to a render-able to style it as disabled node/path.
     STYLE_DISABLED = Style(color=COLOR_DISABLED, dim=True)
+    STYLE_DEPRECATED = Style(color=COLOR_DEPRECATED, italic=True)
+    STYLE_REQUIRED = Style(color=COLOR_REQUIRED, bold=True)
 
     STYLE_PATH_SEGMENT = Style(color=COLOR_PATH_SEGMENT)
     STYLE_PATH_ANCHOR = Style(color=COLOR_PATH_ANCHOR, bold=True)
@@ -71,6 +80,12 @@ class DtshTheme(object):
     STYLE_NODE_ALIAS = Style(color=COLOR_NODE_ALIAS)
     STYLE_NODE_COMPAT = Style(color=COLOR_NODE_COMPAT)
     STYLE_NODE_DESC = Style(color=COLOR_NODE_DESC)
+
+    STYLE_BINDING_DESC = Style(color=COLOR_BINDING_DESC)
+
+    STYLE_PROPERTY_DESC = Style(color=COLOR_PROPERTY_DESC)
+
+    STYLE_BUS = Style(color=COLOR_BUS)
 
     WCHAR_PROMPT = '\u276f'
     WCHAR_ELLIPSIS = '\u2026'
@@ -340,6 +355,27 @@ class DtshTheme(object):
         return tab
 
     @staticmethod
+    def mk_prop_spec_table() -> Table:
+        """Create a named table layout with 1 column.
+
+        Arguments:
+        title - table title
+        """
+        tab = Table(
+            box=None, # Default: Box.HEAVY_HEAD
+            padding=(0, 1),
+            pad_edge=False, # Default: True
+            expand=False,
+            show_header=False, # Default: True
+            show_footer=False,
+            show_edge=False, # Default: True
+            show_lines=False,
+            leading=0,
+            highlight=False,
+        )
+        return tab
+
+    @staticmethod
     def mk_node_table(expand: bool = False) -> Table:
         """Create a table layout for node list views.
 
@@ -512,6 +548,47 @@ class DtshTheme(object):
         addr = DtshTheme.mk_node_address(node, with_status, with_holder=False)
         compat = DtshTheme.mk_node_compat(node, with_status,  with_holder=False)
         tab.add_row(addr, nick, compat)
+        return tab
+
+    @staticmethod
+    def mk_property_spec(spec: PropertySpec) -> Table:
+        tab = DtshTheme.mk_prop_spec_table()
+
+        tab_summary = DtshTheme.mk_grid(2)
+
+        if spec.specifier_space is not None:
+            str_name = f'{spec.name} ({spec.specifier_space})'
+        else:
+            str_name = f'{spec.name}'
+        if spec.required:
+            style = DtshTheme.STYLE_REQUIRED
+        elif spec.deprecated:
+            style = DtshTheme.STYLE_DEPRECATED
+        else:
+            style = DtshTheme.STYLE_DEFAULT
+
+        txt_prop = Text(str_name, style)
+        tab_summary.add_row('Property:', txt_prop)
+
+        if spec.type is not None:
+            txt_type = DtshTheme.mk_txt(spec.type)
+            tab_summary.add_row('Type:', txt_type)
+        # FIXME: same as binding.path
+        # if spec.path:
+        #     filename = os.path.basename(spec.path)
+        #     str_binding_path = f'[link file:{spec.path}]{filename}'
+        #     tab_summary.add_row('Binding:', str_binding_path)
+        #
+        # How to get the yaml file actually specifying this property ?
+
+        tab.add_row(tab_summary)
+
+        if spec.description:
+            str_desc = spec.description.strip()
+            txt_desc = Text(str_desc, DtshTheme.STYLE_PROPERTY_DESC)
+            tab.add_row(txt_desc)
+            tab.add_row(None)
+
         return tab
 
     @staticmethod
