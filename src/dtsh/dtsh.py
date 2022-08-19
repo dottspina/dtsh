@@ -9,7 +9,7 @@ import getopt
 
 from abc import abstractmethod
 
-from devicetree.edtlib import EDT, EDTError, Node
+from devicetree.edtlib import EDT, EDTError, Node, Binding
 
 
 class DtshVt(object):
@@ -485,6 +485,17 @@ class Dtsh(object):
         """Available shell built-ins as a list.
         """
         return [cmd for _, cmd in self._builtins.items()]
+
+    @property
+    def dt_bindings(self) -> dict[str, Binding]:
+        bindings = dict[str, Binding]()
+        for compat, nodes in self._edt.compat2nodes.items():
+            # FIXME: private API usage
+            # Note: node._binding may be None (e.g. nordic,nrf52840-dk-nrf52840),
+            # despite a key exists for this compat
+            if  nodes[0]._binding is not None:
+                bindings[compat] = nodes[0]._binding
+        return bindings
 
     def builtin(self, name: str) -> DtshCommand | None:
         """Access a built-in by command name.
