@@ -84,6 +84,12 @@ class DtshManPage(object):
         tab.add_row(txt_version, txt_center, txt_dtsh)
         vt.write(tab)
 
+    def print_section(self, name: str, content: RenderableType, vt: DtshVt):
+        """Print a man page section."""
+        vt.write(Text(name.upper(), DtshTheme.STYLE_BOLD))
+        vt.write(Padding.indent(content, 8))
+        vt.write()
+
     @abstractmethod
     def print_body(self, vt: DtshVt) -> None:
         """Print the manual page body.
@@ -126,7 +132,7 @@ class DtshBuiltinManPage(DtshManPage):
         txt_sep = Text(f' {DtshTheme.WCHAR_HYPHEN} ', DtshTheme.STYLE_DEFAULT)
         txt_desc = Text(self._builtin.desc, DtshTheme.STYLE_DEFAULT)
         tab.add_row(txt_name, txt_sep, txt_desc)
-        self._print_section('name', tab, vt)
+        self.print_section('name', tab, vt)
 
     def _print_section_synopsys(self, vt: DtshVt):
         tab = DtshTheme.mk_grid(1)
@@ -135,7 +141,7 @@ class DtshBuiltinManPage(DtshManPage):
         for opt in self._builtin.options:
             tab.add_row(Text(opt.usage, DtshTheme.STYLE_BOLD))
             tab.add_row(Text(f'        {opt.desc}', DtshTheme.STYLE_DEFAULT))
-        self._print_section('synopsys', tab, vt)
+        self.print_section('synopsys', tab, vt)
 
     def _print_section_description(self, doc_vstr: list[str], vt: DtshVt) -> int:
         sz_src = len(doc_vstr)
@@ -154,7 +160,7 @@ class DtshBuiltinManPage(DtshManPage):
             section_vstr = doc_vstr[offset + 1:stop_at]
             md_src = '\n'.join(section_vstr)
             md = Markdown(md_src)
-            self._print_section('description', md, vt)
+            self.print_section('description', md, vt)
 
         return stop_at
 
@@ -178,11 +184,7 @@ class DtshBuiltinManPage(DtshManPage):
             section_vstr = doc_vstr[offset + 1:stop_at]
             md_src = '\n'.join(section_vstr)
             md = Markdown(md_src)
-            self._print_section('examples', md, vt)
+            self.print_section('examples', md, vt)
 
         return stop_at
 
-    def _print_section(self, name: str, content: RenderableType, vt: DtshVt):
-        vt.write(Text(name.upper(), DtshTheme.STYLE_BOLD))
-        vt.write(Padding.indent(content, 8))
-        vt.write()
