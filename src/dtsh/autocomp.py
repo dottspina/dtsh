@@ -5,7 +5,7 @@
 """Auto-completion with GNU readline for devicetree shells."""
 
 
-from devicetree.edtlib import Node
+from devicetree.edtlib import Node, Binding
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp
 
@@ -107,6 +107,11 @@ class DevicetreeAutocomp(DtshAutocomp):
                 for node in list[Node](model):
                     self._model.append(node)
                     self._hints.append(node.path)
+            elif isinstance(model[0], Binding):
+                self._model = list[Binding]()
+                for binding in list[Binding](model):
+                    self._model.append(binding)
+                    self._hints.append(binding.compatible)
             else:
                 # Fallback to string model.
                 self._model = list[str]()

@@ -9,7 +9,7 @@ import readline
 import signal
 import sys
 
-from devicetree.edtlib import Node
+from devicetree.edtlib import Node, Binding
 
 from rich.text import Text
 
@@ -186,6 +186,9 @@ def readline_display_hook(substitution, matches, longest_match_length) -> None:
         elif isinstance(m0, DtshCommandOption):
             model = list[DtshCommandOption](_autocomp.model)
             view = DtshTheme.mk_option_hints_display(model)
+        elif isinstance(m0, Binding):
+            model = list[Binding](_autocomp.model)
+            view = DtshTheme.mk_binding_hints_display(model)
         elif isinstance(m0, Node):
             model = list[Node](_autocomp.model)
             view = DtshTheme.mk_node_hints_display(model)

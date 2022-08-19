@@ -7,7 +7,7 @@
 
 from abc import abstractmethod
 
-from devicetree.edtlib import Node
+from devicetree.edtlib import Node, Binding
 
 from rich.color import Color
 from rich.style import Style
@@ -255,6 +255,26 @@ class DtshTheme(object):
         # ISSUE: edtlib would raise p.description.strip() not defined on NoneType,
         # let's rely on p.spec.
         tab = DtshTheme.mk_grid(2)
+        return tab
+
+    @staticmethod
+    def mk_binding_hints_display(hints: list[Binding]) -> Table:
+        """Layout bindings completion hints.
+
+        Arguments:
+        hints -- a binding list to display as hints
+
+        Returns a rich table.
+        """
+        tab = DtshTheme.mk_grid(2)
+        for binding in hints:
+            txt_compat = DtshTheme.mk_txt(binding.compatible)
+            if binding.description:
+                desc_str = DtshTheme.get_str_summary(binding.description)
+                txt_desc = DtshTheme.mk_dim(desc_str)
+            else:
+                txt_desc = None
+            tab.add_row(txt_compat, txt_desc)
         return tab
 
     @staticmethod
