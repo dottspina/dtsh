@@ -64,7 +64,7 @@ class DevicetreeTerm(DtshVt):
         """
         if self._pager is None:
             self._console.clear()
-            self._pager = self._console.pager(styles=True)
+            self._pager = self._console.pager(styles=True, links=True)
             self._pager.__enter__()
 
     def pager_exit(self) -> None:
