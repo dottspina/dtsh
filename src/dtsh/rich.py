@@ -505,6 +505,27 @@ class DtshTheme(object):
         return None
 
     @staticmethod
+    def mk_node_compatible(node: Node,
+                           with_status: bool = True,
+                           with_holder: bool = True) -> Text | None:
+        compats_txt = None
+        if node.compats:
+            if with_status and (node.status == 'disabled'):
+                compats_txt = DtshTheme.mk_dim(' '.join(node.compats))
+            else:
+                compats_vtxt = list[Text]()
+                for compat in node.compats:
+                    if compat == node.matching_compat:
+                        style = DtshTheme.STYLE_NODE_COMPAT
+                    else:
+                        style = DtshTheme.STYLE_DEFAULT
+                    compats_vtxt.append(Text(compat, style))
+                compats_txt = Text(' ').join(compats_vtxt)
+        elif with_holder:
+            compats_txt = DtshTheme.TXT_HOLDER
+        return compats_txt
+
+    @staticmethod
     def mk_node_desc(node: Node,
                      with_status: bool = True,
                      with_holder: bool = True) -> Text | None:
@@ -531,7 +552,7 @@ class DtshTheme(object):
             DtshTheme.mk_node_label(node, with_status, with_holder),
             DtshTheme.mk_node_labels(node, with_status, with_holder),
             DtshTheme.mk_node_aliases(node, with_status, with_holder),
-            DtshTheme.mk_node_compat(node, with_status, with_holder),
+            DtshTheme.mk_node_compatible(node, with_status, with_holder),
             DtshTheme.mk_node_desc(node, with_status, with_holder)
         )
 
