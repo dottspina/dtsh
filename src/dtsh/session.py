@@ -9,7 +9,7 @@ import readline
 import signal
 import sys
 
-from devicetree.edtlib import Node, Binding
+from devicetree.edtlib import Node, Binding, Property
 
 from rich.text import Text
 
@@ -209,6 +209,9 @@ def readline_display_hook(substitution, matches, longest_match_length) -> None:
         elif _autocomp.mode == DtshAutocomp.MODE_DT_NODE:
             model = list[Node](_autocomp.model)
             view = DtshTheme.mk_node_hints_display(model)
+        elif _autocomp.mode == DtshAutocomp.MODE_DT_PROP:
+            model = list[Property](_autocomp.model)
+            view = DtshTheme.mk_property_hints_display(model)
         else:
             # Autcomp mode MODE_ANY.
             view = DtshTheme.mk_grid(1)

@@ -6,7 +6,7 @@
 
 from collections import OrderedDict
 
-from devicetree.edtlib import Node, Binding
+from devicetree.edtlib import Node, Binding, Property
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshAutocomp
 
@@ -120,6 +120,10 @@ class DevicetreeAutocomp(DtshAutocomp):
                     # See readline_completions_hook(() in dtsh.session.
                     hint += '/'
                 self._autocomp_state[hint] = node
+        elif self._mode == DtshAutocomp.MODE_DT_PROP:
+            for prop in list[Property](model):
+                hint = f'{prop.node.path}${prop.name}'
+                self._autocomp_state[hint] = prop
         elif self._mode == DtshAutocomp.MODE_DT_BINDING:
             for binding in list[Binding](model):
                 self._autocomp_state[binding.compatible] = binding

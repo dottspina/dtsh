@@ -7,7 +7,7 @@
 
 from abc import abstractmethod
 
-from devicetree.edtlib import Node, Binding, PropertySpec
+from devicetree.edtlib import Node, Binding, Property, PropertySpec
 
 from rich.color import Color
 from rich.style import Style
@@ -80,6 +80,8 @@ class DtshTheme(object):
     STYLE_NODE_ALIAS = Style(color=COLOR_NODE_ALIAS)
     STYLE_NODE_COMPAT = Style(color=COLOR_NODE_COMPAT)
     STYLE_NODE_DESC = Style(color=COLOR_NODE_DESC)
+
+    STYLE_STATUS_OK = Style(color=COLOR_NODE_STATUS_OKAY)
 
     STYLE_BINDING_DESC = Style(color=COLOR_BINDING_DESC)
 
@@ -259,7 +261,7 @@ class DtshTheme(object):
         return tab
 
     @staticmethod
-    def mk_property_hints_display(model: list[Node]) -> Table:
+    def mk_property_hints_display(model: list[Property]) -> Table:
         """Layout property completion hints.
 
         Arguments:
@@ -270,6 +272,12 @@ class DtshTheme(object):
         # ISSUE: edtlib would raise p.description.strip() not defined on NoneType,
         # let's rely on p.spec.
         tab = DtshTheme.mk_grid(2)
+        for prop in model:
+            if prop.spec and prop.spec.description:
+                prop_desc = DtshTheme.get_str_summary(prop.spec.description)
+            else:
+                prop_desc = ''
+            tab.add_row(DtshTheme.mk_txt(prop.name), DtshTheme.mk_dim(prop_desc))
         return tab
 
     @staticmethod
@@ -426,6 +434,13 @@ class DtshTheme(object):
         return txt
 
     @staticmethod
+    def mk_node_status(node: Node) -> Text:
+        if node.status == 'okay':
+            return Text(node.status, DtshTheme.STYLE_STATUS_OK)
+        else:
+            return DtshTheme.mk_dim(node.status)
+
+    @staticmethod
     def mk_node_address(node: Node,
                         with_status: bool = True,
                         with_holder: bool = True) -> Text | None:
@@ -492,9 +507,9 @@ class DtshTheme(object):
         return None
 
     @staticmethod
-    def mk_node_compat(node: Node,
-                       with_status: bool = True,
-                       with_holder: bool = True) -> Text | None:
+    def mk_node_binding(node: Node,
+                        with_status: bool = True,
+                        with_holder: bool = True) -> Text | None:
         if node.matching_compat:
             txt = Text(node.matching_compat, DtshTheme.STYLE_NODE_COMPAT)
             if with_status and node.status == 'disabled':
@@ -503,6 +518,17 @@ class DtshTheme(object):
         if with_holder:
             return DtshTheme.TXT_HOLDER
         return None
+
+    @staticmethod
+    def mk_binding(binding: Binding, with_link=True) -> Text:
+        if binding.compatible:
+            style = DtshTheme.STYLE_DEFAULT
+            if binding.path and with_link:
+                style = style.update_link(f'file:{binding.path}')
+            txt = Text(binding.compatible, style)
+        else:
+            txt = Text()
+        return txt
 
     @staticmethod
     def mk_node_compatible(node: Node,
@@ -567,7 +593,7 @@ class DtshTheme(object):
             tab.columns[1].width = width
         nick = DtshTheme.mk_node_nickname(node, with_status)
         addr = DtshTheme.mk_node_address(node, with_status, with_holder=False)
-        compat = DtshTheme.mk_node_compat(node, with_status,  with_holder=False)
+        compat = DtshTheme.mk_node_binding(node, with_status,  with_holder=False)
         tab.add_row(addr, nick, compat)
         return tab
 

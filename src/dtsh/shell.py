@@ -13,6 +13,7 @@ from dtsh.builtin_pwd import DtshBuiltinPwd
 from dtsh.builtin_cd import DtshBuiltinCd
 from dtsh.builtin_ls import DtshBuiltinLs
 from dtsh.builtin_tree import DtshBuiltinTree
+from dtsh.builtin_cat import DtshBuiltinCat
 from dtsh.builtin_man import DtshBuiltinMan
 
 
@@ -32,6 +33,7 @@ class DevicetreeShell(Dtsh):
                 DtshBuiltinCd(self),
                 DtshBuiltinLs(self),
                 DtshBuiltinTree(self),
+                DtshBuiltinCat(self),
                 DtshBuiltinMan(self)
                 ]:
             self._builtins[cmd.name] = cmd

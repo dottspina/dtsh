@@ -10,7 +10,7 @@ import getopt
 from abc import abstractmethod
 from typing import ClassVar, Tuple
 
-from devicetree.edtlib import EDT, EDTError, Node, Binding
+from devicetree.edtlib import EDT, EDTError, Node, Binding, Property
 
 
 class DtshVt(object):
@@ -592,6 +592,22 @@ class Dtsh(object):
         except EDTError as e:
             raise DtshError(f'no such node: {path}', e)
 
+    def isnode(self, path: str) -> bool:
+        """Answsers whether a path represents an actual devicetree node.
+
+        Arguments:
+        path -- an absolute devicetree node's path
+
+        Raises:
+        - ValueError when path is unspecified
+        """
+        try:
+            self._edt.get_node(path)
+            return True
+        except EDTError:
+            pass
+        return False
+
     def cd(self, path: str) -> None:
         """Change the current working node.
 
@@ -902,6 +918,20 @@ class DtshAutocomp(object):
             # No completions for invalid path.
             pass
 
+        return completions
+
+    @staticmethod
+    def autocomplete_with_properties(node_prefix: str,
+                                     prop_prefix: str,
+                                     shell: Dtsh) -> list[Property]:
+
+        completions = list[Property]()
+        path_prefix = shell.realpath(node_prefix)
+        if shell.isnode(path_prefix):
+            node = shell.path2node(path_prefix)
+            for _, p in node.props.items():
+                if p.name.startswith(prop_prefix) and len(p.name) > len(prop_prefix):
+                    completions.append(p)
         return completions
 
 
