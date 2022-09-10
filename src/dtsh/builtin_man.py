@@ -118,9 +118,10 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
             except DtshError:
                 # Dry parsing of incomplete command line.
                 pass
-            completions = self._autocomplete_compat(prefix)
-            if completions:
-                return completions
+            if self.with_compat:
+                completions = self._autocomplete_compat(prefix)
+                if completions:
+                    return completions
 
         # Then, try command name
         completions = self._autocomplete_command_name(prefix)
