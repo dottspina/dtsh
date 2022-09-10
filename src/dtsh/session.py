@@ -167,7 +167,21 @@ def readline_completions_hook(text: str, state: int) -> str | None:
     completions = _autocomp.autocomplete(cmdline, text, 0)
 
     if state < len(completions):
-        return completions[state]
+        hint = completions[state]
+        if len(completions) == 1:
+            # GNU readline will eventually replace 'text' with these
+            # state values (or their longest prefix).
+            # When there's only one possible completion,
+            # we can tell the user it's useless to press TAB again
+            # by appending a space to the corresponding 'state' value.
+            #
+            # We assume a hint that ends with '/':
+            # - is a node path
+            # - the node has children, pressing TAB again should show them
+            if not hint.endswith('/'):
+                hint += ' '
+        return hint
+
     return None
 
 

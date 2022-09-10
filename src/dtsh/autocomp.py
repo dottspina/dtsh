@@ -113,7 +113,13 @@ class DevicetreeAutocomp(DtshAutocomp):
         self._mode, model = cmd.autocomplete_param(prefix)
         if self._mode == DtshAutocomp.MODE_DT_NODE:
             for node in list[Node](model):
-                self._autocomp_state[node.path] = node
+                hint = node.path
+                if node.children:
+                    # Prepare auto-completion state for TABing
+                    # the node's children enumeration.
+                    # See readline_completions_hook(() in dtsh.session.
+                    hint += '/'
+                self._autocomp_state[hint] = node
         elif self._mode == DtshAutocomp.MODE_DT_BINDING:
             for binding in list[Binding](model):
                 self._autocomp_state[binding.compatible] = binding
