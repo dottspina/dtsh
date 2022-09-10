@@ -13,7 +13,7 @@ from devicetree.edtlib import Node, Binding
 
 from rich.text import Text
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshSession, DtshError
+from dtsh.dtsh import Dtsh, DtshAutocomp, DtshCommand, DtshCommandOption, DtshSession, DtshError
 from dtsh.dtsh import DtshCommandNotFoundError, DtshCommandUsageError, DtshCommandFailedError
 from dtsh.shell import DevicetreeShell
 from dtsh.term import DevicetreeTerm
@@ -157,6 +157,8 @@ _session: DevicetreeShellSession | None = None
 _autocomp: DevicetreeAutocomp | None = None
 
 
+# GNU readline completer function callback for rl_completion_matches().
+# MUST answer completions that actually match te given prefix.
 def readline_completions_hook(text: str, state: int) -> str | None:
     if _autocomp is None:
         return None
@@ -169,6 +171,8 @@ def readline_completions_hook(text: str, state: int) -> str | None:
     return None
 
 
+# GNU readline implementation for rl_completion_display_matches_hook().
+#
 def readline_display_hook(substitution, matches, longest_match_length) -> None:
     if (_session is None) or (_autocomp is None):
         return
@@ -179,20 +183,20 @@ def readline_display_hook(substitution, matches, longest_match_length) -> None:
     _session.term.write()
 
     if _autocomp.model:
-        m0 = _autocomp.model[0]
-        if isinstance(m0, DtshCommand):
+        if _autocomp.mode == DtshAutocomp.MODE_DTSH_CMD:
             model = list[DtshCommand](_autocomp.model)
             view = DtshTheme.mk_command_hints_display(model)
-        elif isinstance(m0, DtshCommandOption):
+        elif _autocomp.mode == DtshAutocomp.MODE_DTSH_OPT:
             model = list[DtshCommandOption](_autocomp.model)
             view = DtshTheme.mk_option_hints_display(model)
-        elif isinstance(m0, Binding):
+        elif _autocomp.mode == DtshAutocomp.MODE_DT_BINDING:
             model = list[Binding](_autocomp.model)
             view = DtshTheme.mk_binding_hints_display(model)
-        elif isinstance(m0, Node):
+        elif _autocomp.mode == DtshAutocomp.MODE_DT_NODE:
             model = list[Node](_autocomp.model)
             view = DtshTheme.mk_node_hints_display(model)
         else:
+            # Autcomp mode MODE_ANY.
             view = DtshTheme.mk_grid(1)
             for m in _autocomp.model:
                 view.add_row(Text(str(m), DtshTheme.STYLE_DEFAULT))

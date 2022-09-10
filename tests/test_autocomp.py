@@ -68,15 +68,15 @@ def test_autocomp_option_name():
 
     # 'cd [-h --help]'
     completions = completer.autocomplete('cd -', '-')
-    assert len(completions) == 2
+    assert len(completions) == 1
     completions = completer.autocomplete('cd --', '--')
     assert len(completions) == 1
 
     # 'ls [-d] [-l] [-r] [-R] [--pager] [-h --help]'
     completions = completer.autocomplete('ls -', '-')
-    assert len(completions) == 7
-    assert completions[5] == '--help'
-    assert completions[6] == '--pager'
+    assert len(completions) == 6
+    assert completions[4] == '-h'
+    assert completions[5] == '--pager'
     completions = completer.autocomplete('ls --', '--')
     assert len(completions) == 2
     assert completions[0] == '--pager'

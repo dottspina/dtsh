@@ -5,6 +5,7 @@
 """Built-in 'tree' command."""
 
 
+from typing import Tuple
 from dtsh.dtsh import Dtsh, DtshVt, DtshCommand, DtshCommandOption, DtshAutocomp
 from dtsh.dtsh import DtshCommandUsageError
 
@@ -190,7 +191,8 @@ Example of rich output:
         view = DtshNodeTreeView(root, self.arg_level, self.with_rich_fmt)
         view.show(vt, self._dtsh, self.with_pager)
 
-    def autocomplete_param(self, prefix: str) -> list:
+    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
         """
-        return DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh)
+        return (DtshAutocomp.MODE_DT_NODE,
+                DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh))

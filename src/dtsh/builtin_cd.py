@@ -5,6 +5,7 @@
 """Built-in 'cd' command."""
 
 
+from typing import Tuple
 from dtsh.dtsh import Dtsh, DtshVt, DtshCommand, DtshAutocomp
 from dtsh.dtsh import DtshCommandUsageError
 
@@ -64,8 +65,8 @@ EXAMPLES
 
         self._dtsh.cd(arg_path)
 
-
-    def autocomplete_param(self, prefix: str) -> list:
+    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
         """
-        return DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh)
+        return (DtshAutocomp.MODE_DT_NODE,
+                DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh))

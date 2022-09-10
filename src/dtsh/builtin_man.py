@@ -5,11 +5,12 @@
 """Built-in 'man' command."""
 
 import readline
+from typing import Tuple
 
 from devicetree.edtlib import Binding
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshError, DtshVt
-from dtsh.dtsh import DtshCommandUsageError, DtshCommandFailedError
+from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
+from dtsh.dtsh import DtshError, DtshCommandUsageError, DtshCommandFailedError
 from dtsh.man import DtshBuiltinManPage, DtshCompatibleManPage
 
 
@@ -105,7 +106,7 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         else:
             raise DtshCommandFailedError(self, f'page not found: {arg_page}')
 
-    def autocomplete_param(self, prefix: str) -> list:
+    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
         """
         # 1st, complete according to flags.
@@ -119,26 +120,26 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
                 # Dry parsing of incomplete command line.
                 pass
             if self.with_compat:
-                completions = self._autocomplete_compat(prefix)
+                completions = self._autocomplete_dt_binding(prefix)
                 if completions:
-                    return completions
+                    return (DtshAutocomp.MODE_DT_BINDING, completions)
 
-        # Then, try command name
-        completions = self._autocomplete_command_name(prefix)
+        # Then, try command name (default).
+        completions = self._autocomplete_dtsh_cmd(prefix)
         if completions:
-            return completions
+            return (DtshAutocomp.MODE_DTSH_CMD, completions)
 
-        return []
+        return (DtshAutocomp.MODE_ANY, [])
 
-    def _autocomplete_command_name(self, prefix: str) -> list[str]:
-        completions = list[str]()
+    def _autocomplete_dtsh_cmd(self, prefix: str) -> list[DtshCommand]:
+        completions = list[DtshCommand]()
         if prefix.find('/') == -1:
             for cmd in self._dtsh.builtins:
                 if (not prefix) or (cmd.name.startswith(prefix) and (len(cmd.name) > len(prefix))):
-                    completions.append(cmd.name)
+                    completions.append(cmd)
         return completions
 
-    def _autocomplete_compat(self, prefix: str) -> list[Binding]:
+    def _autocomplete_dt_binding(self, prefix: str) -> list[Binding]:
         completions = list[Binding]()
         for compat, binding in self._dtsh.dt_bindings.items():
             if prefix:

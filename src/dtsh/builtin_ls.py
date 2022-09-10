@@ -5,6 +5,7 @@
 """Built-in 'ls' command."""
 
 
+from typing import Tuple
 from devicetree.edtlib import Node
 
 from dtsh.dtsh import DtshCommand, DtshCommandOption, Dtsh, DtshAutocomp, DtshVt
@@ -225,10 +226,11 @@ partition  0xf8000  storage        storage_partition  ﹍  ﹍  Flash partition 
                                 self.with_rich_fmt)
         view.show(vt, self._dtsh, self.with_pager)
 
-    def autocomplete_param(self, prefix: str) -> list:
+    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
         """
-        return DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh)
+        return (DtshAutocomp.MODE_DT_NODE,
+                DtshAutocomp.autocomplete_with_nodes(prefix, self._dtsh))
 
     def _follow_node_content(self,
                              parent: Node,

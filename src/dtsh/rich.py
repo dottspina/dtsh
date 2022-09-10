@@ -201,44 +201,44 @@ class DtshTheme(object):
         return f'\001\x1b[{sgr_color};1m\002{DtshTheme.WCHAR_PROMPT}\001\x1b[0m\002 '
 
     @staticmethod
-    def mk_command_hints_display(hints: list[DtshCommand]) -> Table:
+    def mk_command_hints_display(model: list[DtshCommand]) -> Table:
         """Layout command completion hints.
 
         Arguments:
-        hints -- a command list to display as hints
+        model -- a command list to display as hints
 
         Returns a rich table.
         """
         tab = DtshTheme.mk_grid(2)
-        for cmd in hints:
+        for cmd in model:
             tab.add_row(DtshTheme.mk_txt(cmd.name), DtshTheme.mk_dim(cmd.desc))
         return tab
 
     @staticmethod
-    def mk_option_hints_display(hints: list[DtshCommandOption]) -> Table:
+    def mk_option_hints_display(model: list[DtshCommandOption]) -> Table:
         """Layout option completion hints.
 
         Arguments:
-        hints -- an option list to display as hints
+        model -- an option list to display as hints
 
         Returns a rich table.
         """
         tab = DtshTheme.mk_grid(2)
-        for opt in hints:
+        for opt in model:
             tab.add_row(DtshTheme.mk_txt(opt.usage), DtshTheme.mk_dim(opt.desc))
         return tab
 
     @staticmethod
-    def mk_node_hints_display(hints: list[Node]) -> Table:
+    def mk_node_hints_display(model: list[Node]) -> Table:
         """Layout node completion hints.
 
         Arguments:
-        hints -- a node list to display as hints
+        model -- a node list to display as hints
 
         Returns a rich table.
         """
         tab = DtshTheme.mk_grid(3)
-        for node in hints:
+        for node in model:
             nick = DtshTheme.mk_txt(DtshTheme.get_node_nickname(node))
             if node.unit_addr is not None:
                 addr = DtshTheme.mk_txt(hex(node.unit_addr))
@@ -259,11 +259,11 @@ class DtshTheme(object):
         return tab
 
     @staticmethod
-    def mk_property_hints_display(hints: list[Node]) -> Table:
+    def mk_property_hints_display(model: list[Node]) -> Table:
         """Layout property completion hints.
 
         Arguments:
-        hints -- a property list to display as hints
+        model -- a property list to display as hints
 
         Returns a rich table.
         """
@@ -273,16 +273,16 @@ class DtshTheme(object):
         return tab
 
     @staticmethod
-    def mk_binding_hints_display(hints: list[Binding]) -> Table:
+    def mk_binding_hints_display(model: list[Binding]) -> Table:
         """Layout bindings completion hints.
 
         Arguments:
-        hints -- a binding list to display as hints
+        model -- a binding list to display as hints
 
         Returns a rich table.
         """
         tab = DtshTheme.mk_grid(2)
-        for binding in hints:
+        for binding in model:
             txt_compat = DtshTheme.mk_txt(binding.compatible)
             if binding.description:
                 desc_str = DtshTheme.get_str_summary(binding.description)

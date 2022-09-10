@@ -4,51 +4,61 @@
 
 """Auto-completion with GNU readline for devicetree shells."""
 
+from collections import OrderedDict
 
 from devicetree.edtlib import Node, Binding
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp
+from dtsh.dtsh import Dtsh, DtshCommand, DtshAutocomp
 
 
 class DevicetreeAutocomp(DtshAutocomp):
     """Devicetree shell commands auto-completion support with GNU readline.
     """
 
-    _hints: list[str]
-    _model: list | None
+    # Maps completion state (strings) and model (objects).
+    #
+    _autocomp_state: OrderedDict[str, object]
+
+    # Autocomp mode.
+    #
+    _mode: int
 
     def __init__(self, shell: Dtsh) -> None:
         """Initialize the completion engine.
         """
         self._dtsh = shell
-        self._hints = list[str]()
-        self._model = None
+        self._mode = DtshAutocomp.MODE_ANY
+        self._autocomp_state = OrderedDict[str, object]()
 
     @property
     def count(self) -> int:
         """Implements DtshAutocomp.count().
         """
-        if self._model:
-            return len(self._model)
-        return 0
+        return len(self._autocomp_state)
 
     @property
     def hints(self) -> list[str]:
         """Implements DtshAutocomp.hints().
         """
-        return self._hints
+        return list(self._autocomp_state.keys())
 
     @property
-    def model(self) -> list | None:
+    def model(self) -> list:
         """Implements DtshAutocomp.model().
         """
-        return self._model
+        return list(self._autocomp_state.values())
+
+    @property
+    def mode(self) -> int:
+        """Implements DtshAutocomp.mode().
+        """
+        return self._mode
 
     def reset(self) -> None:
         """Implements DtshAutocomp.reset().
         """
-        self._hints.clear()
-        self._model = None
+        self._mode = DtshAutocomp.MODE_ANY
+        self._autocomp_state.clear()
 
     def autocomplete(self,
                      cmdline: str,
@@ -72,50 +82,44 @@ class DevicetreeAutocomp(DtshAutocomp):
                 else:
                     self._autocomp_with_params(cmd, prefix)
 
-        return self._hints
+        return self.hints
 
     def _autocomp_empty_cmdline(self) -> None:
-        self._model = list[DtshCommand]()
+        self._mode = DtshAutocomp.MODE_DTSH_CMD
         for cmd in self._dtsh.builtins:
-            self._hints.append(cmd.name)
-            self._model.append(cmd)
+            self._autocomp_state[cmd.name] = cmd
 
     def _autocomp_with_commands(self, prefix: str) -> None:
-        self._model = list[DtshCommand]()
+        self._mode = DtshAutocomp.MODE_DTSH_CMD
         for cmd in self._dtsh.builtins:
             if cmd.name.startswith(prefix) and (len(cmd.name) > len(prefix)):
-                self._hints.append(cmd.name)
-                self._model.append(cmd)
+                self._autocomp_state[cmd.name] = cmd
 
     def _autocomp_with_options(self, cmd: DtshCommand, prefix: str) -> None:
-        self._model = list[DtshCommandOption]()
+        self._mode = DtshAutocomp.MODE_DTSH_OPT
         for opt in cmd.autocomplete_option(prefix):
-            self._model.append(opt)
-
-        for opt in self._model:
+            # When building the options hints for rl_completion_matches(),
+            # we must answer the longest possible hints for the given prefix:
+            # we'll use the option's long name when it does not have any short
+            # name or the prefix starts with '--', its short name otherwise.
+            # The syntactic characters '-' are included in the hints since
+            # they're part of the prefix.
             if opt.shortname and (not prefix.startswith('--')):
-                self._hints.append(f'-{opt.shortname}')
-        for opt in self._model:
-            if opt.longname:
-                self._hints.append(f'--{opt.longname}')
+                self._autocomp_state[f'-{opt.shortname}'] = opt
+            elif opt.longname:
+                self._autocomp_state[f'--{opt.longname}'] = opt
 
     def _autocomp_with_params(self, cmd:DtshCommand, prefix: str) -> None:
-        model = cmd.autocomplete_param(prefix)
-        if model:
-            if isinstance(model[0], Node):
-                self._model = list[Node]()
-                for node in list[Node](model):
-                    self._model.append(node)
-                    self._hints.append(node.path)
-            elif isinstance(model[0], Binding):
-                self._model = list[Binding]()
-                for binding in list[Binding](model):
-                    self._model.append(binding)
-                    self._hints.append(binding.compatible)
-            else:
-                # Fallback to string model.
-                self._model = list[str]()
-                for m in model:
-                    completion = str(m)
-                    self._model.append(completion)
-                    self._hints.append(completion)
+        self._mode, model = cmd.autocomplete_param(prefix)
+        if self._mode == DtshAutocomp.MODE_DT_NODE:
+            for node in list[Node](model):
+                self._autocomp_state[node.path] = node
+        elif self._mode == DtshAutocomp.MODE_DT_BINDING:
+            for binding in list[Binding](model):
+                self._autocomp_state[binding.compatible] = binding
+        elif self._mode == DtshAutocomp.MODE_DTSH_CMD:
+            for cmd in list[DtshCommand](model):
+                self._autocomp_state[cmd.name] = cmd
+        else:
+            for completion in model:
+                self._autocomp_state[str(completion)] = completion

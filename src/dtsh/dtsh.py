@@ -8,6 +8,7 @@
 import getopt
 
 from abc import abstractmethod
+from typing import ClassVar, Tuple
 
 from devicetree.edtlib import EDT, EDTError, Node, Binding
 
@@ -409,16 +410,20 @@ class DtshCommand(object):
         """
         return []
 
-    def autocomplete_param(self, prefix: str) -> list:
+    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Auto-complete a command's parameter value.
 
+        Completions are represented by the tagged list of possible
+        parameter objects.
+
+        The tag will help client code to interpret (type) these parameter values.
 
         Arguments:
         prefix -- the startswith pattern for parameter values
 
-        Returns a list of matching parameters.
+        Returns the tagged list of matching parameters as a tuple.
         """
-        return []
+        return DtshAutocomp.MODE_ANY, []
 
     @abstractmethod
     def execute(self, vt: DtshVt) -> None:
@@ -790,7 +795,26 @@ class Dtsh(object):
 
 class DtshAutocomp(object):
     """Devicetree shell command line completer.
+
+    Usually associated to the shell session's input buffer
+    shared with GNU readline.
+
+    The auto-completion state machine is made of:
+    - the completion state, which is the sequence of possible input strings
+      (hints) matching a given prefix
+    - a model, which is the list of the actual possible objects matching the
+      given prefix
+    - a mode, that tags the model semantic (may help client code to avoid
+      calling isinstance())
     """
+
+    MODE_ANY: ClassVar[int] = 0
+    MODE_DTSH_CMD: ClassVar[int] = 1
+    MODE_DTSH_OPT: ClassVar[int] = 2
+    MODE_DTSH_PAGE: ClassVar[int] = 3
+    MODE_DT_NODE: ClassVar[int] = 4
+    MODE_DT_PROP: ClassVar[int] = 5
+    MODE_DT_BINDING: ClassVar[int] = 6
 
     @property
     @abstractmethod
@@ -802,17 +826,33 @@ class DtshAutocomp(object):
     @abstractmethod
     def hints(self) -> list[str]:
         """Current completion state.
+
+        This is the list of completion strings that match the last prefix
+        provided to autocomplete().
         """
 
     @property
     @abstractmethod
-    def model(self) -> list | None:
+    def model(self) -> list:
         """Current completion model.
+
+        This is the model objects correponding to the current completion hints.
+
+        Permits rich implementation of the rl_completion_display_matches_hook()
+        callback.
+        """
+
+    @property
+    @abstractmethod
+    def mode(self) -> int:
+        """Current completion mode.
+
+        Tag describing the current completion model.
         """
 
     @abstractmethod
     def reset(self) -> None:
-        """Reset current completion state.
+        """Reset current completion state and model.
         """
 
     @abstractmethod
@@ -827,15 +867,17 @@ class DtshAutocomp(object):
         prefix -- the prefix word to complete
         cursor -- required to get the full command line's state,
                   but unsupported
+
+        Returns the completion state (hint strings) matching the prefix.
         """
 
     @staticmethod
     def autocomplete_with_nodes(prefix: str, shell: Dtsh) -> list[Node]:
-        """Auto-complete with a list of nodes.
+        """Helper function to auto-complete with a list of nodes.
 
         Arguments:
         prefix -- the node path prefix
-        shell -- the contextual devicetree shell instance
+        shell -- the shell instance the nodes belong to
 
         Returns a list of matching nodes.
         """
