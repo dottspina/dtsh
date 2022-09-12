@@ -459,6 +459,9 @@ class Dtsh(object):
     # Built-in commands.
     _builtins: dict[str, DtshCommand]
 
+    # Cached bindings map.
+    _bindings: dict[str, Binding]
+
     def __init__(self, edt: EDT) -> None:
         """Initialize a shell-like interface to a devicetree.
 
@@ -472,6 +475,8 @@ class Dtsh(object):
         self._edt = edt
         self._cwd = self._edt.get_node('/')
         self._builtins = dict[str, DtshCommand]()
+        self._bindings = dict[str, Binding]()
+        self._init_bindings()
 
     @property
     def cwd(self) -> Node:
@@ -493,16 +498,10 @@ class Dtsh(object):
 
     @property
     def dt_bindings(self) -> dict[str, Binding]:
-        bindings = dict[str, Binding]()
-        for compat, nodes in self._edt.compat2nodes.items():
-            # FIXME: private API usage
-            # Note: node._binding may be None (e.g. nordic,nrf52840-dk-nrf52840),
-            # despite a key exists for this compat
-            for node in nodes:
-                if node._binding:
-                    bindings[compat] = node._binding
-                    break
-        return bindings
+        return self._bindings
+
+    def dt_binding(self, compat: str) -> Binding | None:
+        return self._bindings.get(compat)
 
     @property
     def dt_aliases(self) -> dict[str, Node]:
@@ -824,6 +823,16 @@ class Dtsh(object):
             path = path[:-1]
 
         return path_prefix + path
+
+    def _init_bindings(self):
+        for compat, nodes in self._edt.compat2nodes.items():
+            # FIXME: private API usage
+            # Note: node._binding may be None (e.g. nordic,nrf52840-dk-nrf52840),
+            # despite a key exists for this compat
+            for node in nodes:
+                if node._binding:
+                    self._bindings[compat] = node._binding
+                    break
 
 
 class DtshAutocomp(object):
