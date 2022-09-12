@@ -1,0 +1,62 @@
+# Copyright (c) 2022 Chris Duf <chris@openmarl.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Devicetree shell default theme
+#
+# See:
+# - Styles: https://rich.readthedocs.io/en/stable/style.html#styles
+# - Standard colors: https://rich.readthedocs.io/en/stable/appendix/colors.html
+# - Theme: https://rich.readthedocs.io/en/stable/style.html#style-themes
+
+[styles]
+
+# Default style.
+dtsh.default = default on default
+
+# Apply to a node (unique) matching compatible (aka binding).
+# Typically: node.matching_compat is defined,
+# and node.binding_path might point to the corresponding yaml file.
+#
+dtsh.binding = light_sea_green
+
+# Apply to compatible strings as in node.compats.
+#
+dtsh.compats = light_sea_green
+
+# Apply to descriptions from DT bindings (nodes or properties).
+#
+dtsh.desc = light_sea_green
+
+# Apply to a node's label properties.
+# color: deep_sky_blue1
+#
+dtsh.labels = #00afff italic
+
+# Apply to a node's labels.
+# color: deep_sky_blue1
+#
+dtsh.label = #00afff
+
+# Apply to a node's aliases.
+#
+dtsh.alias = turquoise2
+
+# Apply to node status 'okay'.
+# Green example: spring_green3
+#
+dtsh.okay = default
+
+# Apply to node status not 'okay'.
+#
+dtsh.not_okay = dim
+
+# Apply when the required data to show,
+# for e.g. a structured view section,
+# is not available
+dtsh.apology = dim italic
+
+# Apply to boolean values.
+#
+dtsh.true = default
+dtsh.false = dim
