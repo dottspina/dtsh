@@ -6,7 +6,7 @@
 
 
 import getopt
-
+import os
 from abc import abstractmethod
 from typing import ClassVar, Tuple
 
@@ -823,6 +823,14 @@ class Dtsh(object):
             path = path[:-1]
 
         return path_prefix + path
+
+    @staticmethod
+    def cfg_dir_path() -> str:
+        xdg_cfg_dir = os.environ.get('XDG_CONFIG_HOME')
+        if not xdg_cfg_dir:
+            home = os.path.expanduser('~')
+            xdg_cfg_dir = os.path.join(home, '.config')
+        return os.path.join(xdg_cfg_dir, 'dtsh')
 
     def _init_bindings(self):
         for compat, nodes in self._edt.compat2nodes.items():

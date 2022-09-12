@@ -106,15 +106,8 @@ class DevicetreeShellSession(DtshSession):
         self._term.write(view)
         self._term.write()
 
-    def configuration_path(self) -> str:
-        xdg_cfg_dir = os.environ.get('XDG_CONFIG_HOME')
-        if not xdg_cfg_dir:
-            home = os.path.expanduser('~')
-            xdg_cfg_dir = os.path.join(home, '.config')
-        return os.path.join(xdg_cfg_dir, 'dtsh')
-
     def readline_hist_path(self) -> str:
-        return os.path.join(self.configuration_path(), 'dtsh_history')
+        return os.path.join(Dtsh.cfg_dir_path(), 'dtsh_history')
 
     def readline_read_history(self):
         hist_path = self.readline_hist_path()
@@ -122,7 +115,7 @@ class DevicetreeShellSession(DtshSession):
             readline.read_history_file(hist_path)
 
     def readline_write_history(self):
-        cfg_path = self.configuration_path()
+        cfg_path = Dtsh.cfg_dir_path()
         if not os.path.isdir(cfg_path):
             os.mkdir(cfg_path)
         readline.write_history_file(self.readline_hist_path())
