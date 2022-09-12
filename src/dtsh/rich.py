@@ -94,6 +94,7 @@ class DtshTheme(object):
     WCHAR_COPYRIGHT = '\u00a9'
     WCHAR_HYPHEN = '\u2014'
     WCHAR_DASH = '\ufe4d'
+    WCHAR_ARROW = '\u2192'
 
     # Set to None to remove ...
     TXT_HOLDER = Text('\ufe4d', Style(color=Color.default(), dim=True))

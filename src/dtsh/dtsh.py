@@ -502,6 +502,14 @@ class Dtsh(object):
                 bindings[compat] = nodes[0]._binding
         return bindings
 
+    @property
+    def dt_aliases(self) -> dict[str, Node]:
+        aliases = dict[str, Node]()
+        for alias, dt_node in self._edt._dt.alias2node.items():
+            edt_node = self._edt.get_node(dt_node.path)
+            aliases[alias] = edt_node
+        return aliases
+
     def builtin(self, name: str) -> DtshCommand | None:
         """Access a built-in by command name.
 
