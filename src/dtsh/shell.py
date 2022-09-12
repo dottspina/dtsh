@@ -11,6 +11,7 @@ from devicetree.edtlib import EDT
 from dtsh.dtsh import Dtsh, DtshError
 from dtsh.builtin_pwd import DtshBuiltinPwd
 from dtsh.builtin_alias import DtshBuiltinAlias
+from dtsh.builtin_chosen import DtshBuiltinChosen
 from dtsh.builtin_cd import DtshBuiltinCd
 from dtsh.builtin_ls import DtshBuiltinLs
 from dtsh.builtin_tree import DtshBuiltinTree
@@ -32,6 +33,7 @@ class DevicetreeShell(Dtsh):
         for cmd in [
                 DtshBuiltinPwd(self),
                 DtshBuiltinAlias(self),
+                DtshBuiltinChosen(self),
                 DtshBuiltinCd(self),
                 DtshBuiltinLs(self),
                 DtshBuiltinTree(self),

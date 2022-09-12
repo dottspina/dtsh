@@ -510,6 +510,13 @@ class Dtsh(object):
             aliases[alias] = edt_node
         return aliases
 
+    @property
+    def dt_chosen(self) -> dict[str, Node]:
+        chosen = dict[str, Node]()
+        for name, node in self._edt.chosen_nodes.items():
+            chosen[name] = node
+        return chosen
+
     def builtin(self, name: str) -> DtshCommand | None:
         """Access a built-in by command name.
 
