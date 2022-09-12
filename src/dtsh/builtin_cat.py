@@ -157,6 +157,8 @@ Description
             v_node.add_row('Unit address:', hex(node.unit_addr))
         if node.compats:
             v_node.add_row('Compatible:',' '.join(node.compats))
+            if node.matching_compat:
+                v_node.add_row('Binding:', DtshTheme.mk_txt_node_binding(node))
         v_node.add_row('Status:', DtshTheme.mk_node_status(node))
         self._cat_layout_add_section(view, 'Node', v_node)
 
@@ -171,30 +173,16 @@ Description
         if node.depends_on:
             v_deps = DtshTheme.mk_grid(2)
             for dep in node.depends_on:
-                if dep.matching_compat:
-                    style = DtshTheme.STYLE_DEFAULT
-                    if dep.binding_path:
-                        style = Style(link=f'file:{dep.binding_path}')
-                    txt_binding = Text(dep.matching_compat, style)
-                else:
-                    txt_binding = Text()
-                v_deps.add_row(dep.name, txt_binding)
+                v_deps.add_row(dep.name, DtshTheme.mk_txt_node_binding(dep))
         else:
             v_deps = DtshTheme.mk_dim("This node does not directly depend on any node.")
         self._cat_layout_add_section(view, 'Depends-on', v_deps)
 
     def _node_layout_add_required_by(self, view: Table, node: Node):
-        v_reqs = DtshTheme.mk_grid(2)
         if node.required_by:
-            for dep in node.required_by:
-                if dep.matching_compat:
-                    style = DtshTheme.STYLE_DEFAULT
-                    if dep.binding_path:
-                        style = Style(link=f'file:{dep.binding_path}')
-                    txt_binding = Text(dep.matching_compat, style)
-                else:
-                    txt_binding = Text()
-                v_reqs.add_row(dep.name, txt_binding, style=DtshTheme.STYLE_DEFAULT)
+            v_reqs = DtshTheme.mk_grid(3)
+            for req in node.required_by:
+                v_reqs.add_row(req.name, DtshTheme.mk_txt_node_binding(req))
         else:
             v_reqs = DtshTheme.mk_dim("There's no other node that directly depends on this node.")
         self._cat_layout_add_section(view, 'Required-by', v_reqs)
@@ -256,7 +244,7 @@ Description
         grid.add_row('Required:', str(prop.spec.required))
         grid.add_row('Value:', self._prop2str(prop))
         if prop.spec.binding:
-            grid.add_row('From:', DtshTheme.mk_binding(prop.spec.binding))
+            grid.add_row('From:', DtshTheme.mk_txt_binding(prop.spec.binding))
         if prop.spec.default:
             grid.add_row('Default:', prop.spec.default)
         self._cat_layout_add_section(view, 'Property', grid)

@@ -514,14 +514,23 @@ class DtshTheme(object):
         return None
 
     @staticmethod
-    def mk_binding(binding: Binding, with_link=True) -> Text:
-        if binding.compatible:
-            style = DtshTheme.STYLE_DEFAULT
-            if binding.path and with_link:
-                style = style.update_link(f'file:{binding.path}')
-            txt = Text(binding.compatible, style)
-        else:
-            txt = Text()
+    def mk_txt_binding(binding: Binding, with_link=True) -> Text:
+        """
+        """
+        if not binding.compatible:
+            return Text()
+        txt = Text(binding.compatible, DtshTheme.STYLE_DEFAULT)
+        if binding.path and with_link:
+            txt.stylize(Style(link=f'file:{binding.path}'))
+        return txt
+
+    @staticmethod
+    def mk_txt_node_binding(node: Node, with_link=True) -> Text:
+        if not node.matching_compat:
+            return Text()
+        txt = Text(node.matching_compat, DtshTheme.STYLE_DEFAULT)
+        if node.binding_path and with_link:
+            txt.stylize(Style(link=f'file:{node.binding_path}'))
         return txt
 
     @staticmethod
