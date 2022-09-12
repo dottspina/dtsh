@@ -239,25 +239,19 @@ class DtshTheme(object):
 
         Returns a rich table.
         """
-        tab = DtshTheme.mk_grid(3)
+        tab = DtshTheme.mk_grid(2)
         for node in model:
-            nick = DtshTheme.mk_txt(DtshTheme.get_node_nickname(node))
-            if node.unit_addr is not None:
-                addr = DtshTheme.mk_txt(hex(node.unit_addr))
-            else:
-                addr = None
+            txt_name = DtshTheme.mk_txt(node.name)
             if node.description:
                 desc_str = DtshTheme.get_str_summary(str(node.description))
-                desc = DtshTheme.mk_txt(f'{desc_str}')
+                txt_desc = DtshTheme.mk_txt(f'{desc_str}')
             else:
-                desc = None
+                txt_desc = None
             if node.status == 'disabled':
-                DtshTheme.conceal_txt(nick)
-                if addr:
-                    DtshTheme.conceal_txt(addr)
-                if desc:
-                    DtshTheme.conceal_txt(desc)
-            tab.add_row(nick, addr, desc)
+                DtshTheme.conceal_txt(txt_name)
+                if txt_desc:
+                    DtshTheme.conceal_txt(txt_desc)
+            tab.add_row(txt_name, txt_desc)
         return tab
 
     @staticmethod
