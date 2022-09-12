@@ -498,8 +498,10 @@ class Dtsh(object):
             # FIXME: private API usage
             # Note: node._binding may be None (e.g. nordic,nrf52840-dk-nrf52840),
             # despite a key exists for this compat
-            if  nodes[0]._binding is not None:
-                bindings[compat] = nodes[0]._binding
+            for node in nodes:
+                if node._binding:
+                    bindings[compat] = node._binding
+                    break
         return bindings
 
     @property
