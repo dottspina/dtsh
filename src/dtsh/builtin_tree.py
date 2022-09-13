@@ -6,10 +6,11 @@
 
 
 from typing import Tuple
+
 from dtsh.dtsh import Dtsh, DtshVt, DtshCommand, DtshCommandOption, DtshAutocomp
 from dtsh.dtsh import DtshCommandUsageError
 
-from dtsh.rich import DtshNodeTreeView
+from dtsh.tui import DtNodeTreeView
 
 
 class DtshBuiltinTree(DtshCommand):
@@ -188,8 +189,11 @@ Example of rich output:
 
         root = self._dtsh.path2node(arg_path)
 
-        view = DtshNodeTreeView(root, self.arg_level, self.with_rich_fmt)
-        view.show(vt, self._dtsh, self.with_pager)
+        view = DtNodeTreeView(root,
+                              self._dtsh,
+                              self.arg_level,
+                              self.with_rich_fmt)
+        view.show(vt, self.with_pager)
 
     def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
