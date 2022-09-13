@@ -10,7 +10,7 @@ from devicetree.edtlib import Node
 
 from dtsh.dtsh import DtshCommand, DtshCommandOption, Dtsh, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshCommandUsageError
-from dtsh.rich import DtshNodeListView
+from dtsh.tui import DtNodeListView
 
 
 class DtshBuiltinLs(DtshCommand):
@@ -69,28 +69,20 @@ Assuming the current working node is the devicetree's root:
 ```
 ❯ ls -l
 /:
-chosen            ﹍  ﹍              ﹍              ﹍  ﹍                     ﹍
-aliases           ﹍  ﹍              ﹍              ﹍  ﹍                     ﹍
-soc               ﹍  ﹍              ﹍              ﹍  ﹍                     ﹍
-pin-controller    ﹍  ﹍              pinctrl         ﹍  nordic,nrf-pinctrl     The nRF pin controller is
-                                                                                 a singleton node
-                                                                                 responsible for
-                                                                                 controlling…
-entropy_bt_hci    ﹍  bt_hci_entropy  rng_hci         ﹍  zephyr,bt-hci-entropy  Bluetooth module that
-                                                                                 uses Zephyr's Bluetooth
-                                                                                 Host Controller Interface
-                                                                                 as…
-cpus              ﹍  ﹍              ﹍              ﹍  ﹍                     ﹍
-sw-pwm            ﹍  SW_PWM          sw_pwm          ﹍  nordic,nrf-sw-pwm      nRFx S/W PWM
-leds              ﹍  ﹍              ﹍              ﹍  gpio-leds              This allows you to define
-                                                                                 a group of LEDs. Each LED
-                                                                                 in the group is…
-pwmleds           ﹍  ﹍              ﹍              ﹍  pwm-leds               PWM LEDs parent node
-buttons           ﹍  ﹍              ﹍              ﹍  gpio-keys              GPIO KEYS parent node
-connector         ﹍  ﹍              arduino_header  ﹍  arduino-header-r3      GPIO pins exposed on
-                                                                                 Arduino Uno (R3) headers…
-analog-connector  ﹍  ﹍              arduino_adc     ﹍  arduino,uno-adc        ADC channels exposed on
-
+Name              Addr  Labels          Alias  Compatible                                                    Description
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+chosen
+aliases
+soc                                            nordic,nRF52840-QIAA nordic,nRF52840 nordic,nRF52 simple-bus
+pin-controller          pinctrl                nordic,nrf-pinctrl                                            The nRF pin controller is a singleton node responsible for controlling…
+entropy_bt_hci          rng_hci                zephyr,bt-hci-entropy                                         Bluetooth module that uses Zephyr's Bluetooth Host Controller Interface as…
+cpus
+sw-pwm                  sw_pwm                 nordic,nrf-sw-pwm                                             nRFx S/W PWM
+leds                                           gpio-leds                                                     This allows you to define a group of LEDs. Each LED in the group is…
+pwmleds                                        pwm-leds                                                      PWM LEDs parent node
+buttons                                        gpio-keys                                                     GPIO KEYS parent node
+connector               arduino_header         arduino-header-r3                                             GPIO pins exposed on Arduino Uno (R3) headers…
+analog-connector        arduino_adc            arduino,uno-adc                                               ADC channels exposed on Arduino Uno (R3) headers…
 ```
 
 Globing:
@@ -134,11 +126,13 @@ Globing:
 ```
 /
 ❯ ls /soc/flash-controller@4001e000/flash@0/partitions/partition@* -ld
-partition  0x0      mcuboot        boot_partition     ﹍  ﹍  Flash partition child node
-partition  0xc000   image-0        slot0_partition    ﹍  ﹍  Flash partition child node
-partition  0x73000  image-1        slot1_partition    ﹍  ﹍  Flash partition child node
-partition  0xda000  image-scratch  scratch_partition  ﹍  ﹍  Flash partition child node
-partition  0xf8000  storage        storage_partition  ﹍  ﹍  Flash partition child node
+Name       Addr     Labels                          Alias  Compatible  Description
+─────────────────────────────────────────────────────────────────────────────────────────────────
+partition  0x0      mcubootboot_partition                              Flash partition child node
+partition  0xc000   image-0slot0_partition                             Flash partition child node
+partition  0x73000  image-1slot1_partition                             Flash partition child node
+partition  0xda000  image-scratchscratch_partition                     Flash partition child node
+partition  0xf8000  storagestorage_partition                           Flash partition child node
 ```
 """
     def __init__(self, shell: Dtsh) -> None:
@@ -221,10 +215,16 @@ partition  0xf8000  storage        storage_partition  ﹍  ﹍  Flash partition 
             for _, contents in node_map.items():
                 contents.reverse()
 
-        view = DtshNodeListView(node_map,
-                                self.with_no_content,
-                                self.with_rich_fmt)
-        view.show(vt, self._dtsh, self.with_pager)
+        view = DtNodeListView(node_map,
+                              self._dtsh,
+                              self.with_no_content,
+                              self.with_rich_fmt)
+        view.show(vt, self.with_pager)
+
+        # view = DtshNodeListView(node_map,
+        #                         self.with_no_content,
+        #                         self.with_rich_fmt)
+        # view.show(vt, self._dtsh, self.with_pager)
 
     def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
