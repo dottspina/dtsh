@@ -7,7 +7,7 @@
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshVt
 from dtsh.dtsh import DtshCommandUsageError
-from dtsh.rich import DtshTheme
+from dtsh.tui import DtshTui
 
 
 class DtshBuiltinAlias(DtshCommand):
@@ -59,7 +59,14 @@ spi-flash0      → /soc/qspi@40029000/mx25r6435f@0
             stdout.write(self.usage)
             return
 
-        view = DtshTheme.mk_grid(3)
+        view = DtshTui.mk_grid(3)
         for alias, node in self._dtsh.dt_aliases.items():
-            view.add_row(alias, DtshTheme.WCHAR_ARROW, node.path)
+            txt_alias = DtshTui.mk_txt(alias)
+            txt_arrow = DtshTui.mk_txt(DtshTui.WCHAR_ARROW)
+            txt_path = DtshTui.mk_txt(node.path)
+            if node.status != 'okay':
+                DtshTui.txt_dim(txt_alias)
+                DtshTui.txt_dim(txt_arrow)
+                DtshTui.txt_dim(txt_path)
+            view.add_row(txt_alias, txt_arrow, txt_path)
         stdout.write(view)
