@@ -7,7 +7,7 @@
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshVt
 from dtsh.dtsh import DtshCommandUsageError
-from dtsh.rich import DtshTheme
+from dtsh.tui import DtshTui
 
 
 class DtshBuiltinChosen(DtshCommand):
@@ -55,7 +55,14 @@ zephyr,ieee802154       → /soc/radio@40001000/ieee802154
             stdout.write(self.usage)
             return
 
-        view = DtshTheme.mk_grid(3)
+        view = DtshTui.mk_grid(3)
         for name, node in self._dtsh.dt_chosen.items():
-            view.add_row(name, DtshTheme.WCHAR_ARROW, node.path)
+            txt_name = DtshTui.mk_txt(name)
+            txt_arrow = DtshTui.mk_txt(DtshTui.WCHAR_ARROW)
+            txt_path = DtshTui.mk_txt(node.path)
+            if node.status != 'okay':
+                DtshTui.txt_dim(txt_name)
+                DtshTui.txt_dim(txt_arrow)
+                DtshTui.txt_dim(txt_path)
+            view.add_row(txt_name, txt_arrow, txt_path)
         stdout.write(view)
