@@ -396,7 +396,7 @@ class DtshTui:
         return grid
 
     @staticmethod
-    def mk_form_prop_spec(prop:Property) -> Table:
+    def mk_form_property(prop:Property) -> Table:
         form = DtshTui.mk_form()
         form.add_row('Name:', prop.name)
         form.add_row('Type:', prop.type)
@@ -584,7 +584,7 @@ class DtPropertyView(DtshTuiStructuredView):
     def __init__(self, prop:Property) -> None:
         super().__init__()
         if prop.spec:
-            self.add_section('Property', DtshTui.mk_form_prop_spec(prop))
+            self.add_section('Property', DtshTui.mk_form_property(prop))
             self.add_section('Description', DtshTui.mk_txt_prop_desc(prop))
             self.add_section('Binding',
                              DtshTui.mk_yaml_prop_binding(prop))
