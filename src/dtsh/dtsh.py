@@ -694,7 +694,7 @@ class Dtsh(object):
             dirnode = self.path2node(path)
             return list[Node](dirnode.children.values())
 
-    def exec_command_string(self, cmd_str: str, vt: DtshVt | None) -> None:
+    def exec_command_string(self, cmd_str: str, vt: DtshVt) -> None:
         """Execute a command string.
 
         Note that the command string content after any '--' token
