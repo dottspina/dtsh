@@ -318,8 +318,8 @@ class DtshTui:
         return Text(reg.name)
 
     @staticmethod
-    def mk_txt_prop_last_binding(prop_spec: PropertySpec,
-                                 with_link: bool = True) -> Text:
+    def mk_txt_prop_spec_path(prop_spec: PropertySpec,
+                              with_link: bool = True) -> Text:
         if not prop_spec.path:
             return Text()
         txt = Text(os.path.basename(prop_spec.path),
@@ -445,7 +445,7 @@ class DtshTui:
         form.add_row('Required:', DtshTui.mk_txt_bool(prop.spec.required))
         form.add_row('Value:', DtshTui.mk_txt_prop_value(prop))
         if prop.spec.path:
-            form.add_row('From:', DtshTui.mk_txt_prop_last_binding(prop.spec))
+            form.add_row('From:', DtshTui.mk_txt_prop_spec_path(prop.spec))
         if prop.spec.default:
             form.add_row('Default:',
                          DtshTui.mk_txt_dt_value(prop.spec.default, prop.type))
