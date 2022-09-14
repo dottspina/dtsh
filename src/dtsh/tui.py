@@ -39,6 +39,11 @@ class DtshTui:
     # Base styles.
     #
     STYLE_DEFAULT = 'dtsh.default'
+    STYLE_BOLD = 'bold'
+    STYLE_DIM = 'dim'
+    STYLE_ITALIC = 'italic'
+    STYLE_UNDERLINE = 'underline'
+    STYLE_STRIKE = 'strike'
     STYLE_APOLOGY = 'dtsh.apology'
     STYLE_TRUE = 'dtsh.true'
     STYLE_FALSE = 'dtsh.false'
@@ -67,6 +72,29 @@ class DtshTui:
             style = Style()
         return style
 
+    @staticmethod
+    def style_default() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_DEFAULT]
+
+    @staticmethod
+    def style_bold() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_BOLD]
+
+    @staticmethod
+    def style_dim() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_DIM]
+
+    @staticmethod
+    def style_italic() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_ITALIC]
+
+    @staticmethod
+    def style_underline() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_UNDERLINE]
+
+    @staticmethod
+    def style_strike() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_STRIKE]
 
     ############################################################################
     # Utils.
@@ -86,8 +114,22 @@ class DtshTui:
     ############################################################################
 
     @staticmethod
-    def mk_txt(txt: str) -> Text:
-        return Text(txt, DtshTui.style(DtshTui.STYLE_DEFAULT))
+    def mk_txt(txt: str, style=None) -> Text:
+        if not style:
+            style = DtshTui.style_default()
+        return Text(txt, style)
+
+    @staticmethod
+    def mk_txt_bold(txt: str) -> Text:
+        return Text(txt, DtshTui.style_bold())
+
+    @staticmethod
+    def mk_txt_italic(txt: str) -> Text:
+        return Text(txt, DtshTui.style_italic())
+
+    @staticmethod
+    def mk_txt_dim(txt: str) -> Text:
+        return Text(txt, DtshTui.style_dim())
 
     @staticmethod
     def mk_txt_bool(is_true: bool,
