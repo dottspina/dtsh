@@ -11,7 +11,7 @@ from devicetree.edtlib import Binding
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError, DtshCommandFailedError
-from dtsh.man import DtshBuiltinManPage, DtshCompatibleManPage
+from dtsh.man import DtshManPageBinding, DtshManPageBuiltin
 
 
 class DtshBuiltinMan(DtshCommand):
@@ -33,7 +33,7 @@ To open the `ls` shell built-in's manual page:
 
 ```
 /
-❯ man --compat arm,v7m-nvic
+❯ man ls
 
 ```
 
@@ -95,11 +95,11 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         if self.with_compat:
             binding = self._dtsh.dt_bindings.get(arg_page)
             if binding:
-                man_page = DtshCompatibleManPage(binding)
+                man_page = DtshManPageBinding(binding)
         else:
             builtin = self._dtsh.builtin(arg_page)
             if builtin:
-                man_page = DtshBuiltinManPage(builtin)
+                man_page = DtshManPageBuiltin(builtin)
 
         if man_page is not None:
             man_page.show(vt, self.with_no_pager)

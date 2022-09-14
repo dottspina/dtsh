@@ -123,6 +123,7 @@ Globing:
 ```
 
 2. filter wild-card:
+
 ```
 /
 ❯ ls /soc/flash-controller@4001e000/flash@0/partitions/partition@* -ld

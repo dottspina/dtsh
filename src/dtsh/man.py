@@ -4,19 +4,20 @@
 
 """Manual pages for devicetree shells."""
 
-import os
+import re
+
 from abc import abstractmethod
 
 from devicetree.edtlib import Binding
 
 from rich.console import RenderableType
 from rich.markdown import Markdown
-from rich.markup import escape
 from rich.padding import Padding
 from rich.text import Text
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshVt
-from dtsh.rich import DtshTheme
+from dtsh.rich import Table
+from dtsh.tui import DtshTui
 
 
 class DtshManPage(object):
@@ -28,6 +29,7 @@ class DtshManPage(object):
 
     _section: str
     _page: str
+    _view: Table
 
     def __init__(self, section: str, page: str) -> None:
         """Create a manual page.
@@ -38,6 +40,8 @@ class DtshManPage(object):
         """
         self._section = section
         self._page = page
+        self._view = DtshTui.mk_grid(1)
+        self._view.expand = True
 
     @property
     def section(self) -> str:
@@ -58,242 +62,205 @@ class DtshManPage(object):
         vt -- the VT to show the man page on
         no_pager -- print the man page without pager
         """
+        self._add_header()
+        self.add_content()
+        self._add_footer()
+
         if not no_pager:
             vt.pager_enter()
-        self.print_header(vt)
-        self.print_body(vt)
-        self.print_footer(vt)
+        vt.write(self._view)
         if not no_pager:
             vt.pager_exit()
 
-    def print_header(self, vt: DtshVt) -> None:
-        """Print man page header.
+    def _add_header(self) -> None:
         """
-        tab = DtshTheme.mk_wide_table()
-        txt_sec = DtshTheme.mk_bold(self.section)
-        txt_page = DtshTheme.mk_bold(self.page)
-        tab.add_row(txt_sec, None, txt_page)
-        vt.write(tab)
-        vt.write()
-
-    def print_footer(self, vt: DtshVt) -> None:
-        """Print man page footer.
         """
-        tab = DtshTheme.mk_wide_table()
-        txt_version = DtshTheme.mk_bold(Dtsh.API_VERSION)
-        txt_center = DtshTheme.mk_txt('Shell-like interface to devicetrees')
-        txt_dtsh = DtshTheme.mk_bold('dtsh')
-        tab.add_row(txt_version, txt_center, txt_dtsh)
-        vt.write(tab)
+        bar = DtshTui.mk_grid_statusbar()
+        bar.add_row(
+            DtshTui.mk_txt_bold(self.section.upper()),
+            None,
+            DtshTui.mk_txt_bold(self.page.upper())
+        )
+        self._view.add_row(bar)
+        bar.add_row(None)
 
-    def print_section(self, name: str, content: RenderableType, vt: DtshVt):
-        """Print a man page section."""
-        vt.write(Text(name.upper(), DtshTheme.STYLE_BOLD))
-        vt.write(Padding.indent(content, 8))
-        vt.write()
+    def _add_footer(self) -> None:
+        """
+        """
+        bar = DtshTui.mk_grid_statusbar()
+        bar.add_row(
+            DtshTui.mk_txt_bold(Dtsh.API_VERSION),
+            DtshTui.mk_txt('Shell-like interface to devicetrees'),
+            DtshTui.mk_txt_bold('DTSH')
+        )
+        self._view.add_row(bar)
+
+    def _add_named_content(self, name:str, content: RenderableType) -> None:
+        self._view.add_row(DtshTui.mk_txt_bold(name.upper()))
+        self._view.add_row(Padding(content, (0,8)))
+        self._view.add_row(None)
 
     @abstractmethod
-    def print_body(self, vt: DtshVt) -> None:
-        """Print the manual page body.
-
-        Actual implementation depends on the manual page's kind.
+    def add_content(self) -> None:
+        """Callback invoked by show() to setup view content.
         """
 
 
-class DtshBuiltinManPage(DtshManPage):
-    """Manual page for shell built-in commands.
+class DtshManPageBuiltin(DtshManPage):
+    """
     """
 
+    # Documented dtsh command.
     _builtin: DtshCommand
 
-    def __init__(self, builtin: DtshCommand) -> None:
-        """Create a command's manual page.
+    # Regexp for page sections.
+    _re: re.Pattern = re.compile('^[A-Z]+$')
 
-        Arguments:
-        builtin -- the shell command
-        """
-        super().__init__(DtshManPage.SECTION_DTSH.upper(), builtin.name.upper())
+    def __init__(self, builtin: DtshCommand) -> None:
+        super().__init__(DtshManPage.SECTION_DTSH, builtin.name)
         self._builtin = builtin
 
-    def print_body(self, vt: DtshVt) -> None:
-        """Overrides DtshManPage.print_body().
-        """
-        self._print_section_name(vt)
-        self._print_section_synopsys(vt)
+    def add_content(self) -> None:
+        self._add_content_name()
+        self._add_content_synopsis()
+        self._add_markdown()
 
-        docstr = self._builtin.__doc__
-        if docstr:
-            doc_vstr = docstr.splitlines()
-            offset = self._print_section_description(doc_vstr, vt)
-            if offset != -1:
-                self._print_section_examples(doc_vstr, offset, vt)
+    def _add_content_name(self) -> None:
+        txt = DtshTui.mk_txt(self._builtin.name)
+        txt.append_text(Text(f' {DtshTui.WCHAR_HYPHEN} ', DtshTui.style_default()))
+        txt = DtshTui.mk_txt(self._builtin.desc)
+        self._add_named_content('name', txt)
 
-    def _print_section_name(self, vt: DtshVt) -> None:
-        tab = DtshTheme.mk_grid(3)
-        txt_name = Text(self._builtin.name, DtshTheme.STYLE_BOLD)
-        txt_sep = Text(f' {DtshTheme.WCHAR_HYPHEN} ', DtshTheme.STYLE_DEFAULT)
-        txt_desc = Text(self._builtin.desc, DtshTheme.STYLE_DEFAULT)
-        tab.add_row(txt_name, txt_sep, txt_desc)
-        self.print_section('name', tab, vt)
-
-    def _print_section_synopsys(self, vt: DtshVt) -> None:
-        tab = DtshTheme.mk_grid(1)
-        tab.add_row(Text(self._builtin.usage))
-        tab.add_row(None)
+    def _add_content_synopsis(self) -> None:
+        grid = DtshTui.mk_grid(1)
+        grid.add_row(DtshTui.mk_txt(self._builtin.usage))
+        grid.add_row(None)
         for opt in self._builtin.options:
-            tab.add_row(Text(opt.usage, DtshTheme.STYLE_BOLD))
-            tab.add_row(Text(f'        {opt.desc}', DtshTheme.STYLE_DEFAULT))
-        self.print_section('synopsys', tab, vt)
+            grid.add_row(DtshTui.mk_txt_bold(opt.usage))
+            grid.add_row(DtshTui.mk_txt(f'        {opt.desc}'))
+        self._add_named_content('synopsis', grid)
 
-    def _print_section_description(self, doc_vstr: list[str], vt: DtshVt) -> int:
-        sz_src = len(doc_vstr)
-        offset = 0
-        while (offset < sz_src) and (doc_vstr[offset] != 'DESCRIPTION'):
-            offset += 1
-        if offset == sz_src:
-            return -1
+    def _add_markdown(self) -> None:
+        content = self._builtin.__doc__
+        if content:
+            content = content.strip()
+            content_vstr = content.splitlines()
+            # Skip until 1st section
+            for i, line in enumerate(content_vstr):
+                if self._is_section_header(line):
+                    content_vstr = content_vstr[i:]
+                    break
+            # Parse all sections.
+            sec_name: str | None = None
+            sec_vstr: list[str] | None = None
+            for line  in content_vstr:
+                line = line.rstrip()
+                if self._is_section_header(line):
+                    # Add current section's content to view if any.
+                    if sec_name and sec_vstr:
+                        self._add_section(sec_name, sec_vstr)
+                    # Init new section's content.
+                    sec_vstr = list[str]()
+                    sec_name = line
+                else:
+                    # Append line to current section.
+                    if sec_vstr is not None:
+                        sec_vstr.append(line)
 
-        # Stop at EXAMPLES.
-        stop_at = offset
-        while (stop_at < sz_src) and (doc_vstr[stop_at] != 'EXAMPLES'):
-            stop_at += 1
+            if sec_name and sec_vstr:
+                self._add_section(sec_name, sec_vstr)
 
-        if stop_at > offset:
-            section_vstr = doc_vstr[offset + 1:stop_at]
-            md_src = '\n'.join(section_vstr)
-            md = Markdown(md_src)
-            self.print_section('description', md, vt)
+    def _is_section_header(self, line: str) -> bool:
+        return self._re.match(line) is not None
 
-        return stop_at
-
-    def _print_section_examples(self,
-                                doc_vstr: list[str],
-                                start_at: int,
-                                vt: DtshVt) -> int:
-        sz_src = len(doc_vstr)
-        offset = start_at
-        while (offset < sz_src) and (doc_vstr[offset] != 'EXAMPLES'):
-            offset += 1
-        if offset == sz_src:
-            return -1
-
-        # Stop at SEEALSO.
-        stop_at = offset
-        while (stop_at < sz_src) and (doc_vstr[stop_at] != 'SEEALSO'):
-            stop_at += 1
-
-        if stop_at > offset:
-            section_vstr = doc_vstr[offset + 1:stop_at]
-            md_src = '\n'.join(section_vstr)
-            md = Markdown(md_src)
-            self.print_section('examples', md, vt)
-
-        return stop_at
+    def _add_section(self, name: str, vstr: list[str]) -> None:
+        md_src = '\n'.join(vstr)
+        md = Markdown(md_src)
+        self._add_named_content(name, md)
 
 
-class DtshCompatibleManPage(DtshManPage):
-    """Manual page for a compatible (aka bindings).
+class DtshManPageBinding(DtshManPage):
+    """
     """
 
     _binding: Binding
 
     def __init__(self, binding: Binding) -> None:
-        """Create a command's manual page.
-
-        Arguments:
-        builtin -- the shell command
-        """
-        super().__init__(DtshManPage.SECTION_COMPATS.upper(),
-                         binding.compatible)
+        super().__init__(DtshManPage.SECTION_COMPATS, binding.compatible)
         self._binding = binding
 
-    def print_body(self, vt: DtshVt) -> None:
-        """Overrides DtshManPage.print_body().
-        """
-        self._print_section_binding(vt)
-        self._print_section_description(vt)
-        self._print_section_bus(vt)
-        self._print_section_cell_specs(vt)
-        self._print_section_properties(vt)
-        self._print_section_source(vt)
+    def add_content(self) -> None:
+        self._add_content_compat()
+        self._add_content_desc()
+        self._add_content_cell_specs()
+        self._add_content_bus()
+        self._add_content_properties()
+        self._add_content_binding()
 
-    def _print_section_description(self, vt: DtshVt) -> None:
-        if self._binding.description:
-            txt_desc = Text(self._binding.description.strip(),
-                            DtshTheme.STYLE_BINDING_DESC)
-            self.print_section('description', txt_desc, vt)
+    def _add_content_compat(self) -> None:
+        grid = DtshTui.mk_form()
+        grid.add_row(DtshTui.mk_txt('Compatible: '),
+                     DtshTui.mk_txt_binding(self._binding))
+        grid.add_row(DtshTui.mk_txt('Summary: '),
+                     DtshTui.mk_txt_desc_short(self._binding.description))
+        self._add_named_content('binding', grid)
 
-    def _print_section_binding(self, vt: DtshVt) -> None:
-        tab = DtshTheme.mk_grid(2)
-        tab.add_row(DtshTheme.mk_txt('Compatible:'),
-                    Text(self._binding.compatible, DtshTheme.STYLE_NODE_COMPAT))
+    def _add_content_desc(self) -> None:
+        self._add_named_content('description',
+                                DtshTui.mk_txt_desc(self._binding.description))
 
-        if self._binding.description:
-            str_summary = DtshTheme.get_str_summary(self._binding.description)
-            tab.add_row(DtshTheme.mk_txt('Summary:'),
-                        Text(str_summary, DtshTheme.STYLE_NODE_DESC))
-
-        if self._binding.path:
-            filename = os.path.basename(self._binding.path)
-            str_binding_path = f'[link file:{escape(self._binding.path)}]{filename}'
-        else:
-            str_binding_path = DtshTheme.WCHAR_ELLIPSIS
-        tab.add_row(DtshTheme.mk_txt('Specified by:'), str_binding_path)
-
-        self.print_section('binding', tab, vt)
-
-    def _print_section_bus(self, vt: DtshVt) -> None:
-        if (self._binding.bus is None) and (self._binding.on_bus is None):
+    def _add_content_bus(self) -> None:
+        if not (self._binding.bus or self._binding.on_bus):
             return
 
-        if self._binding.bus is not None:
-            str_label = "Nodes with this binding's compatible describe bus"
+        if self._binding.bus:
+            str_label = "Nodes with this compatible's binding describe bus"
             str_bus = self._binding.bus
         else:
-            str_label = "Nodes with this binding's compatible appear on bus"
+            str_label = "Nodes with this compatible's binding appear on bus"
             str_bus = self._binding.on_bus
 
-        txt_label = DtshTheme.mk_txt(f'{str_label}:')
-        txt_bus = Text(str_bus, DtshTheme.STYLE_BUS)
-        tab = DtshTheme.mk_grid(2)
-        tab.add_row(txt_label, txt_bus)
+        txt = DtshTui.mk_txt(f'{str_label}: ')
+        txt.append_text(
+            DtshTui.mk_txt(str_bus, DtshTui.style(DtshTui.STYLE_DT_BUS))
+        )
+        self._add_named_content('bus', txt)
 
-        self.print_section('bus', tab, vt)
-
-    def _print_section_cell_specs(self, vt: DtshVt) -> None:
+    def _add_content_cell_specs(self) -> None:
         # Maps specifier space names (e.g. 'gpio') to list of
-        # cell names (e.g. ['pin', 'flags'])
+        # cell names (e.g. ['pin', 'flags']).
         spec_map = self._binding.specifier2cells
+        # Number of specifier spaces.
         N = len(spec_map)
         if N == 0:
             return
-
-        tab = DtshTheme.mk_grid(1)
+        grid = DtshTui.mk_grid(1)
         i_spec = 0
         for spec_space, spec_names in spec_map.items():
-            tab.add_row(f'{spec_space}-cells:')
+            grid.add_row(f'{spec_space}-cells:')
             for name in spec_names:
-                tab.add_row(f'- {name}')
+                grid.add_row(f'- {name}')
             if i_spec < (N - 1):
-                tab.add_row(None)
+                grid.add_row(None)
             i_spec += 1
-        self.print_section('cell specifiers', tab, vt)
+        self._add_named_content('cell specifiers', grid)
 
-    def _print_section_properties(self, vt: DtshVt) -> None:
-        # Maps property names to specifications (PropertySpec)
-        prop_map = self._binding.prop2specs
-        N = len(prop_map)
+    def _add_content_properties(self) -> None:
+        # Maps property names to specifications (PropertySpec).
+        spec_map = self._binding.prop2specs
+        # Number of property specs.
+        N = len(spec_map)
         if N == 0:
             return
+        grid = DtshTui.mk_grid(1)
+        i_spec = 0
+        for _, spec in spec_map.items():
+            grid.add_row(DtshTui.mk_form_prop_spec(spec))
+            if i_spec < (N - 1):
+                grid.add_row(None)
+            i_spec += 1
+        self._add_named_content('properties', grid)
 
-        tab = DtshTheme.mk_table(1)
-        for _, spec in prop_map.items():
-            tab_spec = DtshTheme.mk_property_spec(spec)
-            tab.add_row(tab_spec)
-        self.print_section('properties', tab, vt)
-
-    def _print_section_source(self, vt: DtshVt) -> None:
-        if self._binding.path:
-            view = DtshTheme.mk_yaml_view(self._binding.path)
-            self.print_section('source', view, vt)
-
+    def _add_content_binding(self) -> None:
+        self._add_named_content('binding',
+                                DtshTui.mk_yaml_binding(self._binding))

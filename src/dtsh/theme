@@ -26,7 +26,7 @@ dtsh.compats = light_sea_green
 
 # Apply to descriptions from DT bindings (nodes or properties).
 #
-dtsh.desc = light_sea_green
+dtsh.desc = medium_purple
 
 # Apply to a node's label properties.
 # color: deep_sky_blue1
@@ -38,9 +38,17 @@ dtsh.labels = #00afff italic
 #
 dtsh.label = #00afff
 
+# Apply to descriptions bus (DT bindings)
+#
+dtsh.bus = dark_khaki bold
+
 # Apply to a node's aliases.
 #
 dtsh.alias = turquoise2
+
+# Apply to a property names.
+#
+dtsh.property = dark_sea_green
 
 # Apply to node status 'okay'.
 # Green example: spring_green3

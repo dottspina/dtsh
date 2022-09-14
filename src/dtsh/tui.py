@@ -55,7 +55,9 @@ class DtshTui:
     STYLE_DT_LABEL = 'dtsh.label'
     STYLE_DT_LABELS = 'dtsh.labels'
     STYLE_DT_ALIAS = 'dtsh.alias'
+    STYLE_DT_PROPERTY = 'dtsh.property'
     STYLE_DT_DESC = 'dtsh.desc'
+    STYLE_DT_BUS = 'dtsh.bus'
     STYLE_DT_OKAY = 'dtsh.okay'
     STYLE_DT_NOT_OKAY = 'dtsh.not_okay'
 
@@ -160,7 +162,7 @@ class DtshTui:
             if desc_short.endswith('.'):
                 desc_short = desc_short[:-1]
             desc_short += DtshTui.WCHAR_ELLIPSIS
-        return Text(desc_short, DtshTui.style(DtshTui.STYLE_DT_BINDING))
+        return Text(desc_short, DtshTui.style(DtshTui.STYLE_DT_DESC))
 
     @staticmethod
     def txt_update_link_file(txt: Text, path: str) -> None:
@@ -459,6 +461,23 @@ class DtshTui:
         return form
 
     @staticmethod
+    def mk_form_prop_spec(prop_spec: PropertySpec) -> Table:
+        form = DtshTui.mk_form()
+        form.add_row(
+            'Name:',
+            DtshTui.mk_txt(prop_spec.name,
+                           DtshTui.style(DtshTui.STYLE_DT_PROPERTY))
+        )
+        form.add_row('Type:', prop_spec.type)
+        form.add_row('Required:', DtshTui.mk_txt_bool(prop_spec.required))
+        if prop_spec.default:
+            form.add_row(
+                'Default:',
+                DtshTui.mk_txt_dt_value(prop_spec.default, prop_spec.type)
+            )
+        return form
+
+    @staticmethod
     def mk_node_tree_item(node: Node,
                           shell: Dtsh,
                           width: list[int],
@@ -496,18 +515,17 @@ class DtshTui:
         return grid
 
     @staticmethod
-    def mk_yaml_prop_binding(prop: Property) -> RenderableType:
-        if not (prop.spec and prop.spec.binding and prop.spec.binding.path):
+    def mk_yaml_binding(binding: Binding) -> RenderableType:
+        if not (binding and binding.path):
             return Text("No binding source available.",
                         DtshTui.style(DtshTui.STYLE_APOLOGY))
         grid = DtshTui.mk_grid(1)
-        txt_path = Text(os.path.basename(prop.spec.binding.path))
-        DtshTui.txt_update_link_file(txt_path, prop.spec.binding.path)
+        txt_path = Text(os.path.basename(binding.path))
+        DtshTui.txt_update_link_file(txt_path, binding.path)
         grid.add_row(txt_path)
         grid.add_row(None)
-        grid.add_row(DtshTui.mk_yaml(prop.spec.binding.path))
+        grid.add_row(DtshTui.mk_yaml(binding.path))
         return grid
-
 
     ############################################################################
     # Layouts: base
@@ -544,6 +562,13 @@ class DtshTui:
             grid.add_column(header=header)
         return grid
 
+    @staticmethod
+    def mk_grid_statusbar() -> Table:
+        bar = Table.grid(padding=(0, 1), expand=True)
+        bar.add_column(justify='left', style=DtshTui.style_default(), ratio=1)
+        bar.add_column(justify='center', style=DtshTui.style_default(), ratio=1)
+        bar.add_column(justify='right', style=DtshTui.style_default(), ratio=1)
+        return bar
 
     ############################################################################
     # Internals
@@ -629,7 +654,7 @@ class DtPropertyView(DtshTuiStructuredView):
             self.add_section('Property', DtshTui.mk_form_property(prop))
             self.add_section('Description', DtshTui.mk_txt_prop_desc(prop))
             self.add_section('Binding',
-                             DtshTui.mk_yaml_prop_binding(prop))
+                             DtshTui.mk_yaml_binding(prop.spec.binding))
         else:
             self.add_section('Property',
                              DtshTui.mk_form_prop_name_val(prop))
