@@ -5,6 +5,7 @@
 """Devicetree shell UI components."""
 
 
+import configparser
 import os
 from typing import ClassVar
 
@@ -19,7 +20,7 @@ from rich.text import Text
 from rich.theme import Theme
 from rich.tree import Tree
 
-from dtsh.dtsh import Dtsh, DtshVt
+from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt
 
 
 class DtshTui:
@@ -60,6 +61,46 @@ class DtshTui:
     STYLE_DT_BUS = 'dtsh.bus'
     STYLE_DT_OKAY = 'dtsh.okay'
     STYLE_DT_NOT_OKAY = 'dtsh.not_okay'
+
+    # Prompt (may be overidden by dtsh.prompt configuration)
+    #
+    PROMPT_WCHAR = '\u276f'
+    PROMPT_COLOR = 88
+    PROMPT_COLOR_ERROR = 99
+    PROMPT_SPARSE = True
+
+    @staticmethod
+    def mk_ansi_prompt(has_error: bool = False) -> str:
+        """Create an ANSI 255 colors compatible prompt.
+
+        Arguments:
+        has_error -- True if last command execution has failed.
+
+        Returns a prompt compatible with ANSI 255 colors terminals.
+        """
+        # Using ANSI escape codes in input() breaks the GNU readline cursor.
+        #
+        # The hand-made prompt bellow uses the RL_PROMPT_{START,STOP}_IGNORE markers
+        # to keep the readline state consistent.
+        #
+        # <SGR_SEC> := <CSI><n1, n2, ...>m
+        # <CSI> := ESC[
+        #       := \x1b[
+        #
+        # <START_IGNORE> := '\001'
+        # <END_IGNORE> := '\002'
+        #
+        # See:
+        # - https://en.wikipedia.org/w/index.php?title=ANSI_escape_code
+        # - https://wiki.hackzine.org/development/misc/readline-color-prompt.html
+        # - https://en.wikipedia.org/w/index.php?title=ANSI_escape_code#Colors
+        #
+        # We assume terminal has at least 255 colors.
+        if has_error:
+            sgr_color = f'38;5;{DtshTui.PROMPT_COLOR}'
+        else:
+            sgr_color = f'38;5;{DtshTui.PROMPT_COLOR_ERROR}'
+        return f'\001\x1b[{sgr_color};1m\002{DtshTui.PROMPT_WCHAR}\001\x1b[0m\002 '
 
     @staticmethod
     def theme() -> Theme:
@@ -110,6 +151,15 @@ class DtshTui:
             return node.name[0:node.name.rfind('@')]
         return node.name
 
+    @staticmethod
+    def get_text_summary(txt: str) -> str:
+        lines = txt.strip().split('\n')
+        str_short = lines[0]
+        if len(lines) > 1:
+            if str_short.endswith('.'):
+                str_short = str_short[:-1]
+            str_short += DtshTui.WCHAR_ELLIPSIS
+        return str_short
 
     ############################################################################
     # Text
@@ -192,6 +242,28 @@ class DtshTui:
         if with_status and (node.status != 'okay'):
             DtshTui.txt_dim(txt)
         return txt
+
+    @staticmethod
+    def mk_txt_node_path(path:str) -> Text:
+        """Create a rich node path.
+
+        Arguments:
+        path -- the node path
+
+        Returns a rich text.
+        """
+        if path == '/':
+            return Text('/', DtshTui.style('dtsh.path.anchor'))
+        nodename = Dtsh.nodename(path)
+        dirpath = Dtsh.dirname(path)
+        if not dirpath.endswith('/'):
+            dirpath += '/'
+        return Text().append_tokens(
+            [
+                (f'{dirpath}', DtshTui.style('dtsh.path.segment')),
+                (nodename, DtshTui.style('dtsh.path.anchor')),
+            ]
+        )
 
     @staticmethod
     def mk_txt_node_addr(node: Node, with_status: bool = False) -> Text:
@@ -360,6 +432,105 @@ class DtshTui:
             controllers = [cad.controller.name for cad in dt_val]
             return Text(str(controllers))
         return Text(str(dt_val))
+
+    ############################################################################
+    # Autocomp hints.
+    ############################################################################
+
+    @staticmethod
+    def mk_command_hints_display(model: list[DtshCommand]) -> Table:
+        """Layout command completion hints.
+
+        Arguments:
+        model -- a command list to display as hints
+
+        Returns a rich table.
+        """
+        tab = DtshTui.mk_grid(2)
+        for cmd in model:
+            tab.add_row(DtshTui.mk_txt(cmd.name), DtshTui.mk_txt_dim(cmd.desc))
+        return tab
+
+    @staticmethod
+    def mk_option_hints_display(model: list[DtshCommandOption]) -> Table:
+        """Layout option completion hints.
+
+        Arguments:
+        model -- an option list to display as hints
+
+        Returns a rich table.
+        """
+        tab = DtshTui.mk_grid(2)
+        for opt in model:
+            tab.add_row(DtshTui.mk_txt(opt.usage), DtshTui.mk_txt_dim(opt.desc))
+        return tab
+
+    @staticmethod
+    def mk_node_hints_display(model: list[Node]) -> Table:
+        """Layout node completion hints.
+
+        Arguments:
+        model -- a node list to display as hints
+
+        Returns a rich table.
+        """
+        tab = DtshTui.mk_grid(2)
+        for node in model:
+            if node.status == 'disabled':
+                style = DtshTui.style_dim()
+            else:
+                style = DtshTui.style_default()
+            txt_name = DtshTui.mk_txt(node.name, style)
+            if node.description:
+                txt_desc = DtshTui.mk_txt_dim(
+                    DtshTui.get_text_summary(node.description)
+                )
+            else:
+                txt_desc = None
+            tab.add_row(txt_name, txt_desc)
+        return tab
+
+    @staticmethod
+    def mk_property_hints_display(model: list[Property]) -> Table:
+        """Layout property completion hints.
+
+        Arguments:
+        model -- a property list to display as hints
+
+        Returns a rich table.
+        """
+        # ISSUE: edtlib would raise p.description.strip() not defined on NoneType,
+        # let's rely on p.spec.
+        tab = DtshTui.mk_grid(2)
+        for prop in model:
+            txt_desc = None
+            if prop.spec and prop.spec.description:
+                txt_desc = DtshTui.mk_txt_dim(
+                    DtshTui.get_text_summary(prop.spec.description)
+                )
+            tab.add_row(DtshTui.mk_txt(prop.name), txt_desc)
+        return tab
+
+    @staticmethod
+    def mk_binding_hints_display(model: list[Binding]) -> Table:
+        """Layout bindings completion hints.
+
+        Arguments:
+        model -- a binding list to display as hints
+
+        Returns a rich table.
+        """
+        tab = DtshTui.mk_grid(2)
+        for binding in model:
+            txt_compat = DtshTui.mk_txt(binding.compatible)
+            if binding.description:
+                txt_desc = DtshTui.mk_txt_dim(
+                    DtshTui.get_text_summary(binding.description)
+                )
+            else:
+                txt_desc = None
+            tab.add_row(txt_compat, txt_desc)
+        return tab
 
 
     ############################################################################
@@ -586,6 +757,16 @@ class DtshTui:
         if not theme:
             theme_path = os.path.join(os.path.dirname(__file__), 'theme')
             theme = Theme.from_file(open(theme_path))
+        # load custom dtsh config
+        config = configparser.ConfigParser()
+        config.read_file(open(theme_path))
+        for name, value in config.items('dtsh'):
+            if name == 'dtsh.prompt.wchar':
+                DtshTui.WCHAR_PROMPT = value
+            elif name == 'dtsh.prompt.color':
+                DtshTui.PROMPT_COLOR = value
+            elif name == 'dtsh.prompt.color.error':
+                DtshTui.PROMPT_COLOR_ERROR = value
         return theme
 
 

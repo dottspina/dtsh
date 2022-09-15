@@ -14,6 +14,13 @@
 # Default style.
 dtsh.default = default on default
 
+# Node path anchor (1st and last segments).
+# Color: DeepSkyBlue3
+dtsh.path.anchor = #0087af
+# Node path segments.
+# Color: DeepSkyBlue1
+dtsh.path.segment = #00afff
+
 # Apply to a node (unique) matching compatible (aka binding).
 # Typically: node.matching_compat is defined,
 # and node.binding_path might point to the corresponding yaml file.
@@ -26,7 +33,7 @@ dtsh.compats = light_sea_green
 
 # Apply to descriptions from DT bindings (nodes or properties).
 #
-dtsh.desc = medium_purple
+dtsh.desc = medium_orchid3
 
 # Apply to a node's label properties.
 # color: deep_sky_blue1
@@ -68,3 +75,13 @@ dtsh.apology = dim italic
 #
 dtsh.true = default
 dtsh.false = dim
+
+
+[dtsh]
+
+# Prompt colors.
+# See https://en.wikipedia.org/w/index.php?title=ANSI_escape_code#Colors
+#
+dtsh.prompt.color = 88
+dtsh.prompt.color.error = 99
+dtsh.prompt.wchar = ❯

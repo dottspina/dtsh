@@ -18,7 +18,7 @@ from dtsh.dtsh import DtshCommandNotFoundError, DtshCommandUsageError, DtshComma
 from dtsh.shell import DevicetreeShell
 from dtsh.term import DevicetreeTerm
 from dtsh.autocomp import DevicetreeAutocomp
-from dtsh.rich import DtshTheme
+from dtsh.tui import DtshTui
 
 
 class DevicetreeShellSession(DtshSession):
@@ -59,8 +59,8 @@ class DevicetreeShellSession(DtshSession):
 
         while True:
             try:
-                self._term.write(DtshTheme.mk_node_path(self._dtsh.pwd))
-                prompt = DtshTheme.mk_ansi_prompt(self._last_err is not None)
+                self._term.write(DtshTui.mk_txt_node_path(self._dtsh.pwd))
+                prompt = DtshTui.mk_ansi_prompt(self._last_err is not None)
                 cmdline = self._term.readline(prompt)
                 if cmdline:
                     if cmdline in ['q', 'quit', 'exit']:
@@ -83,13 +83,13 @@ class DevicetreeShellSession(DtshSession):
             except EOFError:
                 self._term.abort()
                 self.close()
-            if DtshTheme.OPTION_SPARSE_PROMPT:
+            if DtshTui.PROMPT_SPARSE:
                 self._term.write()
 
     def close(self) -> None:
         """Overrides DtshSession.close().
         """
-        self._term.write('bye.', style=DtshTheme.STYLE_ITALIC)
+        self._term.write('bye.', style=DtshTui.style_italic())
         self.readline_write_history()
         sys.exit(0)
 
@@ -98,9 +98,9 @@ class DevicetreeShellSession(DtshSession):
         """
         view = Text().append_tokens(
             [
-                ('dtsh', DtshTheme.STYLE_BOLD),
-                (f" ({Dtsh.API_VERSION}): ", DtshTheme.STYLE_DEFAULT),
-                ('Shell-like interface to a devicetree', DtshTheme.STYLE_ITALIC)
+                ('dtsh', DtshTui.style_bold()),
+                (f" ({Dtsh.API_VERSION}): ", DtshTui.style_default()),
+                ('Shell-like interface to a devicetree', DtshTui.style_italic())
             ]
         )
         self._term.write(view)
@@ -192,27 +192,27 @@ def readline_display_hook(substitution, matches, longest_match_length) -> None:
     if _autocomp.model:
         if _autocomp.mode == DtshAutocomp.MODE_DTSH_CMD:
             model = list[DtshCommand](_autocomp.model)
-            view = DtshTheme.mk_command_hints_display(model)
+            view = DtshTui.mk_command_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DTSH_OPT:
             model = list[DtshCommandOption](_autocomp.model)
-            view = DtshTheme.mk_option_hints_display(model)
+            view = DtshTui.mk_option_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_BINDING:
             model = list[Binding](_autocomp.model)
-            view = DtshTheme.mk_binding_hints_display(model)
+            view = DtshTui.mk_binding_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_NODE:
             model = list[Node](_autocomp.model)
-            view = DtshTheme.mk_node_hints_display(model)
+            view = DtshTui.mk_node_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_PROP:
             model = list[Property](_autocomp.model)
-            view = DtshTheme.mk_property_hints_display(model)
+            view = DtshTui.mk_property_hints_display(model)
         else:
             # Autcomp mode MODE_ANY.
-            view = DtshTheme.mk_grid(1)
+            view = DtshTui.mk_grid(1)
             for m in _autocomp.model:
-                view.add_row(Text(str(m), DtshTheme.STYLE_DEFAULT))
+                view.add_row(DtshTui.mk_txt(str(m)))
         _session.term.write(view)
 
-    _session.term.write(DtshTheme.mk_ansi_prompt(), end='')
+    _session.term.write(DtshTui.mk_ansi_prompt(), end='')
     _session.term.write(cmdline, end='')
     sys.stdout.flush()
 
