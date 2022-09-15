@@ -107,7 +107,7 @@ class DevicetreeShellSession(DtshSession):
         self._term.write()
 
     def readline_hist_path(self) -> str:
-        return os.path.join(Dtsh.cfg_dir_path(), 'dtsh_history')
+        return os.path.join(Dtsh.cfg_dir_path(), 'history')
 
     def readline_read_history(self):
         hist_path = self.readline_hist_path()
