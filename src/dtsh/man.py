@@ -328,20 +328,14 @@ _DTSH_MAN_PAGE="""
 - [GNU readline](https://tiswww.cwru.edu/php/chet/readline/rltop.html)
   integration for commands history, auto-completion support,
   and well-known key bindings
-- rich user interface with the
-  [Python rich library](https://rich.readthedocs.io/en/stable/introduction.html)
+- *rich* user interface ([Python rich](https://pypi.org/project/rich))
 
 This tool was created to explore Zephyr's
 [devicetree](https://docs.zephyrproject.org/latest/build/dts/intro.html)
 and
 [bindings](https://docs.zephyrproject.org/latest/build/dts/bindings.html).
 
-One of my favorites is:
-
-```
-/
-❯ ls -lR --pager
-```
+See also: [dtsh introductory video](https://youtu.be/pc2AMx1iPPE) (Youtube).
 
 ## SYNOPSIS
 
@@ -385,7 +379,7 @@ The shell is a set of **built-in** commands that interface a loaded devicetree.
 ### Path
 
 Most shell built-ins operate on devicetree
-[**path names**](https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#path-names).
+[**path names**](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).
 
 `dtsh` also supports paths relative to the **current working node**,
 that can be changed by the `cd` built-in, and printed by `pwd`.
@@ -635,6 +629,11 @@ dtsh.prompt.wchar = ❯
 
 ## REFERENCES
 
+**dtsh**
+
+- [Home page](https://github.com/dottspina/dtsh) (GitHub)
+- [Introductory video](https://youtu.be/pc2AMx1iPPE) (Youtube)
+
 **Devicetree specifications**:
 
 - [browse](https://devicetree-specification.readthedocs.io/en/stable/) latest stable
@@ -649,5 +648,6 @@ dtsh.prompt.wchar = ❯
 
 - [Linux and the Devicetree](https://www.kernel.org/doc/html/latest/devicetree/usage-model.html)
 - [Device Tree Usage](https://elinux.org/Device_Tree_Usage)
+- [Device Tree Reference](https://elinux.org/Device_Tree_Reference)
 
 """
