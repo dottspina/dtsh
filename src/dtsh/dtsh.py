@@ -74,8 +74,8 @@ class DtshCommandOption(object):
 
     An option that expects a named value is an argument.
 
-    An option may admit a short name (for e.g. 'v'),
-    and/or a long name (for e.g. 'verbose').
+    An option may admit a short name (e.g. 'v'),
+    and/or a long name (e.g. 'verbose').
     """
 
     _desc: str
@@ -92,12 +92,12 @@ class DtshCommandOption(object):
         """Define a command option.
 
         Arguments:
-        desc -- short description, for e.g. 'use a long listing format'
-        shortname -- short option name (for e.g. the 'v' in '-v),
+        desc -- short description, e.g. 'use a long listing format'
+        shortname -- short option name (e.g. the 'v' in '-v),
                      or None if the option does not admit a short name
-        longname -- long option name (for e.g. 'verbose' in '--verbose'),
+        longname -- long option name (e.g. 'verbose' in '--verbose'),
                     or None if the option does not admit a long name
-        arg -- the argument name (for e.g. in '-a i2c0', the argument name could
+        arg -- the argument name (e.g. in '-a i2c0', the argument name could
                be 'alias'), or None if the option is a flag
         """
         self._desc = desc
@@ -114,7 +114,7 @@ class DtshCommandOption(object):
 
     @property
     def shortname(self) -> str | None:
-        """The option's short name, for e.g. 'v'.
+        """The option's short name, e.g. 'v'.
 
         This name does not include the '-' prefix,
         neither the ':' postfix when an argument is expected.
@@ -126,7 +126,7 @@ class DtshCommandOption(object):
 
     @property
     def longname(self) -> str | None:
-        """The option's long name, for e.g. 'verbose'.
+        """The option's long name, e.g. 'verbose'.
 
         This name does not include the '--' prefix,
         neither the '=' postfix when an argument is expected.
@@ -144,7 +144,7 @@ class DtshCommandOption(object):
 
     @property
     def usage(self) -> str:
-        """The option's usage string, for e.g. '-a <alias> -v --verbose'.
+        """The option's usage string, e.g. '-a <alias> -v --verbose'.
         """
         txt = ''
         if self._shortname:
@@ -198,9 +198,9 @@ class DtshCommand(object):
     """Devicetree shell command.
     """
 
-    # Name, for e.g. 'ls'.
+    # Name, e.g. 'ls'.
     _name: str
-    # Description, for e.g. 'list nodes content'.
+    # Description, e.g. 'list nodes content'.
     _desc: str
     # Supported options.
     _options: list[DtshCommandOption]
@@ -215,7 +215,7 @@ class DtshCommand(object):
         """Defines a devicetree shell command.
 
         Arguments:
-        name -- the command's name (for e.g. 'ls')
+        name -- the command's name (e.g. 'ls')
         desc -- the command's description
         with_pager -- if True, enables pager option support
         options -- the command's options
@@ -235,13 +235,13 @@ class DtshCommand(object):
 
     @property
     def name(self) -> str:
-        """Command's name, for e.g. 'ls'.
+        """Command's name, e.g. 'ls'.
         """
         return self._name
 
     @property
     def desc(self) -> str:
-        """Command's description, for e.g. 'list nodes content'.
+        """Command's description, e.g. 'list nodes content'.
         """
         return self._desc
 
@@ -264,7 +264,7 @@ class DtshCommand(object):
     def getopt_short(self) -> str:
         """Short options specification string compatible with GNU getopt.
 
-        For e.g. 'ha:' when the option supports a flag '-h',
+        e.g. 'ha:' when the option supports a flag '-h',
         and an argument '-a:'.
         """
         shortopts = ''
@@ -279,7 +279,7 @@ class DtshCommand(object):
     def getopt_long(self) -> list[str]:
         """Long options specification list compatible with GNU getopt.
 
-        For e.g. ['help','alias='] when the option supports a flag '--help',
+        e.g. ['help','alias='] when the option supports a flag '--help',
         and an argument '--alias='.
         """
         longopts = []
@@ -303,8 +303,8 @@ class DtshCommand(object):
         """Access a supported option.
 
         Arguments:
-        name -- an option's name, either a short form (for e.g. '-h'),
-                or a long form (for e.g. '--help')
+        name -- an option's name, either a short form (e.g. '-h'),
+                or a long form (e.g. '--help')
 
         Returns None if the option is not supported by this command.
         """
@@ -321,8 +321,8 @@ class DtshCommand(object):
         """Access a command's flag.
 
         Arguments:
-        name -- the flag's name, either a short form (for e.g. '-v'),
-                or a long form (for e.g. '--verbose')
+        name -- the flag's name, either a short form (e.g. '-v'),
+                or a long form (e.g. '--verbose')
 
         Returns True if name refers to a set flag, False otherwise.
         """

@@ -67,7 +67,7 @@ dtsh.okay = default
 dtsh.not_okay = dim
 
 # Apply when the required data to show,
-# for e.g. a structured view section,
+# e.g. a structured view section,
 # is not available
 dtsh.apology = dim italic
 

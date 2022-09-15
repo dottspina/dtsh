@@ -18,7 +18,7 @@ class DtshBuiltinCat(DtshCommand):
 DESCRIPTION
 The `cat` command will concatenate and print devicetree content at `PATH`.
 
-Think Linux `/proc` file systems, for e.g. `cat /proc/cpuinfo`.
+Think Linux `/proc` file systems, e.g. `cat /proc/cpuinfo`.
 
 `cat` supports the `$` character as a separator between a node's path and
 a property name: `PATH := <node-path>[$<property-name>]`

@@ -323,7 +323,7 @@ _DTSH_MAN_PAGE="""
 `dtsh` is a *shell-like* interface to a devicetree:
 
 - a file-system metaphor mapped to devicetree path names
-- common commands (for e.g. `ls`) and option (for e.g. '-l')
+- common commands (e.g. `ls`) and option (e.g. '-l')
   syntax compatible with GNU getopt
 - [GNU readline](https://tiswww.cwru.edu/php/chet/readline/rltop.html)
   integration for commands history, auto-completion support,
@@ -399,7 +399,7 @@ and `..` its parent. The devicetree root node is its own parent.
 - `man`: open a manual page
 
 Use `man <built-in>` to print a command's manual page,
-for e.g. `man ls`.
+e.g. `man ls`.
 
 ## USER INTERFACE
 
@@ -443,7 +443,7 @@ Where:
 
 - <built-in>: the command's name
 - `OPTIONS`: options with [GNU getopt syntax](https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html)
-  for short (for e.g. `-h`) and long (for e.g. `--help`) names
+  for short (e.g. `-h`) and long (e.g. `--help`) names
 - `PARAMS`: the command's parameters, typically a single path
 
 OPTIONS and PARAMS are not positional: `ls -l /soc` is equivalent to
@@ -507,8 +507,8 @@ Useful key bindings include:
 
 Where:
 
-- for e.g. `C-c` means holding the **Ctrl** key and then press **c**
-- for e.g. `M-d` means holding the **Alt** (*meta*) key and then press **d**
+- e.g. `C-c` means holding the **Ctrl** key and then press **c**
+- e.g. `M-d` means holding the **Alt** (*meta*) key and then press **d**
 
 ## CONFIGURATION
 
@@ -607,7 +607,7 @@ dtsh.okay = default
 dtsh.not_okay = dim
 
 # Apply when the required data to show,
-# for e.g. a structured view section,
+# e.g. a structured view section,
 # is not available
 dtsh.apology = dim italic
 
