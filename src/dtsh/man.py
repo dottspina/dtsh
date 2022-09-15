@@ -13,10 +13,10 @@ from devicetree.edtlib import Binding
 from rich.console import RenderableType
 from rich.markdown import Markdown
 from rich.padding import Padding
+from rich.table import Table
 from rich.text import Text
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshVt
-from dtsh.rich import Table
 from dtsh.tui import DtshTui
 
 
