@@ -11,7 +11,7 @@ from devicetree.edtlib import Binding
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError, DtshCommandFailedError
-from dtsh.man import DtshManPageBinding, DtshManPageBuiltin
+from dtsh.man import DtshManPageBinding, DtshManPageBuiltin, DtshManPageDtsh
 
 
 class DtshBuiltinMan(DtshCommand):
@@ -92,6 +92,7 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         arg_page = self._params[0]
 
         man_page = None
+
         if self.with_compat:
             binding = self._dtsh.dt_bindings.get(arg_page)
             if binding:
@@ -100,6 +101,9 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
             builtin = self._dtsh.builtin(arg_page)
             if builtin:
                 man_page = DtshManPageBuiltin(builtin)
+
+        if (not man_page) and (arg_page == 'dtsh'):
+            man_page = DtshManPageDtsh()
 
         if man_page is not None:
             man_page.show(vt, self.with_no_pager)
