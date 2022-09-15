@@ -176,8 +176,6 @@ partition  0xf8000  storagestorage_partition                           Flash par
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
@@ -185,6 +183,8 @@ partition  0xf8000  storagestorage_partition                           Flash par
         if self.with_usage_summary:
             vt.write(self.usage)
             return
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
         if self._params:
             arg_path = self._dtsh.realpath(self._params[0])

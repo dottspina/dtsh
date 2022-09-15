@@ -46,8 +46,6 @@ EXAMPLES
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-        if len(self._params) > 0:
-            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, stdout: DtshVt) -> None:
         """Implements DtshCommand.execute().
@@ -55,5 +53,7 @@ EXAMPLES
         if self.with_usage_summary:
             stdout.write(self.usage)
             return
+        if len(self._params) > 0:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
         stdout.write(self._dtsh.pwd)

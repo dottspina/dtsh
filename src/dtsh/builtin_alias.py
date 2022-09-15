@@ -49,8 +49,6 @@ spi-flash0      → /soc/qspi@40029000/mx25r6435f@0
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-        if len(self._params) > 0:
-            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, stdout: DtshVt) -> None:
         """Implements DtshCommand.execute().
@@ -58,6 +56,8 @@ spi-flash0      → /soc/qspi@40029000/mx25r6435f@0
         if self.with_usage_summary:
             stdout.write(self.usage)
             return
+        if len(self._params) > 0:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
         view = DtshTui.mk_grid(3)
         for alias, node in self._dtsh.dt_aliases.items():

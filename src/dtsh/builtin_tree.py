@@ -162,8 +162,6 @@ Example of rich output:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
 
         opt = self.option('-L')
         if opt and opt.value:
@@ -181,6 +179,8 @@ Example of rich output:
         if self.with_usage_summary:
             vt.write(self.usage)
             return
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
         if self._params:
             arg_path = self._dtsh.realpath(self._params[0])

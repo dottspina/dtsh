@@ -77,10 +77,6 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-        if len(self._params) == 0:
-            raise DtshCommandUsageError(self, 'what manual page do you want?')
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
@@ -88,6 +84,10 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         if self.with_usage_summary:
             vt.write(self.usage)
             return
+        if len(self._params) == 0:
+            raise DtshCommandUsageError(self, 'what manual page do you want?')
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
         arg_page = self._params[0]
 
