@@ -53,7 +53,7 @@ def test_shell_builtins():
     with from_here():
         shell = DevicetreeShell.create('test.dts', ['bindings'])
 
-    assert len(shell.builtins) == 5
+    assert len(shell.builtins) == 8
     assert shell.builtin('pwd') is not None
     assert shell.builtin('cd') is not None
     assert shell.builtin('ls') is not None
