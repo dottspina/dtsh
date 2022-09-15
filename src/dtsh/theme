@@ -21,7 +21,7 @@ dtsh.path.anchor = #0087af
 # Color: DeepSkyBlue1
 dtsh.path.segment = #00afff
 
-# Apply to a node (unique) matching compatible (aka binding).
+# Apply to a node's (unique) matching compatible (aka binding).
 # Typically: node.matching_compat is defined,
 # and node.binding_path might point to the corresponding yaml file.
 #

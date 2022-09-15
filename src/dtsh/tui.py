@@ -601,9 +601,10 @@ class DtshTui:
         if node.props:
             grid = DtshTui.mk_grid_simple_head(['Name', 'Type', 'Value'])
             for _, prop in node.props.items():
-                grid.add_row(prop.name,
-                             prop.type,
-                             DtshTui.mk_txt_prop_value(prop))
+                grid.add_row(
+                    DtshTui.mk_txt(prop.name, DtshTui.style(DtshTui.STYLE_DT_PROPERTY)),
+                    prop.type,
+                    DtshTui.mk_txt_prop_value(prop))
         else:
             grid = DtshTui.mk_grid(1)
             grid.add_row(Text("This node does not define any property.",
@@ -613,7 +614,10 @@ class DtshTui:
     @staticmethod
     def mk_form_property(prop:Property) -> Table:
         form = DtshTui.mk_form()
-        form.add_row('Name:', prop.name)
+        form.add_row(
+            'Name:',
+            DtshTui.mk_txt(prop.name, DtshTui.style(DtshTui.STYLE_DT_PROPERTY))
+        )
         form.add_row('Type:', prop.type)
         form.add_row('Required:', DtshTui.mk_txt_bool(prop.spec.required))
         form.add_row('Value:', DtshTui.mk_txt_prop_value(prop))
@@ -660,7 +664,7 @@ class DtshTui:
         grid.add_row(
             DtshTui.mk_txt_node_addr(node, with_status=with_status),
             DtshTui.mk_txt_node_nick(node, with_status=with_status),
-            DtshTui.mk_txt_node_compats(node, shell, with_status=with_status)
+            DtshTui.mk_txt_node_desc_short(node, with_link=False, with_status=True)
         )
         return grid
 
@@ -832,7 +836,8 @@ class DtPropertyView(DtshTuiStructuredView):
     def __init__(self, prop:Property) -> None:
         super().__init__()
         if prop.spec:
-            self.add_section('Property', DtshTui.mk_form_property(prop))
+            self.add_section('Property',
+                             DtshTui.mk_form_property(prop))
             self.add_section('Description', DtshTui.mk_txt_prop_desc(prop))
             self.add_section('Binding',
                              DtshTui.mk_yaml_binding(prop.spec.binding))
