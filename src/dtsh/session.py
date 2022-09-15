@@ -96,14 +96,37 @@ class DevicetreeShellSession(DtshSession):
     def banner(self):
         """
         """
-        view = Text().append_tokens(
-            [
-                ('dtsh', DtshTui.style_bold()),
-                (f" ({Dtsh.API_VERSION}): ", DtshTui.style_default()),
-                ('Shell-like interface to a devicetree', DtshTui.style_italic())
-            ]
+        self._term.write(
+            Text().append_tokens(
+                [
+                    ('dtsh', DtshTui.style_bold()),
+                    (f" ({Dtsh.API_VERSION}): ", DtshTui.style_default()),
+                    ('Shell-like interface to a devicetree', DtshTui.style_italic())
+                ]
+            )
         )
-        self._term.write(view)
+        self._term.write(
+            Text().append_tokens(
+                [
+                    ('Help: ', DtshTui.style_default()),
+                    ('man dtsh', DtshTui.style_bold())
+                ]
+            )
+        )
+        self._term.write(
+            Text().append_tokens(
+                [
+                    ('How to exit: ', DtshTui.style_default()),
+                    ('q', DtshTui.style_bold()),
+                    (', or ', DtshTui.style_default()),
+                    ('quit', DtshTui.style_bold()),
+                    (', or ', DtshTui.style_default()),
+                    ('exit', DtshTui.style_bold()),
+                    (', or press ', DtshTui.style_default()),
+                    ('Ctrl-D', DtshTui.style_bold()),
+                ]
+            )
+        )
         self._term.write()
 
     def readline_hist_path(self) -> str:
