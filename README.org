@@ -2,7 +2,7 @@
 
 *dtsh* is a /shell-like/ interface to the devicetree models
 produced by the ~dtlib~ and ~edtlib~ libraries now maintained
-as parts of the Zephyr's project
+as parts of the Zephyr project
 ([[https://github.com/zephyrproject-rtos/python-devicetree][python-devicetree]]),
 and also available as independent Python packages via
 [[https://pypi.org/project/devicetree/][PyPI]].
@@ -61,7 +61,7 @@ Where:
 At the shell prompt, issue the ~man dtsh~ command to access the most
 up-to-date documentation.
 
-An [[yt:pc2AMx1iPPE][introductory video]] is also available (Youtube).
+An [[https://youtu.be/pc2AMx1iPPE][introductory video]] is also available (Youtube).
 
 ** Requirements
 
