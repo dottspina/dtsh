@@ -254,16 +254,24 @@ class DtshTui:
         """
         if path == '/':
             return Text('/', DtshTui.style('dtsh.path.anchor'))
-        nodename = Dtsh.nodename(path)
-        dirpath = Dtsh.dirname(path)
-        if not dirpath.endswith('/'):
-            dirpath += '/'
-        return Text().append_tokens(
-            [
-                (f'{dirpath}', DtshTui.style('dtsh.path.segment')),
-                (nodename, DtshTui.style('dtsh.path.anchor')),
-            ]
-        )
+
+        path_segments = path.split('/')
+        # Skip path_segments[0] == ''.
+        path_segments = path_segments[1:]
+
+        txt_segments = list[Text]()
+        for i, seg in enumerate(path_segments):
+            if (i == 0) or (i == len(path_segments) - 1):
+                txt_segments.append(
+                    DtshTui.mk_txt(seg, DtshTui.style('dtsh.path.anchor'))
+                )
+            else:
+                txt_segments.append(
+                    DtshTui.mk_txt(seg, DtshTui.style('dtsh.path.segment'))
+                )
+
+        txt_sep = DtshTui.mk_txt('/', DtshTui.style('dtsh.path.segment'))
+        return txt_sep.append_text(txt_sep.join(txt_segments))
 
     @staticmethod
     def mk_txt_node_addr(node: Node, with_status: bool = False) -> Text:

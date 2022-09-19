@@ -16,10 +16,10 @@ dtsh.default = default on default
 
 # Node path anchor (1st and last segments).
 # Color: DeepSkyBlue3
-dtsh.path.anchor = #0087af
+dtsh.path.anchor = #00afff bold
 # Node path segments.
 # Color: DeepSkyBlue1
-dtsh.path.segment = #00afff
+dtsh.path.segment = #0087af
 
 # Apply to a node's (unique) matching compatible (aka binding).
 # Typically: node.matching_compat is defined,
