@@ -437,14 +437,17 @@ Pressing `Ctrl-D` at the prompt will exit the `dtsh` session.
 
 ### Command line
 
-The `dtsh` shell grammar is quite simple: `<built-in> [OPTIONS] [PARAMS]`
+The `dtsh` shell grammar is quite simple: `<built-in> [OPTIONS] [PARAMS] [> PATH]`
 
 Where:
 
 - <built-in>: the command's name
 - `OPTIONS`: options with [GNU getopt syntax](https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html)
   for short (e.g. `-h`) and long (e.g. `--help`) names
-- `PARAMS`: the command's parameters, typically a single path
+- `PARAMS`: the command's parameters, typically a single node's path name
+- `> PATH`: will redirect the command's output to the file at PATH;
+  depending on the extension, the command output may be saved as an HTML page (`.html`),
+  an SVG image (`.svg`), or a text file (default)
 
 OPTIONS and PARAMS are not positional: `ls -l /soc` is equivalent to
 `ls /soc -l`.

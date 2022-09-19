@@ -4,17 +4,20 @@
 
 """Devicetree shell session."""
 
+
 import os
+import re
 import readline
 import signal
 import sys
 
 from devicetree.edtlib import Node, Binding, Property
 
+from rich.console import Console
 from rich.text import Text
 
-from dtsh.dtsh import Dtsh, DtshAutocomp, DtshCommand, DtshCommandOption, DtshSession, DtshError
-from dtsh.dtsh import DtshCommandNotFoundError, DtshCommandUsageError, DtshCommandFailedError
+from dtsh.dtsh import Dtsh, DtshAutocomp, DtshCommand, DtshCommandOption, DtshSession, DtshVt
+from dtsh.dtsh import DtshError, DtshCommandNotFoundError, DtshCommandUsageError, DtshCommandFailedError
 from dtsh.shell import DevicetreeShell
 from dtsh.term import DevicetreeTerm
 from dtsh.autocomp import DevicetreeAutocomp
@@ -58,18 +61,23 @@ class DevicetreeShellSession(DtshSession):
         self.banner()
 
         while True:
+            redir2vt = None
             try:
                 self._term.write(DtshTui.mk_txt_node_path(self._dtsh.pwd))
                 prompt = DtshTui.mk_ansi_prompt(self._last_err is not None)
                 cmdline = self._term.readline(prompt)
+                self._last_err = None
                 if cmdline:
                     if cmdline in ['q', 'quit', 'exit']:
+                        # Exit process.
                         self.close()
-                    self._dtsh.exec_command_string(cmdline, self._term)
-                    self._last_err = None
-                else:
-                    # Also reset error state on empty command line.
-                    self._last_err = None
+
+                    i = cmdline.rfind('>')
+                    if i != -1:
+                        redir2vt = FileStdoutVt(cmdline[i+1:].strip())
+                        self._dtsh.exec_command_string(cmdline[:i], redir2vt)
+                    else:
+                        self._dtsh.exec_command_string(cmdline, self._term)
 
             except DtshCommandNotFoundError as e:
                 self._last_err = e
@@ -83,6 +91,11 @@ class DevicetreeShellSession(DtshSession):
             except EOFError:
                 self._term.abort()
                 self.close()
+
+            if redir2vt:
+                # Actually writing to the file happens in the VT dtor.
+                del redir2vt
+                redir2vt = None
             if DtshTui.PROMPT_SPARSE:
                 self._term.write()
 
@@ -246,3 +259,152 @@ def dtsh_session_sig_handler(signum, frame):
     # As a work-around, we ignore SIGINT.
     if signum == signal.SIGINT:
         return
+
+
+
+class FileStdoutVt(DtshVt):
+    """VT implementation for command output redirection.
+    """
+
+    _console: Console
+
+
+    def __init__(self, path: str) -> None:
+        """ Creates a new VT.
+
+        Arguments:
+        path -- Path of the file the command output is redirected to;
+                the file format (HTML, SVG, text) is determined by the filename
+                extension (.html, .svg, default).
+        """
+        try:
+            path = os.path.abspath(path)
+            self._file = open(path, 'w')
+        except IOError as e:
+            raise DtshError(f'could not open file: {path}', e)
+        self._console = Console(highlight=False,
+                                theme=DtshTui.theme(),
+                                record=True)
+
+    def pager_enter(self) -> None:
+        """Overrides DtshVt.pager_enter().
+
+        Ignored, no pager.
+        """
+        pass
+
+    def pager_exit(self) -> None:
+        """Overrides DtshVt.pager_exit().
+
+        Ignored, no pager.
+        """
+        pass
+
+    def write(self, *args, **kwargs) -> None:
+        """Overrides DtshVt.write().
+
+        Quietly write to console, recording output.
+
+        Arguments:
+        args -- Positional arguments for Console.print()
+        kwargs -- Keyword arguments for Console.print()
+        """
+        with self._console.capture():
+            self._console.print(*args, **kwargs)
+
+    def clear(self) -> None:
+        """Overrides DtshVt.clear().
+
+        Ignored, does not clear the console.
+        """
+        pass
+
+    def readline(self, ansi_prompt: str) -> str:
+        """Overrides DtshVt.readline().
+
+        Returns an empty string (no input stream).
+        """
+        return ''
+
+    def abort(self) -> None:
+        """Overrides DtshVt.abort().
+
+        Ignored.
+        """
+        pass
+
+    # Actually writing to file happens in he dtor.
+    #
+    def __del__(self):
+        if self._file.name.endswith('.html'):
+            html = self._console.export_html()
+            self._file.write(html)
+        elif self._file.name.endswith('.svg'):
+            self._write_svg()
+        else:
+            txt = self._console.export_text()
+            self._file.write(txt)
+        self._file.close()
+
+    def _write_svg(self):
+        svg = self._console.export_svg(title='')
+        # Remove macOS-ish windows buttons.
+        s = re.search(_RE_SVG_BUTTONS, svg)
+        if s:
+            svg = svg[:s.start()] + svg[s.end() + 1:]
+        # Remove top padding
+        svg_vstr = list[str]()
+        re_view = re.compile(_RE_SVG_VIEWPORT)
+        re_rect = re.compile(_RE_SVG_RECT)
+        re_trans = re.compile(_RE_SVG_TRANSFORM)
+        for line in svg.splitlines(keepends=True):
+            # Substract hard coded padding to viewport's height.
+            m = re_view.match(line)
+            if m and m.groups():
+                width = m.groups()[0]
+                height = m.groups()[1]
+                line = line.replace(
+                    f'viewBox="0 0 {width} {height}"',
+                    f'viewBox="0 0 {width} {float(height) - _SVG_HARD_PADDING}"'
+                )
+
+            # Substract hard coded padding to viewport's height.
+            m = re_rect.match(line)
+            if m and m.groups():
+                height = m.groups()[0]
+                line = line.replace(
+                    f'height="{height}"',
+                    f'height="{float(height) - _SVG_HARD_PADDING}"')
+
+            # Substract hard coded padding to transformation y.
+            m = re_trans.match(line)
+            if m and m.groups():
+                x = m.groups()[0]
+                y = m.groups()[1]
+                line = line.replace(
+                    f'translate({x}, {y})',
+                    f'translate({x}, {int(y) - _SVG_HARD_PADDING})'
+                )
+
+            svg_vstr.append(line)
+
+        self._file.writelines(svg_vstr)
+
+
+# Hard coded top padding in rich.console.export_svg().
+#
+_SVG_HARD_PADDING = 40
+
+# All values in this regex are hard coded in rich.console.export_svg(),
+# and do not seem to depen on e.g. a theme.
+# We'll remove the whole pattern.
+_RE_SVG_BUTTONS = r'''<g transform="translate\(26,22\)">\s*<circle cx="0" cy="0" r="7" fill="#ff5f57"/>\s*<circle cx="22" cy="0" r="7" fill="#febc2e"/>\s*<circle cx="44" cy="0" r="7" fill="#28c840"/>\s*</g>'''
+
+# We'll substract the hard coded padding to the viewport height (the second group).
+_RE_SVG_VIEWPORT = r'''\s*<svg class="rich-terminal" viewBox="0 0 (\S*) (\S*)" xmlns="http://www.w3.org/2000/svg">\s*'''
+
+# We'll substract the hard coded padding to the rect height.
+_RE_SVG_RECT = r'''\s*<rect fill="#\d*" stroke="rgba\(\d*,\d*,\d*,0\.\d*\)" stroke-width="1" x="1" y="1" width="\d*" height="(\d*\.\d*)" rx="\d*"/>\s*'''
+
+# We'll substract the hard coded padding to the transformation y (the second group).
+_RE_SVG_TRANSFORM = r'''\s*<g transform="translate\((\d*), (\d*)\)" clip-path="url\(#terminal-\d*-clip-terminal\)">\s*'''
