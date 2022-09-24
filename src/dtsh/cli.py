@@ -19,6 +19,8 @@ def run():
         DevicetreeShellSession.open(dt_src_path, dt_bindings_path).run()
     except DtshError as e:
         print(f'{str(e)}\n')
+        if e.cause:
+            print(f'{str(e.cause)}\n')
         # -EINVAL
         sys.exit(-22)
 

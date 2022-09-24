@@ -84,6 +84,6 @@ class DevicetreeShell(Dtsh):
         try:
             edt = EDT(dt_source_path, dt_bindings_path)
         except Exception as e:
-            raise DtshError('Devicetree initialization failed.') from e
+            raise DtshError('Devicetree initialization failed.', e)
 
         return DevicetreeShell(edt)
