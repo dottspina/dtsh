@@ -462,6 +462,11 @@ class Dtsh(object):
     # Cached bindings map.
     _bindings: dict[str, Binding]
 
+    # Cached available DT binding paths (including YAML files that do
+    # not describe a compatible).
+    # Memory trade-off: this map may contain about 2000 entries.
+    _binding2path: dict[str, str]
+
     def __init__(self, edt: EDT) -> None:
         """Initialize a shell-like interface to a devicetree.
 
@@ -476,6 +481,8 @@ class Dtsh(object):
         self._cwd = self._edt.get_node('/')
         self._builtins = dict[str, DtshCommand]()
         self._bindings = dict[str, Binding]()
+        self._binding2path = dict[str, str]()
+        self._init_binding_paths()
         self._init_bindings()
 
     @property
@@ -524,6 +531,19 @@ class Dtsh(object):
         or None when this compatible is either unmatched or not described.
         """
         return self._bindings.get(compat)
+
+    def dt_binding_path(self, fname: str) -> str | None:
+        """Search binding directories for a given DT specification file name.
+
+        Contrary to the Dtsh.dt_binding() API, this search is not limited
+        to bindings that describe a compatible.
+
+        Arguments
+        fname -- the YAML file name, e.g. "nordic,nrf-swi.yaml"
+
+        Returns the full path of the YAML file, or None when not found.
+        """
+        return self._binding2path.get(fname)
 
     @property
     def dt_aliases(self) -> dict[str, Node]:
@@ -852,11 +872,8 @@ class Dtsh(object):
         return os.path.join(xdg_cfg_dir, 'dtsh')
 
     def _init_bindings(self) -> None:
-        # compat2nodes should include all compatible strings matched by
-        # a devicetree node.
-        #
+        # EDT.compat2nodes includes all compatibles matched by a devicetree node.
         # See also EDT._init_luts().
-        #
         for compat, nodes in self._edt.compat2nodes.items():
             # A compatible may not map to any binding in the devicetree
             # underlying model:
@@ -877,7 +894,7 @@ class Dtsh(object):
             # For example, it's None when the Binding is inferred
             # from node properties. It can also be None for Binding objects
             # created using 'child-binding:' with no compatible.
-            #
+            binding = None
             for node in nodes:
                 # There are handfull of issues here:
                 # - we access the private member edtlib.Node._binding,
@@ -889,15 +906,38 @@ class Dtsh(object):
                 #   nodes with the more specific compatible "nordic,nrf-egu"
                 #   will remain undefined despite the proper binding file
                 #   (nordic,nrf-swi.yaml) being available
-                # - not filtering on Node.matching_compat will /define/
+                # - not filtering on Node.matching_compat would /define/
                 #   inconsistent bindings, e.g. the compatible "nordic,nrf-swi"
                 #   would bind with nordic,nrf-egu.yaml
                 #
                 # See also edtlib.EDT._init_compat2binding()
-                #
                 if node._binding and (node.matching_compat == compat):
-                    self._bindings[compat] = node._binding
+                    binding = node._binding
                     break
+            if not binding:
+                # We may have missed a binding for a compatible that never
+                # appears as the most specific (see above): if a corresponding
+                # YAML file seems to actually exist, try to instantiate an
+                # out-of-devicetree Binding.
+                path = self.dt_binding_path(f'{compat}.yaml')
+                if path:
+                    # WARNING: this may fail with an exception,
+                    # for now let it crash to better know how and when.
+                    binding = Binding(path, self._binding2path)
+            if binding:
+                self._bindings[compat] = binding
+
+    def _init_binding_paths(self) -> None:
+        # Mostly duplicates code from edtlib._binding_paths()
+        # and edtlib.EDT._init_compat2binding().
+        yaml_paths = list[str]()
+        for bindings_dir in self._edt.bindings_dirs:
+            for root, _, filenames in os.walk(bindings_dir):
+                for filename in filenames:
+                    if filename.endswith(".yaml") or filename.endswith(".yml"):
+                        yaml_paths.append(os.path.join(root, filename))
+        for path in yaml_paths:
+            self._binding2path[os.path.basename(path)] = path
 
 
 class DtshAutocomp(object):
