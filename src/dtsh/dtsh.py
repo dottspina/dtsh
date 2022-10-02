@@ -498,9 +498,31 @@ class Dtsh(object):
 
     @property
     def dt_bindings(self) -> dict[str, Binding]:
+        """Map each compatible to its binding.
+
+        This collection should include all compatibles that are both:
+        - matched (by a node's "compatible" property)
+        - described (by a corresponding YAML file)
+
+        However, the current implementation of the devicetree model initialization
+        may filter out bindings that never appear first (i.e. as most specific)
+        in the "compatible" list of a node.
+        For example, the binding for "nordic,nrf-swi" is likely to
+        always be masked by a more specific compatible, e.g. "nordic,nrf-egu".
+        """
         return self._bindings
 
     def dt_binding(self, compat: str) -> Binding | None:
+        """Access bindings by their compatible.
+
+        See Dtsh.dt_bindings() for limitations.
+
+        Arguments:
+        compat -- a compatible (DTSpec 2.3.1)
+
+        Returns the binding describing this compatible,
+        or None when this compatible is either unmatched or not described.
+        """
         return self._bindings.get(compat)
 
     @property
@@ -829,13 +851,51 @@ class Dtsh(object):
             xdg_cfg_dir = os.path.join(home, '.config')
         return os.path.join(xdg_cfg_dir, 'dtsh')
 
-    def _init_bindings(self):
+    def _init_bindings(self) -> None:
+        # compat2nodes should include all compatible strings matched by
+        # a devicetree node.
+        #
+        # See also EDT._init_luts().
+        #
         for compat, nodes in self._edt.compat2nodes.items():
-            # FIXME: private API usage
-            # Note: node._binding may be None (e.g. nordic,nrf52840-dk-nrf52840),
-            # despite a key exists for this compat
+            # A compatible may not map to any binding in the devicetree
+            # underlying model:
+            # - a compatible that represents a board, for which the binding
+            #   is looked up with the board identifier, and describes the board
+            #   itself (e.g. architecture, supported toolchains and Zephyr subsystems)
+            #   and not a devicetree content; for example, the board identified
+            #   by "nrf52840dk_nrf52840" is described by its binding file nrf52840dk_nrf52840.yaml,
+            #   while its DTS file nrf52840dk_nrf52840.dts will set the
+            #   compatible property of the devicetree root node to "nordic,nrf52840-dk-nrf52840"
+            # - a compatible somewhat part of the DT core specifications
+            #   (e.g. "simple-bus", DTSpec 4.5)
+            # - a compatible that does not define any property beside those
+            #   inherited from the base bindings (e.g. "arm,armv7m-systick")
+            # - typically a compatible that isn't described by any YAML file
+            #
+            # See also edtlib.Binding.compatible:
+            # For example, it's None when the Binding is inferred
+            # from node properties. It can also be None for Binding objects
+            # created using 'child-binding:' with no compatible.
+            #
             for node in nodes:
-                if node._binding:
+                # There are handfull of issues here:
+                # - we access the private member edtlib.Node._binding,
+                #   and assume Node.matching_compat will equal to
+                #   Node._binding.compatible wherever a node has a binding
+                # - filtering by Node.matching_compat may filter out
+                #   compatibles that are actually matched by devicetree nodes;
+                #   e.g. the compatible "nordic,nrf-swi" that's matched by
+                #   nodes with the more specific compatible "nordic,nrf-egu"
+                #   will remain undefined despite the proper binding file
+                #   (nordic,nrf-swi.yaml) being available
+                # - not filtering on Node.matching_compat will /define/
+                #   inconsistent bindings, e.g. the compatible "nordic,nrf-swi"
+                #   would bind with nordic,nrf-egu.yaml
+                #
+                # See also edtlib.EDT._init_compat2binding()
+                #
+                if node._binding and (node.matching_compat == compat):
                     self._bindings[compat] = node._binding
                     break
 
