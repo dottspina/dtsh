@@ -5,9 +5,13 @@
 """Devicetree shell UI components."""
 
 
+from typing import ClassVar
+
 import configparser
 import os
-from typing import ClassVar
+
+import yaml
+from devicetree.edtlib import Loader as edtlib_YamlLoader
 
 from devicetree.edtlib import Node, Binding, Property, PropertySpec, Register
 
@@ -61,6 +65,7 @@ class DtshTui:
     STYLE_DT_BUS = 'dtsh.bus'
     STYLE_DT_OKAY = 'dtsh.okay'
     STYLE_DT_NOT_OKAY = 'dtsh.not_okay'
+    STYLE_DT_INCLUDE = 'dtsh.include'
 
     # Prompt (may be overidden by dtsh.prompt configuration)
     #
@@ -676,6 +681,70 @@ class DtshTui:
         )
         return grid
 
+    @staticmethod
+    def mk_tree_node_binding(node: Node,
+                             binding: Binding,
+                             shell: Dtsh) -> Tree:
+        """Build the bindings tree for a node's compatible.
+
+        Arguments:
+        node -- the node the binding belongs to (used to know if the binding is
+                the matched compatible for this node)
+        binding -- a binding matched by this node's compatible string
+        shell - the dtsh context
+
+        Returns a tree representing the binding specifications this compatible.
+        """
+        anchor = DtshTui.mk_txt_binding(binding)
+        if node.matching_compat == binding.compatible:
+            anchor.stylize(DtshTui.style(DtshTui.STYLE_BOLD))
+        tree = Tree(anchor)
+
+        with open(binding.path, encoding="utf-8") as f:
+            yaml_content = f.read()
+        yaml_py = yaml.load(yaml_content, edtlib_YamlLoader)
+
+        for inc_path in DtshTui._yaml_include_as_paths(yaml_py, shell):
+            DtshTui.mk_branch_binding_path(inc_path, tree, shell)
+        return tree
+
+    @staticmethod
+    def mk_branch_binding_path(path: str,
+                               tree: Tree,
+                               shell: Dtsh) -> None:
+        with open(path, encoding="utf-8") as f:
+            yaml_content = f.read()
+        yaml_py = yaml.load(yaml_content, edtlib_YamlLoader)
+
+        compat = yaml_py.get('compatible')
+        if compat:
+            anchor = Text(str(compat), DtshTui.style(DtshTui.STYLE_DT_COMPATS))
+        else:
+            anchor = Text(os.path.basename(path),
+                          DtshTui.style(DtshTui.STYLE_DT_INCLUDE))
+        DtshTui.txt_update_link_file(anchor, path)
+
+        branch = tree.add(anchor)
+        for inc_path in DtshTui._yaml_include_as_paths(yaml_py, shell):
+            DtshTui.mk_branch_binding_path(inc_path, branch, shell)
+
+    @staticmethod
+    def _yaml_include_as_paths(yaml_py, shell: Dtsh) -> list[str]:
+        # Paths for the YAML files included with "include:" statements.
+        inc_paths = list[str]()
+        # See edtlib.Binding._merge_includes()
+        yaml_inc = yaml_py.get('include')
+        if isinstance(yaml_inc, str):
+            path = shell.dt_binding_path(yaml_inc)
+            if path:
+                inc_paths.append(path)
+        elif isinstance(yaml_inc, list):
+            for fname in yaml_inc:
+                path = shell.dt_binding_path(fname)
+                if path:
+                    inc_paths.append(path)
+        return inc_paths
+
     ############################################################################
     # Layouts: yaml
     ############################################################################
@@ -817,6 +886,7 @@ class DtshTuiStructuredView(DtshTuiView):
     def _as_grid(self) -> Table:
         return self._view
 
+
 class DtNodeView(DtshTuiStructuredView):
     """
     """
@@ -835,8 +905,23 @@ class DtNodeView(DtshTuiStructuredView):
                          DtshTui.mk_grid_node_registers(node))
         self.add_section('Properties',
                          DtshTui.mk_grid_node_properties(node))
-        self.add_section('Binding',
+        self.add_section('Specified-by',
                          DtshTui.mk_yaml_node_binding(node))
+        self._add_section_bindings_tree(node, shell)
+
+    def _add_section_bindings_tree(self, node: Node, shell:Dtsh) -> None:
+        grid = DtshTui.mk_grid(1)
+        N = len(node.compats)
+        for i, compat in enumerate(node.compats):
+            binding = shell.dt_binding(compat)
+            if binding:
+                tree = DtshTui.mk_tree_node_binding(node, binding, shell)
+                grid.add_row(tree)
+                i += 1
+                if i < N:
+                    grid.add_row(None)
+        self.add_section("Bindings", grid)
+
 
 class DtPropertyView(DtshTuiStructuredView):
     """

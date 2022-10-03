@@ -57,6 +57,9 @@ dtsh.alias = turquoise2
 #
 dtsh.property = dark_sea_green
 
+# Apply to included YAML files that are not DT compatibles.
+dtsh.include = dark_khaki
+
 # Apply to node status 'okay'.
 # Green example: spring_green3
 #
