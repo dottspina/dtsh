@@ -667,7 +667,6 @@ class DtshTui:
 
     @staticmethod
     def mk_node_tree_item(node: Node,
-                          shell: Dtsh,
                           width: list[int],
                           with_status: bool = False) -> Table:
         grid = DtshTui.mk_grid(3)
@@ -1043,7 +1042,7 @@ class DtNodeTreeView(DtshTuiView):
 
         for _, node in root.children.items():
             if self._rich_fmt:
-                anchor = DtshTui.mk_node_tree_item(node, self._dtsh, width, True)
+                anchor = DtshTui.mk_node_tree_item(node, width, True)
             else:
                 anchor = node.name
             branch = tree.add(anchor)
