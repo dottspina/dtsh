@@ -1,144 +1,396 @@
 #+title: dtsh
 
-*dtsh* is a /shell-like/ interface to the devicetree models
-produced by the ~dtlib~ and ~edtlib~ libraries now maintained
-as parts of the Zephyr project
-([[https://github.com/zephyrproject-rtos/python-devicetree][python-devicetree]]),
-and also available as independent Python packages via
-[[https://pypi.org/project/devicetree/][PyPI]].
+*dtsh* is an interactive /shell-like/ interface with a devicetree and its bindings:
 
-Once a devicetree model is loaded from its DT sources and bindings,
-~dtsh~ will show:
+- familiar hierarchical file-system metaphor
+- accustomed command names and command line syntax
+- common command line interface paradigms and keybindings
 
-- a file-system metaphor mapped to devicetree [[https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names][path names]]
-- common commands (for e.g. ~ls~) and option (for e.g. ~-l~)
-  syntax compatible with GNU getopt
-- [[https://tiswww.cwru.edu/php/chet/readline/rltop.html][GNU readline]] integration for commands history, auto-completion,
-  and well-known key bindings
-- a /rich/ user interface ([[https://pypi.org/project/rich][Python rich]])
+It's said an ~ls /soc -l > soc.svg~ speaks a thousand words:
 
-This tool was created to explore Zephyr's [[https://docs.zephyrproject.org/latest/build/dts/intro.html][devicetree]]
-and [[https://docs.zephyrproject.org/latest/build/dts/bindings.html][bindings]].
-
-[[./doc/img/dtsh_home.png]]
+[[./doc/img/soc.svg]]
 
 #+begin_quote
-☂ *DISCLAMER*: This software is a Proof of Concept, something like a Request For Comments, about:
-- the usefulness of this kind of tool, to which audience
-- the command line approach's ergonomics
-- which shell commands are the most useful (my personal preference may go to ~ls -lR --pager /~)
-- which commands are missing that would definitely be worth implementing
-- the software compatibility with Linux devicetrees (for e.g. when building the Linux kernel
-  for ARM architectures)
-- the [[https://github.com/dottspina/dtsh/issues][BUGS]] ;-)
+DISCLAIMER: This software was created as a Proof of Concept for a simple tool
+that could assist newcomers to Zephyr in understanding what a devicetree is,
+and how bindings describe and constrain its content.
 
-This software is developed and tested on Fedora Workstation: should work more or less
-Out Of The Box™ on most modern Linux distributions, mileage may vary on other platforms.
+It's still in alpha state, and made public AS IS:
+
+- while the current feature set might already prove helpful to beginners,
+  it may also quickly frustrate more knowledgeable users
+- possible bugs could instead confuse beginners (unfortunately)
+- should install and run more or less Out Of The Box™ on most modern Linux distributions,
+  mileage may vary on other platforms
+- should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files: this does NOT directly apply to the devicetree usage by the Linux kernel
+
+Please refer to the bottom CONTRIBUTE section to report bugs and provide feedback.
 #+end_quote
 
-* Quick start
-
-Install in /current Python environment/:
-
-#+begin_example
-$ git clone https://github.com/dottspina/dtsh.git
-$ cd dtsh
-$ pip install .
-#+end_example
-
-The ~dtsh~ command should now be available.
-
-To start a shell session: ~dtsh [<dts-file>] [<binding-dir>*]~
-
-Where:
-
-- ~<dts-file>~: Path to a device tree source file (~.dts~);
-  if unspecified, defaults to ~$PWD/build/zephyr/zephyr.dts~
-- ~<binding-dirs>~: List of path to search for DT bindings (~.yaml~);
-  if unspecified, and the environment variable ~ZEPHYR_BASE~ is set,
-  defaults to Zephyr's DT bindings
-
-At the shell prompt, issue the ~man dtsh~ command to access the most
-up-to-date documentation.
-
-An [[https://youtu.be/pc2AMx1iPPE][introductory video]] is also available (Youtube).
+* Getting started
 
 ** Requirements
 
-Most ~dtsh~ requirements are Python dependencies, that should install automatically.
+Most ~dtsh~ requirements should already be fulfilled wherever a Zephyr development environment is installed.
 
-Beside these, a terminal with 256 colors support, and a font with a reasonable
-unicode characters set (arrows, lines, simple symbols) are recommended.
+*** POSIX
 
-Most of ~dtsh~ user interface's styles can be customized by creating
-a /theme/ file ~$DTSH_CONFIG_DIR/theme~ (see /Theme/ in ~man dtsh~).
+This is an abusive keyword for facilities most POSIX-like operating systems provide one way or another:
 
-** Examples
+- the [[https://tiswww.cwru.edu/php/chet/readline/rltop.html][GNU readline]] (or [[https://www.thrysoee.dk/editline/][editline]]) library we rely upon for command line auto-completion, commands history,
+   and keybindings
+- an ANSI ([[https://www.ecma-international.org/publications-and-standards/standards/ecma-48/][ECMA-48]]) terminal emulator, preferably 256 colors support and a font that includes unicode glyphs
+   for a few common symbols
 
-To open an arbitrary DT source file, with custom bindings:
+*** Python
+
+The minimal requirement is set to Python 3.7, with proper support for [[https://pip.pypa.io/en/stable/][pip]], [[https://setuptools.pypa.io/en/latest/setuptools.html][setuptools]] and [[https://peps.python.org/pep-0427/][wheel]]
+(see also the [[https://packaging.python.org/en/latest/guides/][Python Packaging Guides]]).
+
+All ~dtsh~ software requirements are Python libraries that will be installed as direct dependencies:
+
+- DT sources and bindings /parser/: ~edtlib~, now maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]])
+- « rich text and beautiful formatting in the terminal »: /rich/ API ([[https://github.com/Textualize/rich][GitHub]], [[https://pypi.org/project/rich/][PyPI]])
+
+** Install
+
+*** Python virtual environment
+
+It's recommended to create a dedicated Python [[https://peps.python.org/pep-0405/][virtual environment]], for example:
+
+#+begin_src sh
+python -m venv --prompt dtsh-venv .venv
+. .venv/bin/activate
+pip install --upgrade pip setuptools wheel
+#+end_src
+
+Since Python 3.9, the [[https://docs.python.org/3/library/venv.html#module-venv][venv]] option ~--upgrade-deps~ updates ~pip~ and ~setuptools~.
+
+See also [[https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/][Installing packages using pip and virtual environments]].
+
+*** Install from sources
+
+#+begin_src sh
+git clone https://github.com/dottspina/dtsh.git
+cd dtsh
+python -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install .
+#+end_src
+
+*** Install from PyPI
+
+TBD.
+
+** Run
+
+To start a shell session: ~dtsh [<dts-file>] [<binding-dir>*]~
+
+where:
+
+- ~<dts-file>~: path to the device tree source file in  [[https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html][DTS Format]] (~.dts~);
+  if unspecified, defaults to ~$PWD/build/zephyr/zephyr.dts~
+- ~<binding-dirs>~: list of directories to search for  [[https://yaml.org/][YAML]] binding files;
+  if unspecified, and the environment variable ~ZEPHYR_BASE~ is set,
+  defaults to [[https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located][Zephyr's bindings]]
+
+To open an arbitrary DTS file with custom bindings:
 
 #+begin_example
 $ dtsh /path/to/foobar.dts /path/to/custom/bindings /path/to/other/custom/bindings
 #+end_example
 
-To open a DT source file with Zephyr's bindings (~$ZEPHYR_BASE/boards~
-and ~$ZEPHYR_BASE/dts/bindings~):
+To open the same DTS file with Zephyr's bindings:
 
 #+begin_example
 $ export ZEPHYR_BASE=/path/to/zephyr
 $ dtsh /path/to/foobar.dts
 #+end_example
 
-To /fast-open/ the current Zephyr project's devicetree
-(~$PWD/build/zephyr/zephyr.dts~), assuming ~ZEPHYR_BASE~ is set:
+On startup, ~dtsh~ will output a banner, followed by the first prompt:
 
 #+begin_example
-$ cd /path/to/some/zephyr/project
-$ dtsh
+dtsh (0.1.0a1): Shell-like interface to a devicetree
+Help: man dtsh
+How to exit: q, or quit, or exit, or press Ctrl-D
+
+/
+❯
 #+end_example
+
+* User guide
+
+The preferred entry point to the ~dtsh~ documentation should be the ~man~ built-in.
+
+An introductory 5-minutes video is also available ([[https://youtu.be/pc2AMx1iPPE][YouTube]]) that may help getting the big picture
+(disclaimer: do not expect the /production quality/ of a typical /Youtuber/, e.g. no sound).
+
+** The shell
+
+The shell is a set of /built-in/ commands for navigating and querying a devicetree and its bindings.
+
+*** File system metaphor
+
+Within a ~dtsh~ session, a devicetree shows itself as a familiar hierarchical file-system,
+where [[https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names][path names]] /look like/ paths to files or directories, depending on the acting shell command.
+
+A current /working node/ is defined, similar to any shell's current working directory,
+allowing ~dtsh~ to also support relative paths.
+
+The wild-card ~.~ represents the current working node, and ~..~ its parent.
+The devicetree root node is its own parent.
+
+The ~cat~ built-in also uses ~$~ as a separator between DT path names and [[https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names][property names]].
+
+*** Command strings
+
+~dtsh~ command strings are based on the [[https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html][GNU getopt]] syntax.
+
+**** Synopsis
+
+All built-ins share the same synopsis:
+
+#+begin_example
+CMD [OPTIONS] [PARAMS]
+#+end_example
+
+where:
+
+- ~CMD~: the built-in name, e.g. ~ls~
+- ~OPTIONS~: the options the command is invoked with (see bellow), e.g. ~-l~
+- ~PARAMS~: the parameters the command is invoked for, e.g. a path name
+
+~OPTIONS~ and ~PARAMS~ are not positional: ~ls -l /soc~ is equivalent to ~ls /soc -l~.
+
+**** Options
+
+An option may support:
+
+- a short name, starting with a single ~-~ (e.g. ~-h~)
+- a long name, starting with ~--~ (e.g. ~--help~)
+
+Short option names can combine: ~-lR~ is equivalent to ~-l -R~.
+
+**** Built-ins
+
+| Built-in |                                           |
+|----------+-------------------------------------------|
+| ~pwd~      | print current working node's path         |
+| ~alias~    | print defined aliases                     |
+| ~chosen~   | print chosen configuration                |
+| ~cd~       | change current working node               |
+| ~ls~       | list devicetree nodes                     |
+| ~tree~     | list devicetree nodes in tree-like format |
+| ~cat~      | concatenate and print devicetree content  |
+| ~man~      | open a manual Page                        |
+
+** User interface
+
+The ~dtsh~ command line interface paradigms and keybindings should sound familiar to Un*x users.
+
+*** The prompt
+
+The default shell prompt is ❯.
+The line immediately above the prompt shows the current working node's path.
+
+#+begin_example
+/
+❯ pwd
+/
+
+/
+❯ cd /soc/i2c@40003000/bme680@76
+
+/soc/i2c@40003000/bme680@76
+❯ pwd
+/soc/i2c@40003000/bme680@76
+
+#+end_example
+
+Pressing ~C-d~ (aka ~CTRL-D~) at the prompt will exit the ~dtsh~ session.
+
+*** Commands history
+
+Commands history is provided through GNU readline integration.
+
+At the shell prompt, press:
+
+- up arrow (↑) to navigate the commands history backward
+- down arrow (↓) to navigate the commands history forward
+- ~C-r~ (aka ~CTRL-R~) to search the commands history
+
+The history file (typically ~$HOME/.config/dtsh/history~) is saved on exit, and loaded on startup.
+
+*** Auto-completion
+
+Command line auto-completion is provided through GNU readline integration.
+
+Auto-completion is triggered by first pressing the ~TAB~ key twice,
+then once for subsequent completions of the same command line, and may apply to:
+
+- command names (aka built-ins)
+- command options
+- command parameters
+
+*** The pager
+
+Built-ins that may produce a large output support the ~--pager~ option: the command's output is then
+/paged/ using the system pager, typically ~less~:
+
+- use up (↑) and down (↓) arrows to navigate line by line
+- use page up (⇑) and down (⇓) to navigate /window/ by /window/
+- press ~g~ go to first line
+- press ~G~ go to last line
+- press ~/~ to enter search mode
+- press ~h~ for help
+- press ~q~ to quit the pager and return to the prompt
+
+*** Output redirection
+
+Command output redirection uses the well-known syntax:
+
+#+begin_example
+CMD [OPTIONS] [PARAMS] > PATH
+#+end_example
+
+where ~PATH~ is the absolute or relative path to the file the command output will be redirected to.
+
+Depending on the extension, the command output may be saved as an HTML page (~.html~),  an SVG image (~.svg~),
+or a text file (default).
+
+For example:
+
+#+begin_example
+/
+❯ ls -l soc > soc.html
+
+#+end_example
+
+*** Keybindings
+
+Familiar keybindings are provided through GNU readline integration.
+
+| Keyboard shortcut |                                              |
+|-------------------+----------------------------------------------|
+| ~C-l~               | clear terminal screen                        |
+| ~C-a~               | move cursor to beginning of command line     |
+| ~C-e~               | move cursor to end of command line           |
+| ~C-k~               | /kill/ text from cursor to end of command line |
+| ~M-d~               | /kill/ word at cursor                          |
+| ~C-y~               | /yank/ (paste) the content of the /kill buffer/  |
+| ~C-←~               | move cursor one word backward                |
+| ~C-→~               | move cursor one word forward                 |
+| ~↑~                 | navigate the commands history backward       |
+| ~↓~                 | navigate the commands history forward        |
+| ~C-r~               | search the commands history                  |
+| ~TAB~               | trigger auto-completion                      |
+
+where:
+
+- e.g. ~C-c~ means hold the ~CTRL~ key, then press ~C~
+- e.g. ~M-d~ means hold the ~Alt~ (/meta/) key, then press ~D~
+
+*** Theme
+
+Colors and such are subjective, and most importantly the rendering will
+eventually depend on the terminal's font and palette, the desktop theme and so on.
+
+Most of the user interface styles can be customized by creating a /theme/ file in the ~dtsh~ configuration
+directory (typically ~$HOME/.config/dtsh~).
+
+Use the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/theme][default theme]] as template:
+
+#+begin_src sh
+cd dtsh
+cp src/dtsh/theme ~/.config/dtsh/theme
+#+end_src
 
 ** Zephyr tips
 
-It's recommended to [[https://docs.zephyrproject.org/latest/develop/getting_started/index.html#get-zephyr-and-install-python-dependencies][install]] the Zephyr's [[https://docs.zephyrproject.org/latest/develop/west/index.html][west]] workspace into a dedicated
-Python virtual environment.
+It's recommended to [[https://docs.zephyrproject.org/latest/develop/getting_started/index.html#get-zephyr-and-install-python-dependencies][install]] the Zephyr's [[https://docs.zephyrproject.org/latest/develop/west/index.html][west]] workspace into a dedicated Python virtual environment.
 
-~dtsh~ can be safely installed into this same environment.
+Installing ~dtsh~ into the same environment allows for a straightforward work-flow:
 
-Once this workspace is activated (e.g. by sourcing ~$ZEPHYR_BASE/zephyr-env.sh~),
-this simple workflow should work:
+1. set the Zephyr kernel environment as usual, e.g. sourcing ~$ZEPHYR_BASE/zephyr-env.sh~
+2. build a Zephyr application as usual, e.g. with ~west build~
+3. run ~dtsh~ without any parameter
+
+For example:
 
 #+begin_example
-$ cd /path/to/some/zephyr/project
-$ west build
+$ . $ZEPHYR_BASE/zephyr-env.sh
+$ west build $ZEPHYR_BASE/samples/sensor/bme680
 $ dtsh
 #+end_example
 
-* Development
+** References
+
+More or less introductory references about /devicetrees/.
+
+*** Devicetree Specifications
+
+- [[https://devicetree-specification.readthedocs.io/en/latest/][Online Devicetree Specifications]] (latest)
+- [[https://devicetree-specification.readthedocs.io/en/stable/][Online Devicetree Specifications]] (stable)
+
+*** Linux
+
+- [[https://docs.kernel.org/devicetree/index.html][Open Firmware and Devicetree]]
+- [[https://elinux.org/Device_Tree_Usage][Device Tree Usage]]
+- [[https://elinux.org/Device_Tree_Reference][Device Tree Reference]]
+- [[https://elinux.org/Device_Tree_What_It_Is][Device Tree What It Is]]
+
+*** Zephyr
+
+- [[https://docs.zephyrproject.org/latest/build/dts/intro.html][Introduction to devicetree]]
+- [[https://docs.zephyrproject.org/latest/build/dts/bindings.html][Devicetree bindings]]
+- [[https://docs.zephyrproject.org/latest/build/dts/api/bindings.html][Bindings index]]
+- [[https://docs.zephyrproject.org/latest/build/dts/api/api.html#zephyr-specific-chosen-nodes][Zephyr-specific chosen nodes]]
+- [[https://docs.zephyrproject.org/latest/build/dts/dt-vs-kconfig.html][Devicetree versus Kconfig]]
 
 
-** Virtual environment
+* Contribute
 
-Install ~dtsh~ in a dedicated virtual environment for /hacking/:
+All kinds of feedback and contribution are encouraged: to contribute, [[https://github.com/dottspina/dtsh/issues/new][open an issue]] with the appropriate [[https://github.com/dottspina/dtsh/issues/labels][label]].
+
+** Request For Comments
+
+This project is still exploring /what could be/:
+
+- an educational tool that would assist students and teachers when introducing /devicetrees/
+- an handy debug or discovery tool that would at a glance show how a /board/ is configured,
+  which buses and devices are supported and if they are enabled, the memory layout for  mapped peripherals and suchlike
+
+To provide feedback regarding theses topics, please open issues with the ~RFC~ label.
+
+** Report bugs
+
+This software is still in alpha state, and has been tested only with the DTS files generated when
+building a few Zephyr sample applications for the nRF52840 DK [[https://docs.zephyrproject.org/latest/boards/arm/nrf52840dk_nrf52840/doc/index.html][board]]: bugs are expected,
+please open issues with the ~bug~ label.
+
+** Hacking dtsh
+
+Hack into ~dtsh~ and contribute [[https://github.com/dottspina/dtsh/pulls][pull requests]] (bug fix, features, documentation, code review).
+
+*** Development mode installation
+
+Install ~dtsh~ in development mode:
 
 #+begin_src sh
 git clone https://github.com/dottspina/dtsh.git
 cd dtsh
-# for Python 3.9 and above
-python -m venv --upgrade-deps .venv
-. .venv/bin/activate
-# for Python 3.7 and 3.8
 python -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip setuptools
-# pip will prefer wheels when installing from PyPI
-pip install wheel
-# install dtsh in development mode
+pip install --upgrade pip setuptools wheel
 pip install --editable .
 #+end_src
 
-** Tests
+The ~--editable~ option asks ~pip~ to install ~dtsh~ as an editable /working copy/.
 
-To run the unit tests:
+*** Unit tests
+
+To run a few unit tests:
 
 #+begin_src sh
 cd dtsh
@@ -149,14 +401,13 @@ pip install ".[test]"
 pytest tests
 #+end_src
 
-** Contributing
+*** Tips
 
-Though Python is not my mother's thong, I've tried to keep some basic design principles,
-and hacking the source code should prove straight forward:
+While probably not so /pythonesque/, the software design should eventually seem obvious,
+and friendly to hacking and prototyping.
 
-- to define a new built-in command: look for the ~DtshCommand~ and ~DtshCommandOption~ classes
-  into the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/dtsh.py][dtsh.dtsh]] module, copy an existing command (for e.g. [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/builtin_ls.py][ls]]) as a template,
-  and customize it
-- re-use helpers and views in the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/tui.py][dtsh.tui]] module to build command outputs
+For example, to define a new built-in:
 
-Propose any contribution (documentation, bug fix, new features, code review) as a [[https://github.com/dottspina/dtsh/pulls][pull request]].
+- look for the ~DtshCommand~ and ~DtshCommandOption~ classes ([[https://github.com/dottspina/dtsh/blob/main/src/dtsh/dtsh.py][dtsh.dtsh]] module) to get the basics
+- copy an existing command (e.g. [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/builtin_ls.py][ls]]) as a template,  and customize it
+- re-use helpers and views from the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/tui.py][dtsh.tui]] module to assemble the command output
