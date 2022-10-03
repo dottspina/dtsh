@@ -312,10 +312,10 @@ class DtshTui:
             txt = Text(compat, DtshTui.style(DtshTui.STYLE_DT_COMPATS))
             if compat == node.matching_compat:
                 txt.stylize(DtshTui.style('bold'))
+            if with_link:
                 binding = shell.dt_binding(compat)
                 if binding and binding.path:
-                    if with_link:
-                        DtshTui.txt_update_link_file(txt, binding.path)
+                    DtshTui.txt_update_link_file(txt, binding.path)
             if with_status and (node.status != 'okay'):
                 DtshTui.txt_dim(txt)
             txt_bindings.append(txt)
