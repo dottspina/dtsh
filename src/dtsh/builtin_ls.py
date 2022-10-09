@@ -126,14 +126,12 @@ Globing:
 
 ```
 /
-❯ ls /soc/flash-controller@4001e000/flash@0/partitions/partition@* -ld
-Name       Addr     Labels                          Alias  Compatible  Description
-─────────────────────────────────────────────────────────────────────────────────────────────────
-partition  0x0      mcubootboot_partition                              Flash partition child node
-partition  0xc000   image-0slot0_partition                             Flash partition child node
-partition  0x73000  image-1slot1_partition                             Flash partition child node
-partition  0xda000  image-scratchscratch_partition                     Flash partition child node
-partition  0xf8000  storagestorage_partition                           Flash partition child node
+❯ ls /soc/gpio* -ld
+Name    Address     Labels  Aliases  Compatible         Description
+────────────────────────────────────────────────────────────────────────
+gpiote  0x40006000  gpiote           nordic,nrf-gpiote  NRF5 GPIOTE node
+gpio    0x50000000  gpio0            nordic,nrf-gpio    NRF5 GPIO node
+gpio    0x50000300  gpio1            nordic,nrf-gpio    NRF5 GPIO node
 ```
 """
     def __init__(self, shell: Dtsh) -> None:
@@ -221,11 +219,6 @@ partition  0xf8000  storagestorage_partition                           Flash par
                               self.with_no_content,
                               self.with_rich_fmt)
         view.show(vt, self.with_pager)
-
-        # view = DtshNodeListView(node_map,
-        #                         self.with_no_content,
-        #                         self.with_rich_fmt)
-        # view.show(vt, self._dtsh, self.with_pager)
 
     def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
         """Overrides DtshCommand.autocomplete_param().
