@@ -31,11 +31,11 @@ If `PATH` is unspecified, `tree` will list the current working node.
 
 The `tree` command list nodes hierarchically as trees.
 
-By default, `tree` will only print the nodes path: use the **-l** option to
-enable a more detailed (aka *rich*) output.
-
 By default, `tree` will recursively walk through all not `disabled` branches: use
 the **-L** option to set a maximum tree depth.
+
+By default, `tree` will only print the nodes path: use the **-l** option to
+enable a more detailed (aka *rich*) output.
 
 Set the **--pager** option to page the command's output using the system pager.
 
@@ -77,47 +77,32 @@ Assuming the current working node is the devicetree's root:
 └── analog-connector
 ```
 
-2. limit depth to 1:
-
-```
-/
-❯ tree -L 1
-/
-├── chosen
-├── aliases
-├── soc
-├── pin-controller
-├── entropy_bt_hci
-├── cpus
-├── sw-pwm
-├── leds
-├── pwmleds
-├── buttons
-├── connector
-└── analog-connector
-```
-
-Example of rich output:
+2. Example of rich output with a tree depth of 2:
 
 ```
 /
 ❯ tree -L 2 -l
- /
+/
 ├──  chosen
 ├──  aliases
 ├──  soc
-│   ├── 0xe000e100 interrupt-controller arm,v7m-nvic
-│   ├── 0xe000e010 timer
-│   ├── 0x10000000 ficr                 nordic,nrf-ficr
-│   ├── 0x10001000 uicr                 nordic,nrf-uicr
-│   ├── 0x20000000 memory               mmio-sram
-│   ├── 0x40000000 clock                nordic,nrf-clock
-│   ├── 0x40000000 power                nordic,nrf-power
+│   ├── 0xe000e100  interrupt-controller ARMv7-M NVIC (Nested Vectored Interrupt Controller)
+│   ├── 0xe000e010  timer
+│   ├── 0x10000000  ficr                 Nordic FICR (Factory Information Configuration Registers)
+│   ├── 0x10001000  uicr                 Nordic UICR (User Information Configuration Registers)
+│   ├── 0x20000000  memory               Generic on-chip SRAM description
+│   ├── 0x40000000  clock                Nordic nRF clock control node
+│   ├── 0x40000000  power                Nordic nRF power control node
+│   ├── 0x40001000  radio                Nordic nRF family RADIO peripheral…
+│   ├── 0x40002000  uart                 Nordic nRF family UARTE (UART with EasyDMA)
+│   ├── 0x40003000  i2c                  Nordic nRF family TWI (TWI master)…
+│   ├── 0x40003000  spi                  Nordic nRF family SPI (SPI master)
+│   ├── 0x40004000  i2c                  Nordic nRF family TWI (TWI master)…
 
 [...]
 
-├──  connector        arduino-header-r3
-└──  analog-connector arduino,uno-adc
+├──  connector        GPIO pins exposed on Arduino Uno (R3) headers…
+└──  analog-connector ADC channels exposed on Arduino Uno (R3) headers…
 ```
 """
 
