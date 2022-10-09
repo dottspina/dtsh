@@ -42,14 +42,14 @@ setup(
     # See also: https://peps.python.org/pep-0440/
     #
     # Required.
-    version="0.1.0a1",
+    version="0.1.0a2",
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
     #
     # Optional.
-    description="Shell-like interface to devicetrees",
+    description="Shell-like interface to devicetree",
 
     # This is an optional longer description of your project that represents
     # the body of text which users will see when they visit PyPI.
@@ -117,7 +117,7 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Embedded Systems",
         # Pick your license as you wish
-        "License :: OSI Approved :: Apache Software License"
+        "License :: OSI Approved :: Apache Software License",
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate you support Python 3. These classifiers are *not*
         # checked by 'pip install'. See instead 'python_requires' below.
@@ -137,7 +137,7 @@ setup(
     # larger catalog.
     #
     # Optional.
-    keywords="devicetree, zephyr, development",
+    keywords="devicetree, zephyr, dts, embedded",
 
     # When your source code is in a subdirectory under the project root, e.g.
     # `src/`, it is necessary to specify the `package_dir` argument.
@@ -192,6 +192,11 @@ setup(
     # package_data={  # Optional
     #     "sample": ["package_data.dat"],
     # },
+    package_data={
+         "dtsh": ["theme"],
+    },
+
+
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/distutils/setupscript.html#installing-additional-files
