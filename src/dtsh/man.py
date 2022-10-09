@@ -318,141 +318,139 @@ class DtshManPageDtsh(DtshManPage):
 
 
 _DTSH_MAN_PAGE="""
-# A devicetree shell
+# dtsh
 
-`dtsh` is a *shell-like* interface to a devicetree:
+[Home](https://github.com/dottspina/dtsh)  [PyPI](https://pypi.org/project/devicetree/)  [Known issues](https://github.com/dottspina/dtsh/issues)
 
-- a file-system metaphor mapped to devicetree path names
-- common commands (e.g. `ls`) and option (e.g. '-l')
-  syntax compatible with GNU getopt
-- [GNU readline](https://tiswww.cwru.edu/php/chet/readline/rltop.html)
-  integration for commands history, auto-completion support,
-  and well-known key bindings
-- *rich* user interface ([Python rich](https://pypi.org/project/rich))
+**dtsh** is an interactive *shell-like* interface with a devicetree and its bindings:
 
-This tool was created to explore Zephyr's
-[devicetree](https://docs.zephyrproject.org/latest/build/dts/intro.html)
-and
-[bindings](https://docs.zephyrproject.org/latest/build/dts/bindings.html).
-
-See also: [dtsh introductory video](https://youtu.be/pc2AMx1iPPE) (Youtube).
+-   browse the devicetree through a familiar hierarchical file-system metaphor
+-   retrieve nodes and bindings with accustomed command names and command line syntax
+-   generate simple documentation artifacts by redirecting commands output to files (text, HTML, SVG)
+-   common command line interface paradigms (auto-completion, history) and keybindings
 
 ## SYNOPSIS
 
 To start a shell session: `dtsh [<dts-file>] [<binding-dir>*]`
 
-Where:
+where:
 
-- `<dts-file>`: Path to a device tree source file (`.dts`);
-  if unspecified, defaults to `$PWD/build/zephyr/zephyr.dts`
-- `<binding-dirs>`: List of path to search for DT bindings (`.yaml`);
-  if unspecified, and the environment variable `ZEPHYR_BASE` is set,
-  defaults to Zephyr's DT bindings
+-   `<dts-file>`: path to the device tree source file in  [DTS Format](https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html) (`.dts`);
+    if unspecified, defaults to `$PWD/build/zephyr/zephyr.dts`
+-   `<binding-dir>`: directory to search for  [YAML](https://yaml.org/) binding files;
+    if unspecified, and the environment variable `ZEPHYR_BASE` is set,
+    defaults to [Zephyr&rsquo;s bindings](https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located)
 
-To open an arbitrary DT source file, with custom bindings:
+To open an arbitrary DTS file with custom bindings:
 
-```
-$ dtsh /path/to/foobar.dts /path/to/custom/bindings /path/to/other/custom/bindings
-```
+    $ dtsh /path/to/foobar.dts /path/to/custom/bindings /path/to/other/custom/bindings
 
-To open a DT source file with Zephyr's bindings (`$ZEPHYR_BASE/boards`
-and `$ZEPHYR_BASE/dts/bindings`):
+To open the same DTS file with Zephyr&rsquo;s bindings:
 
-```
-$ export ZEPHYR_BASE=/path/to/zephyr
-$ dtsh /path/to/foobar.dts
-```
-
-To *fast-open* the current Zephyr project's devicetree
-(`$PWD/build/zephyr/zephyr.dts`),
-assuming `ZEPHYR_BASE` is set:
-
-```
-$ cd /path/to/some/zephyr/project
-$ dtsh
-```
+    $ export ZEPHYR_BASE=/path/to/zephyr
+    $ dtsh /path/to/foobar.dts
 
 ## THE SHELL
 
-The shell is a set of **built-in** commands that interface a loaded devicetree.
+`dtsh` defines a set of *built-in* commands that interface with a devicetree
+and its bindings through a hierarchical file-system metaphor.
 
-### Path
+### File system metaphor
 
-Most shell built-ins operate on devicetree
-[**path names**](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).
+Within a `dtsh` session, a devicetree shows itself as a familiar hierarchical file-system,
+where [path names](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names)
+*look like* paths to files or directories, depending on the acting shell command.
 
-`dtsh` also supports paths relative to the **current working node**,
-that can be changed by the `cd` built-in, and printed by `pwd`.
+A current *working node* is defined, similar to any shell&rsquo;s current working directory,
+allowing `dtsh` to also support relative paths.
 
-The wild-card `.` represents the current working node,
-and `..` its parent. The devicetree root node is its own parent.
+A leading `.` represents the current working node, and `..` its parent.
+The devicetree root node is its own parent.
+
+To designate properties, `dtsh` use `$` as a separator between DT path names and [property names](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names)
+(should be safe since `$` is an invalid character for both node and property names).
+
+Some commands support filtering or *globbing* with trailing wild-cards `*`.
+
+### Command strings
+
+The `dtsh` command string is based on the
+[GNU getopt](https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html) syntax.
+
+#### Synopsis
+
+All built-ins share the same synopsis:
+
+    CMD [OPTIONS] [PARAMS]
+
+where:
+
+-   `CMD`: the built-in name, e.g. `ls`
+-   `OPTIONS`: the options the command is invoked with (see bellow), e.g. `-l`
+-   `PARAMS`: the parameters the command is invoked for, e.g. a path name
+
+`OPTIONS` and `PARAMS` are not positional: `ls -l /soc` is equivalent to `ls /soc -l`.
+
+#### Options
+
+An option may support:
+
+-   a short name, starting with a single `-` (e.g. `-h`)
+-   a long name, starting with `--` (e.g. `--help`)
+
+Short option names can combine: `-lR` is equivalent to `-l -R`.
+
+Options semantic should be consistent across commands, e.g. `-l` always means *long format*.
+
+We also try to re-use *well-known* option names, e.g. `-r` for *reverse sort* or `-R` for *recursive*.
 
 ### Built-ins
 
-- `pwd`: print current working node's path
-- `alias`: print defined aliases
-- `chosen`: print chosen configuration
-- `cd`: change current working node
-- `ls`: list devicetree nodes
-- `tree`: list devicetree nodes in tree-like format
-- `cat`: concatenate and print devicetree content
-- `man`: open a manual page
+- `alias`     print defined aliases
+- `chosen`    print chosen configuration
+- `pwd`       print current working node's path
+- `cd`        change current working node
+- `ls`        list devicetree nodes
+- `tree`      list devicetree nodes in tree-like format
+- `cat`       concatenate and print devicetree content
+- `man`       open a manual page
 
 Use `man <built-in>` to print a command's manual page,
 e.g. `man ls`.
 
+### Manual pages
+
+As expected, the `man` command will open the manual page for the shell itself (`man dtsh`),
+or one of its built-ins (e.g. `man ls`).
+
+`man` may also open a manual page for a
+[compatible](https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#compatible),
+which is essentially a view of its (YAML) bindings: e.g.  `man --compat nordic,nrf-radio`
+
+`man` should eventually also serve as an entry point to external useful or normative documents,
+e.g. the Devicetree Specifications or the Zephyr project&rsquo;s documentation.
+
 ## USER INTERFACE
 
-On startup, a `dtsh` session will output a banner,
-followed by the first prompt:
-
-```
-$ dtsh
-dtsh (0.1.0a1): Shell-like interface to a devicetree
-Help: man dtsh
-How to exit: q, or quit, or exit, or press Ctrl-D
-
-/
-❯
-```
+The `dtsh` command line interface paradigms and keybindings should sound familiar.
 
 ### The prompt
 
 The default shell prompt is ❯.
-The line immediately above the prompt shows the current working node's path.
+The line immediately above the prompt shows the current working node&rsquo;s path.
 
-```
-/
-❯ pwd
-/
+    /
+    ❯ pwd
+    /
 
-/
-❯ cd /soc/i2c@40003000/bme680@76
+    /
+    ❯ cd /soc/i2c@40003000/bme680@76
 
-/soc/i2c@40003000/bme680@76
-❯
-```
+    /soc/i2c@40003000/bme680@76
+    ❯ pwd
+    /soc/i2c@40003000/bme680@76
 
-Pressing `Ctrl-D` at the prompt will exit the `dtsh` session.
-
-### Command line
-
-The `dtsh` shell grammar is quite simple: `<built-in> [OPTIONS] [PARAMS] [> PATH]`
-
-Where:
-
-- <built-in>: the command's name
-- `OPTIONS`: options with [GNU getopt syntax](https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html)
-  for short (e.g. `-h`) and long (e.g. `--help`) names
-- `PARAMS`: the command's parameters, typically a single node's path name
-- `> PATH`: will redirect the command's output to the file at PATH;
-  depending on the extension, the command output may be saved as an HTML page (`.html`),
-  an SVG image (`.svg`), or a text file (default)
-
-OPTIONS and PARAMS are not positional: `ls -l /soc` is equivalent to
-`ls /soc -l`.
-
-Short option names can combine: `-lR` is equivalent to `-l -R`.
+Pressing `C-d` (aka `CTRL-D`) at the prompt will exit the `dtsh` session.
 
 ### Commands history
 
@@ -462,195 +460,117 @@ At the shell prompt, press:
 
 - up arrow (↑) to navigate the commands history backward
 - down arrow (↓) to navigate the commands history forward
-- `C-r` (aka `Ctrl-R`) to search history
+- `C-r` (aka `CTRL-R`) to search the commands history
 
-The history is saved on exit, and loaded on startup.
+The history file (typically `$HOME/.config/dtsh/history`) is saved on exit, and loaded on startup.
 
 ### Auto-completion
 
 Command line auto-completion is provided through GNU readline integration.
 
-Auto-completion is triggered by first pressing the **TAB** key twice,
-then once for subsequent completions of the same command line,
-and may apply to:
+Auto-completion is triggered by first pressing the `TAB` key twice,
+then once for subsequent completions of the same command line, and may apply to:
 
-- command names
+- command names (aka built-ins)
 - command options
 - command parameters
 
 ### The pager
 
-Built-ins that may produce a large output support the `--pager` option:
-the command's output is then *paged* using the system pager, typically `less`:
+Built-ins that may produce large outputs support the `--pager` option: the command&rsquo;s
+output is then *paged* using the system pager, typically `less`:
 
-- use up (↑) and down (↓) arrows to navigate line by line
-- use page up (⇑) and down (⇓) to navigate by *page*
-- press **g** go to first line
-- press **G** go to last line
-- press **/** to enter search mode
-- press **h** for help
-- press **q** to quit
+-   use up (↑) and down (↓) arrows to navigate line by line
+-   use page up (⇑) and down (⇓) to navigate *window* by *window*
+-   press `g` go to first line
+-   press `G` go to last line
+-   press `/` to enter search mode
+-   press `h` for help
+-   press `q` to quit the pager and return to the `dtsh` prompt
 
-### Key bindings
+On the contrary, the `man` command uses the pager by default
+and defines a `--no-pager` option to disable it.
 
-Useful key bindings include:
+### External links
 
-- `C-l`: clear terminal screen
-- `C-a`: move cursor to beginning of command line
-- `C-e`: move cursor to end of command line
-- `C-k`: *kill* text from cursor to end of command line
-- `M-d`: *cut* word at cursor
-- `C-y`: *yank* (aka paste)
-- `C-←`: move cursor one word backward
-- `C-→`: move cursor one word forward
-- `↑`: navigate the commands history backward
-- `↓`: navigate the commands history forward
-- `C-r`: search commands history
-- `TAB`: trigger auto-completion
+`dtsh` commands output may contain links to external documents such as:
 
-Where:
+-   the local YAML binding files, that should open in the system&rsquo;s
+    default text editor
+-   the Devicetree specifications or the Zephyr project&rsquo;s documentation,
+    that should open in the system&rsquo;s default web browser
 
-- e.g. `C-c` means holding the **Ctrl** key and then press **c**
-- e.g. `M-d` means holding the **Alt** (*meta*) key and then press **d**
+How these links will appear in the console, and whether they are *actionable* or not,
+eventually depend on the terminal.
 
-## CONFIGURATION
+This is an example of such links: [Device Tree What It Is](https://elinux.org/Device_Tree_What_It_Is)
 
-`dtsh` configuration includes:
+### Output redirection
 
-- the commands history file
-- the user interface theme
+Command output redirection uses the well-known syntax:
 
-This configuration is located in a specific directory `DTSH_CONFIG_DIR`:
+    CMD [OPTIONS] [PARAMS] > PATH
 
-- `$XDG_CONFIG_HOME/dtsh` if `XDG_CONFIG_HOME` is set
-- `$HOME/.config/dtsh` otherwise
+where `PATH` is the absolute or relative path to the file the command output will be redirected to.
 
-### History
+Depending on the extension, the command output may be saved as an HTML page (`.html`),  an SVG image (`.svg`),
+or a text file (default).
 
-The commands history is persisted across `dtsh` sessions in the
-`$DTSH_CONFIG_DIR/history` file.
+For example:
 
-This file is automatically created. Removing it clears the history.
+    /
+    ❯ ls -l soc > soc.html
+
+### Keybindings
+
+Familiar keybindings are set through GNU readline integration.
+
+- `C-l`    clear terminal screen
+- `C-a`    move cursor to beginning of command line
+- `C-e`    move cursor to end of command line
+- `C-k`    *kill* text from cursor to end of command line
+- `M-d`    *kill* word at cursor
+- `C-y`    *yank* (paste) the content of the *kill buffer*
+- `C-←`    move cursor one word backward
+- `C-→`    move cursor one word forward
+- `↑`      navigate the commands history backward
+- `↓`      navigate the commands history forward
+- `C-r`    search the commands history
+- `TAB`    trigger auto-completion
 
 ### Theme
 
-Colors and such are subjective, and most importantly the rendering would
-eventually depend on the terminal's font and palette, the desktop theme and so on.
+Colors and such are subjective, and most importantly the rendering will
+eventually depend on the terminal&rsquo;s font and palette,
+possibly resulting in severe accessibility issues, e.g. grey text on white background
+or a weird shell prompt.
 
-Most of `dtsh` user interface's styles can be customized by creating
-a *theme* file `$DTSH_CONFIG_DIR/theme`:
+In such situations, or to accommodate personal preferences, users can try to override
+`dtsh` colors (and prompt) by creating a *theme* file  (typically `$HOME/.config/dtsh/theme`).
 
-```
-# Copyright (c) 2022 Chris Duf <chris@openmarl.org>
-#
-# SPDX-License-Identifier: Apache-2.0
+Use the [default theme](https://github.com/dottspina/dtsh/blob/main/src/dtsh/theme) as template:
 
-# Devicetree shell default theme
-#
-# See:
-# - Styles: https://rich.readthedocs.io/en/stable/style.html#styles
-# - Standard colors: https://rich.readthedocs.io/en/stable/appendix/colors.html
-# - Theme: https://rich.readthedocs.io/en/stable/style.html#style-themes
+    cp src/dtsh/theme ~/.config/dtsh/theme
 
-[styles]
+## References
 
-# Default style.
-dtsh.default = default on default
+**Devicetree Specifications**
 
-# Node path anchor (1st and last segments).
-# Color: DeepSkyBlue3
-dtsh.path.anchor = #0087af
-# Node path segments.
-# Color: DeepSkyBlue1
-dtsh.path.segment = #00afff
+-   [Online Devicetree Specifications](https://devicetree-specification.readthedocs.io/en/latest/) (latest)
+-   [Online Devicetree Specifications](https://devicetree-specification.readthedocs.io/en/stable/) (stable)
 
-# Apply to a node's (unique) matching compatible (aka binding).
-# Typically: node.matching_compat is defined,
-# and node.binding_path might point to the corresponding yaml file.
-#
-dtsh.binding = light_sea_green
+**Zephyr**
 
-# Apply to compatible strings as in node.compats.
-#
-dtsh.compats = light_sea_green
+-   [Introduction to devicetree](https://docs.zephyrproject.org/latest/build/dts/intro.html)
+-   [Devicetree bindings](https://docs.zephyrproject.org/latest/build/dts/bindings.html)
+-   [Bindings index](https://docs.zephyrproject.org/latest/build/dts/api/bindings.html)
+-   [Zephyr-specific chosen nodes](https://docs.zephyrproject.org/latest/build/dts/api/api.html#zephyr-specific-chosen-nodes)
+-   [Devicetree versus Kconfig](https://docs.zephyrproject.org/latest/build/dts/dt-vs-kconfig.html)
 
-# Apply to descriptions from DT bindings (nodes or properties).
-#
-dtsh.desc = medium_orchid3
+**Linux**
 
-# Apply to a node's label properties.
-# color: deep_sky_blue1
-#
-dtsh.labels = #00afff italic
-
-# Apply to a node's labels.
-# color: deep_sky_blue1
-#
-dtsh.label = #00afff
-
-# Apply to descriptions bus (DT bindings)
-#
-dtsh.bus = dark_khaki bold
-
-# Apply to a node's aliases.
-#
-dtsh.alias = turquoise2
-
-# Apply to a property names.
-#
-dtsh.property = dark_sea_green
-
-# Apply to node status 'okay'.
-# Green example: spring_green3
-#
-dtsh.okay = default
-
-# Apply to node status not 'okay'.
-#
-dtsh.not_okay = dim
-
-# Apply when the required data to show,
-# e.g. a structured view section,
-# is not available
-dtsh.apology = dim italic
-
-# Apply to boolean values.
-#
-dtsh.true = default
-dtsh.false = dim
-
-
-[dtsh]
-
-# Prompt colors.
-# See https://en.wikipedia.org/w/index.php?title=ANSI_escape_code#Colors
-#
-dtsh.prompt.color = 88
-dtsh.prompt.color.error = 99
-dtsh.prompt.wchar = ❯
-```
-
-## REFERENCES
-
-**dtsh**
-
-- [Home page](https://github.com/dottspina/dtsh) (GitHub)
-- [Introductory video](https://youtu.be/pc2AMx1iPPE) (Youtube)
-
-**Devicetree specifications**:
-
-- [browse](https://devicetree-specification.readthedocs.io/en/stable/) latest stable
-- [download](https://www.devicetree.org/specifications/) specifications
-
-**Zephyr**:
-
-- [Introduction to devicetree](https://docs.zephyrproject.org/latest/build/dts/intro.html)
-- [Bindings index](https://docs.zephyrproject.org/latest/build/dts/api/bindings.html)
-
-**Linux**:
-
-- [Linux and the Devicetree](https://www.kernel.org/doc/html/latest/devicetree/usage-model.html)
-- [Device Tree Usage](https://elinux.org/Device_Tree_Usage)
-- [Device Tree Reference](https://elinux.org/Device_Tree_Reference)
-
+-   [Open Firmware and Devicetree](https://docs.kernel.org/devicetree/index.html)
+-   [Device Tree Usage](https://elinux.org/Device_Tree_Usage)
+-   [Device Tree Reference](https://elinux.org/Device_Tree_Reference)
+-   [Device Tree What It Is](https://elinux.org/Device_Tree_What_It_Is)
 """
