@@ -23,21 +23,22 @@ It's still in its inception phase:
 - possible bugs could instead confuse beginners (unfortunately)
 - should install and run more or less Out Of The Box™ on most modern Linux distributions,
   mileage may vary on other platforms
-- should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files: this does NOT directly apply to the devicetree usage by the Linux kernel
+- should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files: this does NOT directly apply to the devicetree use by the Linux kernel
 
 All kinds of feedback and contribution are encouraged: please refer to the bottom CONTRIBUTE section.
 #+end_quote
 
-- [[Getting started][Getting started]]
-  - [[Requirements][Requirements]]
-  - [[Install][Install]]
-  - [[Run][Run]]
-  - [[Zephyr integration][Zephyr integration]]
-- [[User guide][User guide]]
-  - [[The shell][The shell]]
-  - [[User interface][User interface]]
-  - [[References][References]]
-- [[Contribute][Contribute]]
+
+- [[https://github.com/dottspina/dtsh#getting-started][Getting started]]
+  - [[https://github.com/dottspina/dtsh#requirements][Requirements]]
+  - [[https://github.com/dottspina/dtsh#install][Install]]
+  - [[https://github.com/dottspina/dtsh#run][Run]]
+  - [[https://github.com/dottspina/dtsh#zephyr-integration][Zephyr integration]]
+- [[https://github.com/dottspina/dtsh#users-guide][User's guide]]
+  - [[https://github.com/dottspina/dtsh#the-shell][The shell]]
+  - [[https://github.com/dottspina/dtsh#user -interface][User interface]]
+  - [[https://github.com/dottspina/dtsh#references][References]]
+- [[https://github.com/dottspina/dtsh#contribute][Contribute]]
 
 * Getting started
 
@@ -244,7 +245,7 @@ To remove ~dtsh~ from a Zephyr workspace:
 pip uninstall dtsh rich
 #+end_src
 
-* User guide
+* User's guide
 
 The preferred entry point to the ~dtsh~ documentation should be its manual pages:
 
