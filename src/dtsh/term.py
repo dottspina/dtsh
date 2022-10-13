@@ -35,7 +35,6 @@ class DevicetreeTerm(DtshVt):
         # We do not want Console syntax highlighting by default.
         self._console = Console(highlight=False)
         self._pager = None
-        self._redir_path = None
 
         if readline_comp_hook is not None:
             # Setup readline autocomp support.
