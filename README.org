@@ -29,7 +29,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 #+end_quote
 
 
-- [[https://github.com/dottspina/dtsh#getting-started][Getting started]]
+- [[https://github.com/dottspina/dtsh#get-started][Get started]]
   - [[https://github.com/dottspina/dtsh#requirements][Requirements]]
   - [[https://github.com/dottspina/dtsh#install][Install]]
   - [[https://github.com/dottspina/dtsh#run][Run]]
@@ -40,7 +40,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
   - [[https://github.com/dottspina/dtsh#references][References]]
 - [[https://github.com/dottspina/dtsh#contribute][Contribute]]
 
-* Getting started
+* Get started
 
  ~dtsh~ is written in Python and has few requirements: it should install and run just fine on most /modern POSIX-like/
  operating systems.
@@ -100,6 +100,11 @@ All ~dtsh~ software requirements are Python libraries that will be installed as 
 - DT sources and bindings /parser/, devicetree model: ~edtlib~, now maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]])
 - « rich text and beautiful formatting in the terminal »: [[https://www.textualize.io/][Textualize]] /rich/ API ([[https://github.com/Textualize/rich][GitHub]], [[https://pypi.org/project/rich/][PyPI]])
 
+*** CMake
+
+~dtsh~ may need to access a few CMake cached variables for setting sensible default values,
+e.g. when building the default bindings search path.
+
 ** Install
 
 It's recommended to install ~dtsh~ in a dedicated Python virtual environment.
@@ -156,11 +161,12 @@ To start a shell session: ~dtsh [<dts-file>] [<binding-dir>*]~
 
 where:
 
-- ~<dts-file>~: path to the device tree source file in  [[https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html][DTS Format]] (~.dts~);
+- ~<dts-file>~: path to the devicetree source file in  [[https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html][DTS Format]] (~.dts~);
   if unspecified, defaults to ~$PWD/build/zephyr/zephyr.dts~
-- ~<binding-dirs>~: list of directories to search for  [[https://yaml.org/][YAML]] binding files;
+- ~<binding-dir>~: directory to search for  [[https://yaml.org/][YAML]] binding files;
   if unspecified, and the environment variable ~ZEPHYR_BASE~ is set,
   defaults to [[https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located][Zephyr bindings search path]]
+  (may require CMake, see [[https://github.com/dottspina/dtsh/issues/1][Incomplete Zephyr bindings search path #1]] for details)
 
 To open an arbitrary DTS file with custom bindings:
 
