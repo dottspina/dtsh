@@ -15,7 +15,7 @@ from typing import ClassVar, Tuple
 
 from devicetree.edtlib import EDT, EDTError, Node, Binding, Property
 
-from dtsh.systools import Git, CMakeCache
+from dtsh.systools import Git, CMakeCache, GCCArm
 
 
 class DtshVt(object):
@@ -634,9 +634,7 @@ class DtshUname(object):
         """Returns GCC Arm toolchain version, or None if unavailable.
         """
         if self._gnuarm_dir:
-            m = re.match(r"^\S*gcc-arm-none-eabi-([\w.\-]+)$", self._gnuarm_dir)
-            if m and m.groups():
-                return m.groups()[0]
+            return GCCArm(self._gnuarm_dir).version
         return None
 
     @property
