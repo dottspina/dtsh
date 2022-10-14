@@ -692,10 +692,11 @@ class DtshUname(object):
 
         board_dir = self._cmake_cache.get('BOARD_DIR')
         if board_dir:
-            path = Path(os.path.join(board_dir, 'dts', 'bindings')).resolve()
-            self._board_dir = str(path)
-            if os.path.isdir(self._board_dir):
-                self._binding_dirs.append(self._board_dir)
+            board_path = Path(board_dir).resolve()
+            self._board_dir = str(board_path)
+            binding_path = Path(os.path.join(board_dir, 'dts', 'bindings')).resolve()
+            if os.path.isdir(binding_path):
+                self._binding_dirs.append(str(binding_path))
         else:
             # When BOARD_DIR is unset, we add both $ZEPHYR_BASE/boards
             # and $PWD/boards (we don't know if it's a Zephyr board
