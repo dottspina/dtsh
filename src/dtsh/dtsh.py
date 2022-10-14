@@ -7,10 +7,15 @@
 
 import getopt
 import os
+import re
+from pathlib import Path
+
 from abc import abstractmethod
 from typing import ClassVar, Tuple
 
 from devicetree.edtlib import EDT, EDTError, Node, Binding, Property
+
+from dtsh.systools import Git, CMakeCache
 
 
 class DtshVt(object):
@@ -436,6 +441,284 @@ class DtshCommand(object):
         """
 
 
+class DtshUname(object):
+    """System information inferred from environment variables,
+    CMake cached variables and Zephyr's Git repository state.
+
+    All paths are resolved (absolute, resolving any symlinks,
+    “..” components are also eliminated).
+    """
+
+    # Resolved DTS file path.
+    _dts_path: str
+
+    # Resolved binding directories.
+    _binding_dirs: list[str]
+
+    # Resolved $ZEPHYR_BASE.
+    _zephyr_base: str | None
+
+    # Resolved $ZEPHYR_SDK_INSTALL_DIR.
+    _zephyr_sdk_dir: str | None
+
+    # Resolved $GNUARMEMB_TOOLCHAIN_PATH.
+    _gnuarm_dir: str | None
+
+    # $ZEPHYR_TOOLCHAIN_VARIANT ('gnuarmemb' or 'zephyr').
+    _zephyr_toolchain: str | None
+
+    # git -C $ZEPHYR_BASE log -n 1 --pretty=format:"%h"
+    _zephyr_rev: str | None
+
+    # git tag --points-at HEAD
+    _zephyr_tags: list[str]
+
+    # Resolved BOARD_DIR (CMake).
+    _board_dir: str | None
+
+    # CMake cached variables.
+    _cmake_cache: CMakeCache
+
+    def __init__(self, dts_path:str, binding_dirs: list[str] | None) -> None:
+        """Initialize system info.
+
+        Arguments:
+        dts_path -- Path to a devicetree source file.
+        binding_dirs -- List of path to search for DT bindings.
+                        If unspecified, and ZEPHYR_BASE is set,
+                        defaults to Zephyr's DT bindings.
+
+        Raises DtshError when a specified path is invalid.
+        """
+        try:
+            self._dts_path = str(Path(dts_path).resolve(strict=True))
+        except FileNotFoundError as e:
+            raise DtshError(f"DTS file not found: {dts_path}", e)
+
+        self._binding_dirs = list[str]()
+        self._zephyr_tags = list[str]()
+        self._zephyr_base = None
+        self._zephyr_sdk_dir = None
+        self._gnuarm_dir = None
+        self._zephyr_toolchain = None
+        self._zephyr_rev = None
+        self._board_dir = None
+
+        self._load_environment()
+        self._load_cmake_cache()
+
+        if self._zephyr_base:
+            git = Git()
+            self._zephyr_rev = git.get_head_commit(self._zephyr_base)
+            self._zephyr_tags = git.get_head_tags(self._zephyr_base)
+
+        if binding_dirs:
+            for binding_dir in binding_dirs:
+                path = Path(binding_dir).resolve()
+                if os.path.isdir(path):
+                    self._binding_dirs.append(str(path))
+                else:
+                    raise DtshError(f"Bindings directory not found: {binding_dir}")
+        elif self._zephyr_base:
+            self._init_zephyr_bindings_search_path()
+
+    @property
+    def dts_path(self) -> str:
+        """Returns the resolved path to the session's DT source file.
+        """
+        return self._dts_path
+
+    @property
+    def dt_binding_dirs(self) -> list[str]:
+        """Returns the DT bindings search path as a list of resolved path.
+
+        When no bindings are specified by the dtsh command line,
+        and the environment variable ZEPHYR_BASE is set,
+        we'll try to default to the bindings Zephyr would use (has used)
+        at build-time.
+
+        "Where are bindings located ?" specifies that binding files are
+        expected to be located in dts/bindings sub-directory of:
+        - the zephyr repository
+        - the application source directory
+        - the board directory
+        - any directories in DTS_ROOT
+        - any module that defines a dts_root in its build
+
+        Walking through the modules' build settings seems a lot of work
+        (needs investigation, and confirmation that it's worth the effort),
+        but we'll at least try to include:
+        - $ZEPHYR_BASE/dts/bindings
+        - APPLICATION_SOURCE_DIR/dts/bindings
+        - BOARD_DIR/dts/bindings
+        - DTS_ROOT/**/dts/bindings
+
+        This implies we get the value of the CMake cached variables
+        APPLICATION_SOURCE_DIR, BOARD_DIR and DTS_ROOT.
+        To invoke CMake, we'll first need a value for APPLICATION_BINARY_DIR:
+        we'll assume its the parent of the directory containing the DTS file,
+        as in <app_root>/build/zephyr/zephyr.dts.
+
+        If that fails:
+        - APPLICATION_SOURCE_DIR will default to $PWD
+        - we will substitute BOARD_DIR/dts/bindings with $ZEPHYR_BASE/boards
+          and $PWD/boards (we don't know if it's a Zephyr board or a custom board,
+          we don't know wich <arch>/<board>/dts/bindings subdirectory to select)
+
+        Only directories that actually exist are included.
+
+        See:
+        - $ZEPHYR_BASE/cmake/modules/dts.cmake
+        - https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located
+        """
+        return self._binding_dirs
+
+    @property
+    def zephyr_base(self) -> str | None:
+        """Returns the resolved path to the Zephyr kernel repository set by
+        the environment variable ZEPHYR_BASE, or None if unset.
+        """
+        return self._zephyr_base
+
+    @property
+    def zephyr_toolchain(self) -> str | None:
+        """Returns the toolchain variant ('zephyr' or 'gnuarmemb') set by the
+        environment variable ZEPHYR_TOOLCHAIN_VARIANT, or None if unset.
+        """
+        return self._zephyr_toolchain
+
+    @property
+    def zephyr_sdk_dir(self) -> str | None:
+        """Returns resolved path the Zephyr SDK directory set by the environment
+        variable ZEPHYR_SDK_INSTALL_DIR, or None if unset.
+        """
+        return self._zephyr_sdk_dir
+
+    @property
+    def gnuarm_dir(self) -> str | None:
+        """Value of the environment variable GNUARMEMB_TOOLCHAIN_PATH, or None.
+        """
+        """Returns the GCC Arm base directory set by the environment variable
+        GNUARMEMB_TOOLCHAIN_PATH, or None if unset.
+        """
+        return self._gnuarm_dir
+
+    @property
+    def zephyr_kernel_rev(self) -> str | None:
+        """Returns the Zephyr kernel revision as given by
+        git -C $ZEPHYR_BASE log -n 1 --pretty=format:"%h",
+        or None when unavailable.
+        """
+        return self._zephyr_rev
+
+    @property
+    def zephyr_kernel_tags(self) -> list[str]:
+        """Returns the Zephyr kernel tags for the current
+        repository state, as given by git tag --points-at HEAD,
+        or None when unavailable.
+        """
+        return self._zephyr_tags
+
+    @property
+    def zephyr_sdk_version(self) -> str | None:
+        """Returns Zephyr SDK version, or None if unavailable.
+        """
+        if self._zephyr_sdk_dir:
+            m = re.match(r"^\S*zephyr-sdk-([\w.]+)$", self._zephyr_sdk_dir)
+            if m and m.groups():
+                return m.groups()[0]
+        return None
+
+    @property
+    def gnuarm_version(self) -> str | None:
+        """Returns GCC Arm toolchain version, or None if unavailable.
+        """
+        if self._gnuarm_dir:
+            m = re.match(r"^\S*gcc-arm-none-eabi-([\w.\-]+)$", self._gnuarm_dir)
+            if m and m.groups():
+                return m.groups()[0]
+        return None
+
+    @property
+    def board_dir(self) -> str | None:
+        """Returns the resolved path to the board directory set by
+        the CMake cached variable BOARD_DIR, or None if unavailable.
+        """
+        return self._board_dir
+
+    @property
+    def board(self) -> str | None:
+        """Returns the value of the CMake cached variable BOARD,
+        or None if unavailable.
+        """
+        return self._cmake_cache.get('BOARD')
+
+    def _load_environment(self) -> None:
+        env = os.getenv('ZEPHYR_BASE')
+        if env:
+            path = Path(env).resolve()
+            self._zephyr_base = str(path)
+        env = os.getenv('ZEPHYR_SDK_INSTALL_DIR')
+        if env:
+            path = Path(env).resolve()
+            self._zephyr_sdk_dir = str(path)
+        env = os.getenv('GNUARMEMB_TOOLCHAIN_PATH')
+        if env:
+            path = Path(env).resolve()
+            self._gnuarm_dir = str(path)
+        self._zephyr_toolchain = os.getenv('ZEPHYR_TOOLCHAIN_VARIANT')
+
+    def _load_cmake_cache(self) -> None:
+        # self._dts_path is already resolved.
+        dts_dir = os.path.dirname(self._dts_path)
+        if os.path.isdir(dts_dir):
+            build_dir = str(Path(dts_dir).parent.absolute())
+            self._cmake_cache = CMakeCache(build_dir)
+
+    def _init_zephyr_bindings_search_path(self) -> None:
+        if not self._zephyr_base:
+            return
+        # self._zephyr_base is already resolved.
+        path = Path(os.path.join(self._zephyr_base, 'dts', 'bindings'))
+        self._binding_dirs.append(str(path))
+
+        app_src_dir = self._cmake_cache.get('APPLICATION_SOURCE_DIR')
+        if not app_src_dir:
+            # APPLICATION_SOURCE_DIR will default to $PWD.
+            app_src_dir = os.getcwd()
+        path = Path(os.path.join(app_src_dir, 'dts', 'bindings')).resolve()
+        if os.path.isdir(path):
+            self._binding_dirs.append(str(path))
+
+        board_dir = self._cmake_cache.get('BOARD_DIR')
+        if board_dir:
+            path = Path(os.path.join(board_dir, 'dts', 'bindings')).resolve()
+            self._board_dir = str(path)
+            if os.path.isdir(self._board_dir):
+                self._binding_dirs.append(self._board_dir)
+        else:
+            # When BOARD_DIR is unset, we add both $ZEPHYR_BASE/boards
+            # and $PWD/boards (we don't know if it's a Zephyr board
+            # or a custom board).
+            #
+            # ISSUE: may we have multiple YAML binding files with the same name,
+            # but for different boards (in different directories) ?
+            path = Path(os.path.join(self._zephyr_base, 'boards')).resolve()
+            if os.path.isdir(path):
+                self._binding_dirs.append(str(path))
+            path = Path(os.path.join(os.getcwd(), 'boards')).resolve()
+            if os.path.isdir(path):
+                self._binding_dirs.append(str(path))
+
+        dts_root = self._cmake_cache.get('DTS_ROOT')
+        if dts_root:
+            # Append all DTS_ROOT/**/dts/bindings we find.
+            for root, _, _ in os.walk(dts_root):
+                path = Path(os.path.join(root, 'dts', 'bindings')).resolve()
+                if os.path.isdir(path):
+                    self._binding_dirs.append(str(path))
+
+
 class Dtsh(object):
     """Shell-like interface to a devicetree.
 
@@ -467,7 +750,10 @@ class Dtsh(object):
     # Memory trade-off: this map may contain about 2000 entries.
     _binding2path: dict[str, str]
 
-    def __init__(self, edt: EDT) -> None:
+    # Sysinfo.
+    _uname: DtshUname
+
+    def __init__(self, edt: EDT, uname: DtshUname) -> None:
         """Initialize a shell-like interface to a devicetree.
 
         The current working node is initialized to the devicetree's root.
@@ -476,14 +762,27 @@ class Dtsh(object):
 
         Arguments:
         edt -- devicetree model (sources and bindings), provided by edtlib
+        uname -- system information inferred from environment variables,
+                 CMake cached variables, Zephyr's Git repository state.
         """
         self._edt = edt
+        self._uname = uname
         self._cwd = self._edt.get_node('/')
         self._builtins = dict[str, DtshCommand]()
         self._bindings = dict[str, Binding]()
         self._binding2path = dict[str, str]()
         self._init_binding_paths()
         self._init_bindings()
+
+    @property
+    def uname(self) -> DtshUname:
+        """System information inferred from environment variables,
+        CMake cached variables and Zephyr's Git repository state.
+
+        This is the system information used to initialize the
+        devicetree and its bindings.
+        """
+        return self._uname
 
     @property
     def cwd(self) -> Node:

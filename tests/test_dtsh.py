@@ -95,8 +95,9 @@ def test_dtsh_init():
     """Covers Dtsh ctor and properties.
     """
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
     assert shell.cwd == edt.get_node('/')
     assert shell.pwd == edt.get_node('/').path
     assert len(shell.builtins) == 0
@@ -107,8 +108,9 @@ def test_dtsh_realpath():
     """Covers Dtsh.realpath().
     """
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
 
     with pytest.raises(ValueError):
         shell.realpath('')
@@ -148,8 +150,9 @@ def test_dtsh_path2node():
     """Covers Dtsh.path2node().
     """
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
 
     with pytest.raises(ValueError):
         shell.path2node('')
@@ -174,8 +177,9 @@ def test_dtsh_cd():
     """Covers `dtsh.Dtsh.cd()`.
     """
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
 
     with pytest.raises(ValueError):
         shell.cd('')
@@ -207,8 +211,9 @@ def test_dtsh_ls():
     """Covers `dtsh.Dtsh.ls()`.
     """
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
 
     with pytest.raises(ValueError):
         shell.ls('')
@@ -271,8 +276,9 @@ def test_dtsh_ls():
 
 def test_dtsh_base_exec():
     with from_here():
-        edt = EDT("test.dts", ["bindings"])
-    shell = Dtsh(edt)
+        sysinfo = DtshUname("test.dts", ["bindings"])
+        edt = EDT(sysinfo.dts_path, sysinfo.dt_binding_dirs)
+    shell = Dtsh(edt, sysinfo)
 
     # Ignore empty command strings.
     shell.exec_command_string('', DtshVt())
