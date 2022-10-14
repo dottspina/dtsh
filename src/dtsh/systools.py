@@ -7,6 +7,7 @@
 import os
 import re
 import sys
+from pathlib import Path
 from subprocess import Popen, PIPE
 
 
@@ -121,3 +122,64 @@ class Git(object):
             # Silently fail (git is probably unavailable).
             pass
         return tags
+
+
+class GCCArm(object):
+    """GCC Arm Embedded Toolchain helper.
+    """
+
+    # Resolved path to arm-none-eabi-gcc.
+    _gcc: str
+
+    # Toolchain, e.g.: GNU Arm Embedded Toolchain 10.3-2021.10
+    _toolchain: str
+
+    # GCC version.
+    _version: str
+
+    # Build date, e.g. 20210824
+    _build_date: str
+
+    def __init__(self, gnuarm_dir: str) -> None:
+        """Initialize helper for host operating system.
+        """
+        gnuarm_path = Path(os.path.join(gnuarm_dir, 'bin')).resolve()
+        if os.path.isdir(gnuarm_path):
+            gcc_name = 'arm-none-eabi-gcc.exe' if os.name == "nt" else 'arm-none-eabi-gcc'
+            gcc_path = Path(os.path.join(gnuarm_path, gcc_name)).resolve()
+            self._gcc = str(gcc_path)
+            try:
+                argv = [self._gcc, '--version']
+                gcc = Popen(argv, stdout=PIPE, stderr=PIPE)
+                stdout, stderr = gcc.communicate()
+                if gcc.returncode == 0:
+                    self._init_version(str(stdout, 'utf-8'))
+                else:
+                    # Dump gcc error.
+                    print(stderr, file=sys.stderr)
+            except Exception:
+                # Silently fail (gcc is probably unavailable).
+                pass
+
+    @property
+    def toolchain(self) -> str:
+        return self._toolchain
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+    @property
+    def build_date(self) -> str:
+        return self._build_date
+
+    def _init_version(self, cmake_stdout: str) -> None:
+        # arm-none-eabi-gcc (GNU Arm Embedded Toolchain 10.3-2021.10) 10.3.1 20210824 (release)
+        regex = re.compile(r'^[\w.\-]+\s\(([\w .\-]+)\)\s([\d.]+)\s(\d+)\s.*$')
+
+        for line in cmake_stdout.splitlines():
+            m = regex.match(line.strip())
+            if m and (len(m.groups()) == 3):
+                self._toolchain = m.groups()[0]
+                self._version = m.groups()[1]
+                self._build_date = m.groups()[2]
