@@ -11,7 +11,7 @@ import pytest
 from devicetree.edtlib import EDT
 
 from dtsh.shell import DevicetreeShell
-from dtsh.dtsh import DtshCommandNotFoundError, DtshError
+from dtsh.dtsh import DtshCommandNotFoundError, DtshError, DtshVt
 
 
 # Context manager pattern borrowed from python-devicetree (test_edtlib.py).
@@ -59,4 +59,4 @@ def test_shell_builtins():
     assert shell.builtin('ls') is not None
 
     with pytest.raises(DtshCommandNotFoundError):
-       shell.exec_command_string('unsupported-builtin', None)
+       shell.exec_command_string('unsupported-builtin', DtshVt())

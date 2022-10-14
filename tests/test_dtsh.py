@@ -10,7 +10,7 @@ import pytest
 
 from devicetree.edtlib import EDT
 
-from dtsh.dtsh import Dtsh, DtshCommandOption, DtshCommand
+from dtsh.dtsh import Dtsh, DtshUname, DtshCommandOption, DtshCommand, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError, DtshCommandNotFoundError
 
 
@@ -275,10 +275,10 @@ def test_dtsh_base_exec():
     shell = Dtsh(edt)
 
     # Ignore empty command strings.
-    shell.exec_command_string('', None)
+    shell.exec_command_string('', DtshVt())
 
     with pytest.raises(DtshCommandNotFoundError):
-        shell.exec_command_string('ls', None)
+        shell.exec_command_string('ls', DtshVt())
 
 
 def test_dtsh_command_option():
