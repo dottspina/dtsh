@@ -5,6 +5,7 @@
 """Devicetree shell UI components."""
 
 
+from abc import abstractmethod
 from typing import ClassVar
 
 import configparser
@@ -854,43 +855,88 @@ class DtshTui:
 # Views
 ############################################################################
 
-class DtshTuiView(object):
-    """
-    """
-    _view: RenderableType
 
-    def show(self, vt: DtshVt, with_pager: bool = False):
+class DtshTuiView(object):
+    """A view will eventually show itself on a rich VT.
+    """
+
+    @abstractmethod
+    def show(self, vt: DtshVt, with_pager: bool = False) -> None:
+        """Show this view on a console.
+
+        Arguments:
+        vt -- the VT to write the view to
+        with_pager -- if True, the output will be paged
         """
+
+
+class DtshTuiGridView(DtshTuiView):
+    """Base grid layout with pager support.
+    """
+
+    # View rich table layout.
+    _grid: Table
+
+    def __init__(self, cols: int = 1, expand: bool = False) -> None:
+        """Initialize the grid.
+
+        Arguments:
+        cols -- number of columns, defaults to 1
+        expand -- if True, axpand the layout to fit the available horizontal
+                  space, defaults to False
+        """
+        self._grid = Table.grid(padding=(0, 1), expand=expand)
+        for _ in range(0, cols):
+            self._grid.add_column()
+
+    def show(self, vt: DtshVt, with_pager: bool = False) -> None:
+        """Implements DtshTView.show().
         """
         if with_pager:
             vt.pager_enter()
-        vt.write(self._view)
+        vt.write(self._grid)
         if with_pager:
             vt.pager_exit()
 
-class DtshTuiStructuredView(DtshTuiView):
-    """
+
+class DtshTuiStructuredView(DtshTuiGridView):
+    """View with content divided into named sections.
+
+    Two-columns grid: the former column holds section names,
+    the later section contents.
     """
 
     def __init__(self) -> None:
-        super().__init__()
-        self._view = DtshTui.mk_grid(2)
+        """Initialize the view.
+        """
+        super().__init__(cols=2)
 
-    def add_section(self, label: str, v_section: RenderableType):
-        txt_label = Text(label, DtshTui.style('bold'))
-        self._as_grid().add_row(txt_label, None)
-        self._as_grid().add_row(None, v_section)
-        self._as_grid().add_row(None, None)
+    def add_section(self, name: str, content: RenderableType) -> None:
+        """Add a section.
 
-    def _as_grid(self) -> Table:
-        return self._view
+        Note that this unconditionally adds an empty row bellow the content row.
+
+        Arguments:
+        name -- the section's label
+        content -- the section's content
+        """
+        label = Text(name, DtshTui.style('bold'))
+        self._grid.add_row(label, None)
+        self._grid.add_row(None, content)
+        self._grid.add_row(None, None)
 
 
 class DtNodeView(DtshTuiStructuredView):
-    """
+    """Structured view for detailed node information.
     """
 
     def __init__(self, node:Node, shell:Dtsh) -> None:
+        """Initialize the view.
+
+        Arguments:
+        node -- the node to show
+        shell -- the context shell
+        """
         super().__init__()
         self.add_section('Node',
                          DtshTui.mk_form_node_common(node, shell))
@@ -923,9 +969,18 @@ class DtNodeView(DtshTuiStructuredView):
 
 
 class DtPropertyView(DtshTuiStructuredView):
-    """
+    """Structured view for detailed property information.
+
+    Most of the information will show up only when the property's specification
+    is available.
     """
     def __init__(self, prop:Property) -> None:
+        """Initialize the view.
+
+        Arguments:
+        prop -- the property to show
+        shell -- the context shell
+        """
         super().__init__()
         if prop.spec:
             self.add_section('Property',
@@ -937,24 +992,48 @@ class DtPropertyView(DtshTuiStructuredView):
             self.add_section('Property',
                              DtshTui.mk_form_prop_name_val(prop))
 
+
 class DtNodeListView(DtshTuiView):
+    """Node list view.
+
+    By default, will show node contents (aka children).
+
+    This view handles both the default and "rich output" cases.
     """
-    """
+
+    # View rich table layout.
+    _view: Table
 
     def __init__(self,
                  node_map: dict[str, list[Node]],
                  shell: Dtsh,
                  with_no_content: bool = False,
                  with_rich_fmt: bool = False) -> None:
-        super().__init__()
+        """Initialize the view.
+
+        Arguments:
+        node_map -- maps node paths to contents (aka child nodes)
+        shell -- the context shell
+        with_no_content -- if True, will show nodes, not their content
+        with_rich_fmt -- if True, will produce "rich output"
+        """
         if with_rich_fmt:
             self._init_rich_view(node_map, shell, with_no_content)
         else:
             self._init_default_view(node_map, with_no_content)
 
+    def show(self, vt: DtshVt, with_pager: bool = False) -> None:
+        """Implements DtshTView.show().
+        """
+        if with_pager:
+            vt.pager_enter()
+        vt.write(self._view)
+        if with_pager:
+            vt.pager_exit()
+
     def _init_default_view(self,
                            node_map: dict[str, list[Node]],
-                           with_no_content: bool):
+                           with_no_content: bool) -> None:
         self._view = DtshTui.mk_grid(1)
         N = len(node_map)
         n = 0
@@ -973,7 +1052,7 @@ class DtNodeListView(DtshTuiView):
     def _init_rich_view(self,
                         node_map: dict[str, list[Node]],
                         shell: Dtsh,
-                        with_no_content: bool):
+                        with_no_content: bool) -> None:
         if with_no_content:
             self._view = self._mk_node_grid()
             for path, _ in node_map.items():
@@ -994,14 +1073,14 @@ class DtNodeListView(DtshTuiView):
                     self._view.add_row(None)
                 n += 1
 
-    def _mk_node_grid(self):
+    def _mk_node_grid(self) -> Table:
         return DtshTui.mk_grid_simple_head(
             [
                 'Name', 'Address', 'Labels', 'Aliases', 'Compatible', 'Description'
             ]
         )
 
-    def _grid_add_node_row(self, grid:Table, node: Node, shell: Dtsh):
+    def _grid_add_node_row(self, grid:Table, node: Node, shell: Dtsh) -> None:
         grid.add_row(
             DtshTui.mk_txt_node_nick(node, with_status=True),
             DtshTui.mk_txt_node_addr(node, with_status=True),
@@ -1013,15 +1092,26 @@ class DtNodeListView(DtshTuiView):
 
 
 class DtNodeTreeView(DtshTuiView):
+    """Node tree view.
     """
-    """
+
+    # View rich tree layout.
+    _view: Tree
 
     def __init__(self,
                  root: Node,
                  shell: Dtsh,
                  level: int,
                  with_rich_fmt: bool) -> None:
-        super().__init__()
+        """Initialize the view.
+
+        Arguments:
+        root - the tree's root node
+        shell -- the context shell
+        level -- the maximum tree depth; if 0, will ignore depth and stop only
+                 when reaching a disabled (not okay) node
+        with_rich_fmt -- if True, produce "rich output"
+        """
         self._rich_fmt = with_rich_fmt
         self._dtsh = shell
         self._level = level
@@ -1030,6 +1120,15 @@ class DtNodeTreeView(DtshTuiView):
         anchor = Text(root.path, DtshTui.style('bold'))
         self._view = Tree(anchor)
         self._follow_node_branch(root, self._view)
+
+    def show(self, vt: DtshVt, with_pager: bool = False) -> None:
+        """Implements DtshTView.show().
+        """
+        if with_pager:
+            vt.pager_enter()
+        vt.write(self._view)
+        if with_pager:
+            vt.pager_exit()
 
     def _follow_node_branch(self,
                             root: Node,
