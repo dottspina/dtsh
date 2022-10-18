@@ -624,6 +624,23 @@ class DtshUname(object):
         return self._zephyr_tags
 
     @property
+    def zephyr_kernel_version(self) -> str | None:
+        """Returns the Zephyr kernel version tag for the current
+        repository state, or None if the state does not match a
+        tagged Zephyr kernel release.
+        """
+        version = None
+        if self.zephyr_kernel_tags:
+            # Include stable and RC releases.
+            regex = re.compile(r'^(v\d.\d.\d[rc\-\d]*)$')
+            for tag in self.zephyr_kernel_tags:
+                m = regex.match(tag.strip())
+                if m:
+                    version = m.groups()[0]
+                    break
+        return version
+
+    @property
     def zephyr_sdk_version(self) -> str | None:
         """Returns the Zephyr SDK version set in the file
         $ZEPHYR_SDK_INSTALL_DIR/sdk_version, or None if unavailable.
@@ -660,6 +677,28 @@ class DtshUname(object):
         or None if unavailable.
         """
         return self._cmake_cache.get('BOARD')
+
+    @property
+    def board_dts_file(self) -> str | None:
+        """Returns the value of the CMake cached variable BOARD,
+        or None if unavailable.
+        """
+        if self.board_dir and self.board:
+            path = os.path.join(self.board_dir, f'{self.board}.dts')
+            if os.path.isfile(path):
+                return path
+        return None
+
+    @property
+    def board_binding_file(self) -> str | None:
+        """Returns the value of the CMake cached variable BOARD,
+        or None if unavailable.
+        """
+        if self.board_dir and self.board:
+            path = os.path.join(self.board_dir, f'{self.board}.yaml')
+            if os.path.isfile(path):
+                return path
+        return None
 
     def _load_environment(self) -> None:
         env = os.getenv('ZEPHYR_BASE')
