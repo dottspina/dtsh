@@ -42,14 +42,14 @@ setup(
     # See also: https://peps.python.org/pep-0440/
     #
     # Required.
-    version="0.1.0a2",
+    version="0.1.0a3",
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
     #
     # Optional.
-    description="Shell-like interface to devicetree",
+    description="Shell-like interface with Zephyr devicetree and bindings",
 
     # This is an optional longer description of your project that represents
     # the body of text which users will see when they visit PyPI.

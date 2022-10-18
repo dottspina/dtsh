@@ -28,7 +28,6 @@ It's still in its inception phase:
 All kinds of feedback and contribution are encouraged: please refer to the bottom CONTRIBUTE section.
 #+end_quote
 
-
 - [[https://github.com/dottspina/dtsh#get-started][Get started]]
   - [[https://github.com/dottspina/dtsh#requirements][Requirements]]
   - [[https://github.com/dottspina/dtsh#install][Install]]
@@ -36,9 +35,10 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
   - [[https://github.com/dottspina/dtsh#zephyr-integration][Zephyr integration]]
 - [[https://github.com/dottspina/dtsh#users-guide][User's guide]]
   - [[https://github.com/dottspina/dtsh#the-shell][The shell]]
-  - [[https://github.com/dottspina/dtsh#user -interface][User interface]]
-  - [[https://github.com/dottspina/dtsh#references][References]]
+  - [[https://github.com/dottspina/dtsh#user-interface][User interface]]
+  - [[https://github.com/dottspina/dtsh#how-to][How To]]
 - [[https://github.com/dottspina/dtsh#contribute][Contribute]]
+- [[https://github.com/dottspina/dtsh#references][References]]
 
 * Get started
 
@@ -56,7 +56,7 @@ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
 
 # Open an existing DTS file, using Zephyr bindings
 $ dtsh /path/to/build/zephyr/zephyr.dts
-dtsh (0.1.0a2): Shell-like interface to a devicetree
+dtsh (0.1.0a3): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -76,6 +76,13 @@ How to exit: q, or quit, or exit, or press Ctrl-D
 ├──  connector        GPIO pins exposed on Arduino Uno (R3) headers…
 └──  analog-connector ADC channels exposed on Arduino Uno (R3) headers…
 #+end_example
+
+To get the /big picture/:
+
+- may be this [[https://youtu.be/pc2AMx1iPPE][short abrupt video]], that at least illustrates the main /shell metaphor/, the auto-completion behavior
+   and the most useful keybindings
+- if already comfortable with Zephyr, running the [[https://github.com/dottspina/dtsh#interactive-tests][interactive tests]]
+   is probably the preferred route to explore ~dsh~
 
 ** Requirements
 
@@ -184,7 +191,7 @@ $ dtsh /path/to/foobar.dts
 On startup, ~dtsh~ will output a banner, followed by the first prompt:
 
 #+begin_example
-dtsh (0.1.0a2): Shell-like interface to a devicetree
+dtsh (0.1.0a3): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -336,6 +343,22 @@ or one of its built-ins (e.g. ~man ls~).
   ~man~ should eventually also serve as an entry point to external useful or normative documents,
   e.g. the Devicetree Specifications or the Zephyr project's documentation.
 
+*** System information
+
+**dtsh** may also expose /system/ information, including:
+
+- the Zephyr kernel version, e.g. ~zephyr-3.1.0~, with a link to the corresponding
+  release notes when available
+- board information, based on the content of its YAML binding file,
+  with a link to the corresponding documentation when the board
+  is [[https://docs.zephyrproject.org/latest/boards/index.html][supported by Zephyr]]
+- the configured /toolchain/, either Zephyr SDK or GNU Arm Embedded
+
+Retrieving this information may involve environment variables (e.g. ~ZEPHYR_BASE~),
+CMake cached variables (e.g. ~BOARD_DIR~), and  ~git~ or ~GCC~.
+
+Refer to `man uname` for details.
+
 ** User interface
 
 The ~dtsh~ command line interface paradigms and keybindings should sound familiar.
@@ -471,29 +494,38 @@ Use the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/theme][default th
 cp src/dtsh/theme ~/.config/dtsh/theme
 #+end_src
 
-** References
+** How To
+*** SoC overview
 
-More or less introductory references about /devicetrees/.
+Try  ~ls -lR --pager /soc~
 
-*** Devicetree Specifications
+*** Board definition
 
-- [[https://devicetree-specification.readthedocs.io/en/latest/][Online Devicetree Specifications]] (latest)
-- [[https://devicetree-specification.readthedocs.io/en/stable/][Online Devicetree Specifications]] (stable)
+Try ~uname -ml~
 
-*** Zephyr
+*** Options Cheat Sheet
 
-- [[https://docs.zephyrproject.org/latest/build/dts/intro.html][Introduction to devicetree]]
-- [[https://docs.zephyrproject.org/latest/build/dts/bindings.html][Devicetree bindings]]
-- [[https://docs.zephyrproject.org/latest/build/dts/api/bindings.html][Bindings index]]
-- [[https://docs.zephyrproject.org/latest/build/dts/api/api.html#zephyr-specific-chosen-nodes][Zephyr-specific chosen nodes]]
-- [[https://docs.zephyrproject.org/latest/build/dts/dt-vs-kconfig.html][Devicetree versus Kconfig]]
+Command options list:
 
-*** Linux
+#+begin_example
+/
+❯ ls -h
+ls [-d] [-l] [-r] [-R] [--pager] [-h --help] [PATH]
+#+end_example
 
-- [[https://docs.kernel.org/devicetree/index.html][Open Firmware and Devicetree]]
-- [[https://elinux.org/Device_Tree_Usage][Device Tree Usage]]
-- [[https://elinux.org/Device_Tree_Reference][Device Tree Reference]]
-- [[https://elinux.org/Device_Tree_What_It_Is][Device Tree What It Is]]
+Command options summary (press ~TAB~ twice after the ~-~ character that starts
+option names):
+
+#+begin_example
+/
+❯ ls -
+-d        list node itself, not its content
+-l        use rich listing format
+-r        reverse order while sorting
+-R        list node contents recursively
+-h --help print usage summary
+--pager   page command output
+#+end_example
 
 * Contribute
 
@@ -524,7 +556,7 @@ When the documentation is lacking, confusing or incorrect, please open issues wi
 
 ** Report bugs
 
-This software is still in alpha state, and has been tested only with the DTS files generated when
+This software is still in alpha state, and is tested mostly with the DTS files generated when
 building a few Zephyr sample applications for the nRF52840 DK [[https://docs.zephyrproject.org/latest/boards/arm/nrf52840dk_nrf52840/doc/index.html][board]]: bugs are expected,
 please open issues with the ~bug~ label.
 
@@ -560,6 +592,47 @@ pip install ".[test]"
 python -m pytest tests
 #+end_src
 
+*** Interactive tests
+
+The [[https://github.com/dottspina/dtsh/tree/main/etc/sh][etc/sh]] folder contains a few helper scrips that, while not originally written
+with a public use in mind, may prove helpful in hacking through ~dtsh~.
+
+In particular ~interactive-tests.sh~, that will sequentially run ~dtsh~
+for various boards and configurations:
+
+#+begin_example
+==== UC7: DTS from Zephyr build, Zephyr bindings
+     Bindings search path: $ZEPHYR_BASE/dts/bindings
+     Toolchain (dtsh): Zephyr SDK
+     Application: coap_client
+     Board: mimxrt1170_evk_cm7
+Run test [yN]:
+#+end_example
+
+The synopsis is:
+
+#+begin_example
+etc/sh/interactive-tests.sh [ZEPHYR_BASE TOOLCHAIN_BASE]
+#+end_example
+
+Where:
+
+- ~ZEPHYR_BASE~ would be a valid value for the environment variable ~ZEPHYR_BASE~ (sic)
+- ~TOOLCHAIN_BASE~ would be a valid value for ~ZEPHYR_SDK_INSTALL_DIR~ or
+  ~$GNUARMEMB_TOOLCHAIN_PATH~ (the script /should/ auto-detect the toolchain variant
+  and set ~ZEPHYR_TOOLCHAIN_VARIANT~ accordingly)
+
+When started without parameters, ~interactive-tests.sh~ will default to hard-coded values
+that match the test platform file-system, and won't make sense anywhere else.
+They are easy to change, though.
+
+WARNING:
+
+- tests ~UC3~ to ~UC9~ will install (uninstall) ~dtsh~ into (from) the Python environment of
+  the West workspace parent of ~ZEPHYR_BASE~
+- tests ~UC8~ and ~UC9~ are expected to fail if GCC Arm 10 and 11 are not installed at the
+  locations determined by the above hard-coded values
+
 *** Notes
 
 While probably not so /pythonesque/, the source code should eventually seem obvious,
@@ -572,3 +645,27 @@ For example, to define a new built-in:
 - re-use or improve helpers and views in the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/tui.py][dtsh.tui]] module to assemble the command output
   (see also the /rich/ [[https://rich.readthedocs.io/en/stable/console.html][Console API]])
 - when ready, register it in the ~dtsh.shell.DevicetreeShell~ constructor
+* References
+
+More or less introductory references about /devicetrees/.
+
+** Devicetree Specifications
+
+- [[https://devicetree-specification.readthedocs.io/en/latest/][Online Devicetree Specifications]] (latest)
+- [[https://devicetree-specification.readthedocs.io/en/stable/][Online Devicetree Specifications]] (stable)
+
+** Zephyr
+
+- [[https://docs.zephyrproject.org/latest/build/dts/intro.html][Introduction to devicetree]]
+- [[https://docs.zephyrproject.org/latest/build/dts/bindings.html][Devicetree bindings]]
+- [[https://docs.zephyrproject.org/latest/build/dts/api/bindings.html][Bindings index]]
+- [[https://docs.zephyrproject.org/latest/build/dts/api/api.html#zephyr-specific-chosen-nodes][Zephyr-specific chosen nodes]]
+- [[https://docs.zephyrproject.org/latest/build/dts/dt-vs-kconfig.html][Devicetree versus Kconfig]]
+
+** Linux
+
+- [[https://docs.kernel.org/devicetree/index.html][Open Firmware and Devicetree]]
+- [[https://elinux.org/Device_Tree_Usage][Device Tree Usage]]
+- [[https://elinux.org/Device_Tree_Reference][Device Tree Reference]]
+- [[https://elinux.org/Device_Tree_What_It_Is][Device Tree What It Is]]
+
