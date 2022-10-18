@@ -35,7 +35,6 @@ class DtshTui:
 
     # Common UTF-8 symbols.
     #
-    WCHAR_PROMPT = '\u276f'
     WCHAR_ELLIPSIS = '\u2026'
     WCHAR_COPYRIGHT = '\u00a9'
     WCHAR_HYPHEN = '\u2014'
@@ -843,7 +842,7 @@ class DtshTui:
         config.read_file(open(theme_path))
         for name, value in config.items('dtsh'):
             if name == 'dtsh.prompt.wchar':
-                DtshTui.WCHAR_PROMPT = value
+                DtshTui.PROMPT_WCHAR = value
             elif name == 'dtsh.prompt.color':
                 DtshTui.PROMPT_COLOR = value
             elif name == 'dtsh.prompt.color.error':
