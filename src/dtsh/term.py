@@ -9,6 +9,7 @@ import readline
 from rich.console import Console, PagerContext
 
 from dtsh.dtsh import DtshVt
+from dtsh.tui import DtshTui
 
 
 class DevicetreeTerm(DtshVt):
@@ -33,7 +34,7 @@ class DevicetreeTerm(DtshVt):
         readline_display_hook -- GNU readline display hook or None
         """
         # We do not want Console syntax highlighting by default.
-        self._console = Console(highlight=False)
+        self._console = Console(highlight=False, theme=DtshTui.theme())
         self._pager = None
 
         if readline_comp_hook is not None:
