@@ -10,15 +10,15 @@ from typing import ClassVar
 
 import configparser
 import os
-
 import yaml
-from devicetree.edtlib import Loader as edtlib_YamlLoader
 
+from devicetree.edtlib import Loader as edtlib_YamlLoader
 from devicetree.edtlib import Node, Binding, Property, PropertySpec, Register
 
 from rich import box
 from rich.console import RenderableType
-from rich.style import Style
+from rich.padding import Padding
+from rich.style import Style, StyleType
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
@@ -40,6 +40,7 @@ class DtshTui:
     WCHAR_HYPHEN = '\u2014'
     WCHAR_DASH = '\ufe4d'
     WCHAR_ARROW = '\u2192'
+    WCHAR_BULLET = '-'
 
     # Base styles.
     #
@@ -144,6 +145,10 @@ class DtshTui:
     def style_strike() -> Style:
         return DtshTui.theme().styles[DtshTui.STYLE_STRIKE]
 
+    @staticmethod
+    def style_apology() -> Style:
+        return DtshTui.theme().styles[DtshTui.STYLE_APOLOGY]
+
     ############################################################################
     # Utils.
     ############################################################################
@@ -201,6 +206,10 @@ class DtshTui:
         return Text(val_str, style)
 
     @staticmethod
+    def mk_txt_warn(msg: str) -> Text:
+        return Text(msg, style='dtsh.warning')
+
+    @staticmethod
     def mk_txt_desc(desc: str | None) -> Text:
         if not desc:
             return Text("No description available.",
@@ -218,6 +227,21 @@ class DtshTui:
                 desc_short = desc_short[:-1]
             desc_short += DtshTui.WCHAR_ELLIPSIS
         return Text(desc_short, DtshTui.style(DtshTui.STYLE_DT_DESC))
+
+    @staticmethod
+    def mk_txt_link(label: str,
+                    url: str,
+                    style: StyleType | None = None) -> Text:
+        """Returns a text link.
+
+        Arguments:
+        label - the link label
+        link - the link URL, e.g. https://docs.zephyrproject.org/
+        style - the label's style
+        """
+        txt = Text(label, style=style or 'default')
+        txt.stylize(Style(link=f'{url}'))
+        return txt
 
     @staticmethod
     def txt_update_link_file(txt: Text, path: str) -> None:
@@ -843,6 +867,8 @@ class DtshTui:
         for name, value in config.items('dtsh'):
             if name == 'dtsh.prompt.wchar':
                 DtshTui.PROMPT_WCHAR = value
+            elif name == 'dtsh.bullet.wchar':
+                DtshTui.WCHAR_BULLET = value
             elif name == 'dtsh.prompt.color':
                 DtshTui.PROMPT_COLOR = value
             elif name == 'dtsh.prompt.color.error':
@@ -851,9 +877,162 @@ class DtshTui:
 
 
 ############################################################################
-# Views
+# Widget: re-usable components alternative to DtshTui.mk_xxx() API
 ############################################################################
 
+class DtshTuiWidget(object):
+    """A widget is a renderable factory for model or state objects.
+    """
+
+    @abstractmethod
+    def as_renderable(self) -> RenderableType:
+        """Returns the renderable for the model or state object this widget
+        represents.
+        """
+
+
+class DtshTuiBulletList(DtshTuiWidget):
+    """Simple bullet list.
+    """
+
+    # List layout.
+    _grid: Table
+
+    # List item prefix, default to "    - ".
+    _bullet: str
+
+    def __init__(self,
+                 label: str | Text,
+                 bullet: str  | None = None) -> None:
+        """Initialize the widget.
+
+        Arguments:
+        label -- the list label (typically ends with ":"),
+                 as a string or a rich Text
+        bulet -- the bullet symbol, defaults to "-"
+        """
+        self._grid = Table.grid(padding=(0, 1))
+        self._bullet = bullet or f"    {DtshTui.WCHAR_BULLET} "
+        self._grid.add_row(label)
+
+    def add_item(self, item: str | Text) -> None:
+        """
+        """
+        r_item = DtshTui.mk_txt(self._bullet)
+        if isinstance(item, Text):
+            r_item = r_item.append_text(item)
+        else:
+            r_item.append(item)
+        self._grid.add_row(r_item)
+
+    def as_renderable(self) -> RenderableType:
+        """Implements DtshTuiWidget.as_renderable().
+        """
+        return self._grid
+
+
+class DtshTuiYaml(DtshTuiWidget):
+    """A widget is a renderable factory for YAML files.
+    """
+
+    _grid: Table
+
+    def __init__(self, path:str, with_title: bool = True) -> None:
+        """Initialize YAML layout.
+        """
+        self._grid = DtshTui.mk_grid(1)
+        if with_title:
+            r_name = DtshTui.mk_txt_link(
+                os.path.basename(path),
+                f"file:{path}",
+                style='dtsh.basename'
+            )
+            self._grid.add_row(r_name)
+            self._grid.add_row()
+        self._grid.add_row(DtshTui.mk_yaml(path))
+
+    def as_renderable(self) -> RenderableType:
+        """Implements DtshTuiWidget.as_renderable().
+        """
+        return self._grid
+
+
+class DtshTuiForm(DtshTuiWidget):
+    """A widget is a renderable factory for model or state objects.
+    """
+
+    # Field separator.
+    FIELD_SEP: Text = Text(":", style=DtshTui.style_default())
+
+    # 2-columns form layout.
+    _form: Table
+
+    # Style for all field labels.
+    _label_style: StyleType
+
+    # Default style for field values.
+    _value_style: StyleType
+
+    def __init__(self,
+                 label_style: StyleType | None = None,
+                 value_style: StyleType | None = None) -> None:
+        """
+        Arguments:
+        label_style --
+        value_style --
+        """
+        self._label_style = label_style or DtshTui.style_default()
+        self._value_style = value_style or DtshTui.style_default()
+        self._form = Table.grid(padding=(0, 1))
+        self._form.add_column()
+        self._form.add_column()
+
+    def add_field(self,
+                  label: str,
+                  value: str | None,
+                  default: str = "Unknown",
+                  style: StyleType | None = None) -> None:
+        """Add a string field.
+
+        Arguments:
+        label -- the field label
+        value -- the field value as a rich Text
+        default -- value string representing None values
+        style --
+        """
+        r_label = Text(label, style=self._label_style)
+        r_label.append_text(DtshTuiForm.FIELD_SEP)
+        if value:
+            r_value = Text(value, style=style or self._value_style)
+        else:
+            r_value = DtshTui.mk_txt_dim(default)
+        self._form.add_row(r_label, r_value)
+
+    def add_field_rich(self,
+                       label: str,
+                       value: Text | None,
+                       default: str = "Unknown") -> None:
+        """Add a rich field.
+
+        Arguments:
+        label -- the field label
+        value -- the field value as a rich Text
+        default -- value string representing None values
+        """
+        r_label = Text(label, style=self._label_style)
+        r_label.append_text(DtshTuiForm.FIELD_SEP)
+        r_value = value or DtshTui.mk_txt_dim(default)
+        self._form.add_row(r_label, r_value)
+
+    def as_renderable(self) -> RenderableType:
+        """Implements DtshTuiWidget.as_renderable().
+        """
+        return self._form
+
+
+############################################################################
+# Views
+############################################################################
 
 class DtshTuiView(object):
     """A view will eventually show itself on a rich VT.
@@ -923,6 +1102,76 @@ class DtshTuiStructuredView(DtshTuiGridView):
         self._grid.add_row(label, None)
         self._grid.add_row(None, content)
         self._grid.add_row(None, None)
+
+
+class DtshTuiPortraitView(DtshTuiGridView):
+    """Vertical layout with indented contents.
+
+    One column grid where different rows have different indentation levels.
+    """
+
+    def __init__(self, expand: bool = False) -> None:
+        """Initialize the view.
+
+        Arguments:
+        expand -- if True, axpand the layout to fit the available horizontal
+                  space, defaults to False
+        """
+        super().__init__(cols=1, expand=expand)
+
+    def add(self, content: RenderableType, indent_size: int = 0) -> None:
+        """Add conttent to this view.
+
+        Arguments:
+        content -- the rich content to add
+        indent_size -- indentation in number of characters
+        """
+        self._grid.add_row(Padding(content, (0, indent_size)))
+
+
+class DtshTuiMemo(DtshTuiPortraitView):
+    """Portrait view organized in named entries.
+
+    This is a more predictable layout alternative to DtshTuiStructuredView.
+
+    Entries will show up as bellow, where dots represent the memo indentation:
+    FOO
+    ........FOO content begins
+            content continue
+
+    BAR
+    ........BAR content begins
+            content continue
+    """
+
+    def __init__(self, indent_size:int = 8, expand: bool = False) -> None:
+        """Initialize the view.
+
+        Arguments:
+        indent_size -- content indentation in number of characters,
+                       defaults to 8
+        expand -- if True, axpand the layout to fit the available horizontal
+                  space, defaults to False
+        """
+        super().__init__(expand=expand)
+        self._indent_size = indent_size
+
+    def add_entry(self, name: str, content: RenderableType | None) -> None:
+        """Add a named entry to the memo.
+
+        Arguments:
+        name -- the entry's label (will be uppercased)
+        content -- the rich content to add
+        is_last -- if False, an empty row is appended bellow the content row
+        """
+        if self._grid.row_count > 0:
+            # Add empty row after previous entry.
+            self._grid.add_row(None)
+        self._grid.add_row(DtshTui.mk_txt_bold(name.upper()))
+        if content is None:
+            content = DtshTui.mk_txt("Information not available.",
+                                     style=DtshTui.style_apology())
+        self._grid.add_row(Padding(content, (0, self._indent_size)))
 
 
 class DtNodeView(DtshTuiStructuredView):
