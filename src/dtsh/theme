@@ -60,6 +60,25 @@ dtsh.property = dark_sea_green
 # Apply to included YAML files that are not DT compatibles.
 dtsh.include = dark_khaki
 
+# Apply to Zephyr commits (not release tags),
+# aka somewhat unstable versions.
+dtsh.commit = dark_goldenrod
+
+# Default for Zephyr information, e.g. version number
+dtsh.zephyr = dodger_blue1
+
+# Default for DTS file name or link.
+dtsh.dts = medium_purple
+
+# Default for GCC Arm Embedded information, e.g. version number
+dtsh.gnuarmemb = gold3
+
+# Apply to board name
+dtsh.board = light_sea_green
+
+# Default for file basenames.
+dtsh.basename = wheat4
+
 # Apply to node status 'okay'.
 # Green example: spring_green3
 #
@@ -79,6 +98,8 @@ dtsh.apology = dim italic
 dtsh.true = default
 dtsh.false = dim
 
+# dtsh warning messages
+dtsh.warning = dark_orange
 
 [dtsh]
 
@@ -88,3 +109,7 @@ dtsh.false = dim
 dtsh.prompt.color = 88
 dtsh.prompt.color.error = 99
 dtsh.prompt.wchar = ❯
+
+# Bullet default
+# Example: -, ✓, •
+dtsh.bullet.wchar = •
