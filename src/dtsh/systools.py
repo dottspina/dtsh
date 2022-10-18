@@ -4,6 +4,7 @@
 
 """Host system tools helpers."""
 
+
 import os
 import re
 import sys
@@ -129,20 +130,25 @@ class GCCArm(object):
     """
 
     # Resolved path to arm-none-eabi-gcc.
-    _gcc: str
+    _gcc: str | None
 
     # Toolchain, e.g.: GNU Arm Embedded Toolchain 10.3-2021.10
-    _toolchain: str
+    _toolchain: str | None
 
     # GCC version.
-    _version: str
+    _version: str | None
 
     # Build date, e.g. 20210824
-    _build_date: str
+    _build_date: str | None
 
     def __init__(self, gnuarm_dir: str) -> None:
         """Initialize helper for host operating system.
         """
+        self._gcc = None
+        self._toolchain = None
+        self._version = None
+        self._build_date = None
+
         gnuarm_path = Path(os.path.join(gnuarm_dir, 'bin')).resolve()
         if os.path.isdir(gnuarm_path):
             gcc_name = 'arm-none-eabi-gcc.exe' if os.name == "nt" else 'arm-none-eabi-gcc'
@@ -162,24 +168,27 @@ class GCCArm(object):
                 pass
 
     @property
-    def toolchain(self) -> str:
+    def toolchain(self) -> str | None:
         return self._toolchain
 
     @property
-    def version(self) -> str:
+    def version(self) -> str | None:
         return self._version
 
     @property
-    def build_date(self) -> str:
+    def build_date(self) -> str | None:
         return self._build_date
 
     def _init_version(self, cmake_stdout: str) -> None:
+        # GCC Arm 10:
         # arm-none-eabi-gcc (GNU Arm Embedded Toolchain 10.3-2021.10) 10.3.1 20210824 (release)
-        regex = re.compile(r'^[\w.\-]+\s\(([\w .\-]+)\)\s([\d.]+)\s(\d+)\s.*$')
-
+        #
+        # GCC Arm 11:
+        # arm-none-eabi-gcc (GNU Toolchain for the Arm Architecture 11.2-2022.02 (arm-11.14)) 11.2.1 20220111
+        regex = re.compile(r'^[\w.\-]+\s([\w .\-()]+)\s([\d.]+)\s(\d+)( [\w()]+)?$')
         for line in cmake_stdout.splitlines():
             m = regex.match(line.strip())
-            if m and (len(m.groups()) == 3):
+            if m:
                 self._toolchain = m.groups()[0]
                 self._version = m.groups()[1]
                 self._build_date = m.groups()[2]
