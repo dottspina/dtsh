@@ -461,6 +461,9 @@ class DtshUname(object):
     # Resolved $ZEPHYR_SDK_INSTALL_DIR.
     _zephyr_sdk_dir: str | None
 
+    # Cached $ZEPHYR_SDK_INSTALL_DIR/sdk_version file content.
+    _zephyr_sdk_version: str | None
+
     # Resolved $GNUARMEMB_TOOLCHAIN_PATH.
     _gnuarm_dir: str | None
 
@@ -499,6 +502,7 @@ class DtshUname(object):
         self._zephyr_tags = list[str]()
         self._zephyr_base = None
         self._zephyr_sdk_dir = None
+        self._zephyr_sdk_version = None
         self._gnuarm_dir = None
         self._zephyr_toolchain = None
         self._zephyr_rev = None
@@ -621,13 +625,19 @@ class DtshUname(object):
 
     @property
     def zephyr_sdk_version(self) -> str | None:
-        """Returns Zephyr SDK version, or None if unavailable.
+        """Returns the Zephyr SDK version set in the file
+        $ZEPHYR_SDK_INSTALL_DIR/sdk_version, or None if unavailable.
         """
-        if self._zephyr_sdk_dir:
-            m = re.match(r"^\S*zephyr-sdk-([\w.]+)$", self._zephyr_sdk_dir)
-            if m and m.groups():
-                return m.groups()[0]
-        return None
+        if self._zephyr_sdk_version is None:
+            if self._zephyr_sdk_dir:
+                path = os.path.join(self._zephyr_sdk_dir, 'sdk_version')
+                try:
+                    with open(path, 'r') as f:
+                        self._zephyr_sdk_version = f.read().strip()
+                except IOError:
+                    # Silently fail.
+                    pass
+        return self._zephyr_sdk_version
 
     @property
     def gnuarm_version(self) -> str | None:
