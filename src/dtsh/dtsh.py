@@ -626,17 +626,17 @@ class DtshUname(object):
     @property
     def zephyr_kernel_version(self) -> str | None:
         """Returns the Zephyr kernel version tag for the current
-        repository state, or None if the state does not match a
-        tagged Zephyr kernel release.
+        repository state, e.g. 'zephyr-v3.1.0',
+        or None if the state does not match a tagged Zephyr kernel release.
         """
         version = None
         if self.zephyr_kernel_tags:
             # Include stable and RC releases.
-            regex = re.compile(r'^(v\d.\d.\d[rc\-\d]*)$')
+            regex = re.compile(r'^zephyr-(v\d.\d.\d[rc\-\d]*)$')
             for tag in self.zephyr_kernel_tags:
-                m = regex.match(tag.strip())
+                m = regex.match(tag)
                 if m:
-                    version = m.groups()[0]
+                    version = tag
                     break
         return version
 
