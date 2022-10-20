@@ -1,0 +1,125 @@
+# Copyright (c) 2022 Chris Duf <chris@openmarl.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Helper shell functions dtsh CI.
+
+thisfile=$(realpath -m "$0")
+thisdir=$(dirname "$thisfile")
+DTSH_HOME=$(realpath -m "$thisdir/../..")
+unset thisfile
+unset thisdir
+
+if [ -z "$ZEF" ]; then
+   # shellcheck disable=SC1091
+   . "$DTSH_HOME/etc/sh/zef"
+fi
+
+
+dtsh_clean() {
+    if [ -n "$DTSH_HOME" ]; then
+        rm -rf "$DTSH_HOME/.pytest_cache"
+        rm -rf "$DTSH_HOME/build"
+        rm -rf "$DTSH_HOME/dist"
+        rm -rf "$DTSH_HOME/src/dtsh.egg-info"
+        rm -rf "$DTSH_HOME/src/dtsh/__pycache__"
+        rm -rf "$DTSH_HOME/tests/__pycache__"
+    fi
+}
+
+
+dtsh_venv() {
+    local arg_venv="$1"
+    zef_venv_create "$arg_venv"
+    echo "Python venv: $arg_venv"
+    pip install -q "$DTSH_HOME"
+}
+
+
+dtsh_unittests() {
+    local test_venv="$DTSH_HOME/tmp-tests/.venv"
+    echo '**** Setup unit tests environment'
+    dtsh_clean
+    dtsh_venv "$test_venv"
+    pip install -q ".[test]" || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Run unit tests'
+    python -m pytest tests || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Dispose unit tests environment'
+    deactivate
+    rm -rf "$DTSH_HOME/tmp-tests"
+    echo 'done.'
+}
+
+
+dtsh_build() {
+    echo '**** Setup build environment'
+    local build_venv="$DTSH_HOME/tmp-build/.venv"
+    dtsh_clean
+    dtsh_venv "$build_venv"
+    pip install -q ".[dist]" || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Build'
+    python -m build || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Dispose build environment'
+    deactivate
+    rm -rf "$DTSH_HOME/tmp-build"
+    echo 'done.'
+}
+
+
+dtsh_dist_test() {
+    dtsh_build
+    echo
+    echo '**** Setup dist environment'
+    local dist_venv="$DTSH_HOME/tmp-dist/.venv"
+    dtsh_venv "$dist_venv"
+    pip install -q ".[dist]" || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Uploading to TestPyPI'
+    # PyPI does not allow for a filename to be reused,
+    # even once a project has been deleted and recreated.
+    local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
+    local whl_test="$DTSH_HOME/dist/dtsh-$RANDOM-py3-none-any.whl"
+    cp "$whl_dist" "$whl_test" || zef_abort
+    python -m twine upload --repository testpypi "$whl_test" || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Dispose dist environment'
+    deactivate
+    rm -rf "$DTSH_HOME/tmp-dist"
+    echo 'done.'
+}
+
+
+dtsh_dist_release() {
+    dtsh_build
+    echo
+    echo '**** Setup dist environment'
+    local dist_venv="$DTSH_HOME/tmp-dist/.venv"
+    dtsh_venv "$dist_venv"
+    pip install -q ".[dist]" || zef_abort
+    echo 'done.'
+    echo
+    local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
+    local src_dist=$(find "$DTSH_HOME"/dist/ -name "*.tar.gz")
+    echo "Source dist: $src_dist"
+    echo "Wheel dist:  $whl_dist"
+    echo "WARNING: will publish on PyPI!!"
+    zef_confirm_yn
+    echo '**** Uploading to PyPI'
+    python -m twine upload "$src_dist" "$whl_dist" || zef_abort
+    echo 'done.'
+    echo
+    echo '**** Dispose dist environment'
+    deactivate
+    rm -rf "$DTSH_HOME/tmp-dist"
+    echo 'done.'
+}

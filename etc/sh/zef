@@ -1,0 +1,638 @@
+# Copyright (c) 2022 Chris Duf <chris@openmarl.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Helper shell functions for Zephyr development.
+#
+# Zef like Zephyr and the mediterranean wind.
+#
+# - Initialize a new Zephyr (West) workspace:   zef_workspc_init <workspc>
+# - Enter Zepyr kernel environment:             zef_open <workspc> <toolchain>
+# - Update current Zephyr environment:          zef_update
+# - Leave current Zephyr environment:           zef_close
+# - Checkout a Zephyr kernel version:           zef_checkout <tag>
+# - Dump environment configuration:             zef_env
+#
+# References:
+# - https://docs.zephyrproject.org/latest/develop/getting_started/index.html
+# - https://docs.zephyrproject.org/latest/develop/beyond-GSG.html
+# - https://docs.zephyrproject.org/latest/develop/env_vars.html
+
+# Avoid double sourcing.
+if [ -n "$ZEF" ]; then
+    echo "zef: Won't load twice."
+    zef_abort
+fi
+ZEF=okay
+
+# West workspace root set by zef_open(), unset by zef_close().
+ZEF_BASE=
+
+# Pretty VT.
+vt_bold=$(tput bold)
+vt_sgr0=$(tput sgr0)
+
+
+################################################################################
+#                               PUBLIC API
+################################################################################
+
+################################################################################
+# Initialize a new Zephyr (West) workspace.
+#
+# Will:
+# - initialize a dedicated Python virtual env.
+# - install West
+# - initialize Zephyr (West) workspace
+# - install Zephyr requirements
+# - configure sane workspace defaults
+#
+# SYNOPSIS
+#   zef_init <workspc>
+#
+#   - <workspc>: absolute or relative path to new Zephyr/west workspace,
+#                defaults to $PWD
+#
+zef_init() {
+    zef_assert_no_workspace
+
+    local arg_workspc="$1"
+    if [ -n "$arg_workspc" ]; then
+        arg_workspc=$(realpath -m "$arg_workspc")
+    else
+        arg_workspc=$(pwd)
+    fi
+    local previous_pwd=$(pwd)
+
+    if [ -d "$arg_workspc" ]; then
+        echo "Workspace root exists: $arg_workspc"
+        zef_continue_yn 'Will remove existing content!'
+        echo 'Removing ...'
+        rm -rf "$arg_workspc"
+        echo
+    fi
+
+    echo 'Will install Zephyr kernel to:'
+    echo
+    echo -e "${vt_bold}$arg_workspc${vt_sgr0}"
+    echo '│'
+    echo '│   # Per-workspace Python venv, may be updated by west after manifest modification:'
+    echo '├── .venv/'
+    echo '│   └── bin                    # Python run-time and Zephyr tools (e.g. west, pyocd)'
+    echo '│   └── lib                    # required Python libraries'
+    echo '│'
+    echo '├── .west/                     # Marks the location of the topdir'
+    echo '│   └── config                 # per-workspace local configuration file'
+    echo '│'
+    echo '│   # The manifest repository, never modified by west after creation:'
+    echo '├── zephyr/                    # .git/ repo'
+    echo '│   ├── west.yml               # manifest file'
+    echo '│   └── [... other files ...]'
+    echo '│'
+    echo '│   # Projects managed by west:'
+    echo '├── modules/'
+    echo '│   └── lib/'
+    echo '│       └── tinycbor/          # .git/ project'
+    echo '├── net-tools/                 # .git/ project'
+    echo '└── [ ... other projects ...]'
+    echo
+    zef_continue_yn
+    echo
+
+    echo '**** [1/6] Create Python venv ****'
+    local arg_venv="$arg_workspc/.venv"
+    zef_venv_create $arg_venv
+    echo
+
+    echo '**** [2/6] Install West ****'
+    pip install -U west || zef_abort
+    echo
+
+    echo '**** [3/6] Initialize workspace ****'
+    west init "$arg_workspc" || zef_abort
+    echo
+
+    echo '**** [4/6] Update workspace ****'
+    cd "$arg_workspc" || zef_abort
+    west update || zef_abort
+    echo
+
+    echo '**** [5/6] Install Zephyr requirements ****'
+    pip install -r "$arg_workspc/zephyr/scripts/requirements.txt" || zef_abort
+    echo
+
+    echo '**** [6/6] Workspace configuration ****'
+    # Note: use e.g. 'west config --local build.board nrf52840dk_nrf52840'
+    # to set a default board.
+    west config --local build.pristine auto
+    west config --local build.cmake-args -- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    west config --local build.generator "Unix Makefiles"
+    west config -l
+    echo
+
+    echo 'done.'
+    cd "$previous_pwd" || zef_abort
+}
+
+
+zef_init_retry() {
+    local arg_workspc="$1"
+    if [ -n "$arg_workspc" ]; then
+        arg_workspc="$(realpath -m $arg_workspc)"
+    else
+        echo 'Where ?'
+        zef_abort
+    fi
+    if [ ! -d "$arg_workspc" ]; then
+        echo "Workspace root does not exists!"
+        zef_abort
+    fi
+
+    local previous_pwd="$(pwd)"
+
+    echo '**** [4/6] Update workspace ****'
+    cd "$arg_workspc" || zef_abort
+    west update || zef_abort
+    echo
+
+    echo '**** [5/6] Install Zephyr requirements ****'
+    pip install -r "$arg_workspc/zephyr/scripts/requirements.txt" || zef_abort
+    echo
+
+    echo '**** [6/6] Workspace configuration ****'
+    # Note: use 'west config --local build.board <board>'
+    # to set a default board.
+    west config --local build.pristine auto
+    west config --local build.cmake-args -- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    west config --local build.generator "Unix Makefiles"
+    west config -l
+    echo
+
+    echo 'done.'
+    cd "$previous_pwd" || zef_abort
+}
+
+
+################################################################################
+# Open a Zephyr command line development environment (workspace and toolchain).
+#
+# Will:
+# - activate the Zephyr (West) workspace Python environment
+# - set ZEPHYR_BASE
+# - configure the toolchain
+# - configure West completion for bash or zsh
+#
+# SYNOPSIS
+#   zef_open <workspc> <toolchain>
+#
+#   - <workspc>: absolute or relative path to a Zephyr/west workspace
+#
+#   - <toolchain>: absolute or relative path to the toolchain (GNU Arm Embedded,
+#                  or Zephyr SDK)
+#
+zef_open() {
+    zef_assert_no_workspace
+
+    local arg_workspc="$1"
+    local arg_toolchain="$2"
+
+    zef_workspc_set $arg_workspc
+    zef_toolchain_set $arg_toolchain
+
+    if [ -n "$BASH_VERSION" ]; then
+        zef_autocomp_add_bash
+    elif [ -n "$ZSH_VERSION" ]; then
+        zef_autocomp_add_zsh
+    fi
+
+    ZEF_BASE=$arg_workspc
+}
+
+
+################################################################################
+# Close Zephyr command line development environment.
+#
+# Will:
+# - Remove West commands from the shell autocomp
+# - Unset related environment variables
+# - Deactivate Zephyr workspace, restoring PATH
+#
+# SYNOPSIS
+#   zef_close
+#
+zef_close() {
+    zef_assert_workspace
+
+    zef_autocomp_remove
+    zef_toolchain_unset
+    zef_workspc_unset
+
+    unset ZEF_BASE
+}
+
+
+################################################################################
+# Update a Zephyr/west workspace.
+#
+# "You must run west update any time the zephyr/west.yml changes, caused,
+# for example, when you pull the zephyr repository, switch branches in it,
+# or perform a git bisect inside of it."
+#
+# https://docs.zephyrproject.org/latest/develop/beyond-GSG.html#keeping-zephyr-updated
+#
+# SYNOPSIS
+#   zef_update
+#
+zef_update() {
+    zef_assert_workspace
+
+    local previous_pwd="$(pwd)"
+
+    echo "Update Zephyr kernel: $ZEPHYR_BASE"
+    cd "$ZEPHYR_BASE" || zef_abort
+    git pull  || zef_abort
+    west update || zef_abort
+
+    cd $previous_pwd || zef_abort
+}
+
+
+################################################################################
+# Checkout Zephyr kernel tag or revision.
+#
+# SYNOPSIS
+#   zef_checkout <tag>
+#
+zef_checkout() {
+    zef_assert_workspace
+
+    local arg_tag="$1"
+    local previous_pwd="$(pwd)"
+
+    echo "Checkout Zephyr kernel: $arg_tag"
+    cd "$ZEPHYR_BASE" || zef_abort
+    git checkout "$arg_tag"  || zef_abort
+    west update || zef_abort
+
+    cd $previous_pwd || zef_abort
+}
+
+
+################################################################################
+# Dump Zephyr command line development environment configuration.
+#
+# SYNOPSIS
+#   zef_env
+#
+zef_env() {
+    echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+    echo "ZEPHYR_BASE: $ZEPHYR_BASE"
+    if [ "$ZEPHYR_TOOLCHAIN_VARIANT" -eq 'gnuarmemb' ]; then
+        echo 'Toolchain: GNU Arm Embedded'
+        echo "GNUARMEMB_TOOLCHAIN_PATH: $GNUARMEMB_TOOLCHAIN_PATH"
+    elif [ "$ZEPHYR_TOOLCHAIN_VARIANT" -eq 'zephyr' ]; then
+        echo 'Toolchain: Zephyr SDK'
+        echo "ZEPHYR_SDK_INSTALL_DIR: $ZEPHYR_SDK_INSTALL_DIR"
+    else
+        echo "Unsupported toolchain: $ZEPHYR_TOOLCHAIN_VARIANT"
+    fi
+    echo "PATH: $PATH"
+}
+
+
+################################################################################
+#                               HELPERS
+################################################################################
+
+################################################################################
+# Set Zephyr (West) workspace.
+#
+# Will:
+# - activate Python venv
+# - set ZEPHYR_BASE
+# - add ZEPHYR_BASE/scripts to PATH
+#
+# Contrary to $ZEPHYR_BASE/zephyr-env.sh, won't load ~/.zephyrrc
+# or other custom configuration files.
+#
+# SYNOPSIS
+#   zef_workspc_set <path>
+#
+#   - <path>: absolute path to a Zephyr/west workspace;
+#             e.g. the path passed to zef_workspc_init().
+#
+zef_workspc_set() {
+    local arg_path="$1"
+    if [ -z "$arg_path" ]; then
+        echo 'Which wokspace ?'
+        zef_abort
+    fi
+
+    arg_path="$(realpath -m $arg_path)"
+    if [ ! -d "$arg_path" ]; then
+        echo "Not a directory: $arg_path"
+        zef_abort
+    fi
+
+    echo "Python venv: $arg_path/.venv"
+    . "$arg_path/.venv/bin/activate" || zef_abort
+
+    export ZEPHYR_BASE="$arg_path/zephyr"
+    echo "ZEPHYR_BASE: $ZEPHYR_BASE"
+
+    local scripts_path="$ZEPHYR_BASE/scripts"
+    if ! echo "${PATH}" | grep -q "${scripts_path}"; then
+         export PATH="$scripts_path:$PATH"
+    fi
+}
+
+################################################################################
+# Unset Zephyr (West) workspace.
+#
+# Will:
+# - unset ZEPHYR_BASE
+# - deactivate Python venv (restoring PATH)
+#
+# SYNOPSIS
+#   zef_workspc_unset
+#
+zef_workspc_unset() {
+    unset ZEPHYR_BASE
+    deactivate
+}
+
+################################################################################
+# Set the build toolchain.
+#
+# Will:
+# - auto-detect the toolchain variant by looking for well-known files
+# - configure the development environment for the detected toolchain
+#
+# SYNOPSIS
+#   zef_toolchain_set <path>
+#
+#   - <path>: absolute path to the toolchain
+#
+zef_toolchain_set() {
+    local arg_path="$1"
+    if [ -z "$arg_path" ]; then
+        echo 'Which toolchain ?'
+        zef_abort
+    fi
+    arg_path="$(realpath -m $arg_path)"
+    if [ ! -d "$arg_path" ]; then
+        echo "Not a directory: $arg_path"
+        zef_abort
+    fi
+
+    local sdk_version_path="$arg_path/sdk_version"
+    local gnuarm_gcc_path="$arg_path/bin/arm-none-eabi-gcc"
+
+    if [ -f "$sdk_version_path" ]; then
+        zef_toolchain_zephyr_sdk "$arg_path"
+    elif [ -f "$gnuarm_gcc_path" ]; then
+        zef_toolchain_gnuarmemb "$arg_path"
+    else
+        echo "Not a toolchain: $arg_path"
+    fi
+}
+
+################################################################################
+# Unset the build toolchain.
+#
+# Will:
+# - unset ZEPHYR_TOOLCHAIN_VARIANT, GNUARMEMB_TOOLCHAIN_PATH
+#   and ZEPHYR_SDK_INSTALL_DIR
+#
+# SYNOPSIS
+#   zef_toolchain_unset
+#
+zef_toolchain_unset() {
+    unset ZEPHYR_TOOLCHAIN_VARIANT
+    unset GNUARMEMB_TOOLCHAIN_PATH
+    unset ZEPHYR_SDK_INSTALL_DIR
+}
+
+################################################################################
+# Configure the development environment for GNU Arm Embedded toolchain.
+#
+# Will:
+# - set ZEPHYR_TOOLCHAIN_VARIANT to 'gnuarmemb'
+# - set GNUARMEMB_TOOLCHAIN_PATH to the toolchain path
+# - enforce ZEPHYR_SDK_INSTALL_DIR is not set
+# - add $GNUARMEMB_TOOLCHAIN_PATH/bin to PATH
+#
+# SYNOPSIS
+#   zef_toolchain_gnuarmemb <path>
+#
+#   - <path>: absolute path to the toolchain
+#
+zef_toolchain_gnuarmemb() {
+    local arg_path="$1"
+
+    export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
+    export GNUARMEMB_TOOLCHAIN_PATH="$arg_path"
+    # https://docs.zephyrproject.org/latest/getting_started/installation_linux.html
+    # To build without the Zephyr SDK’s prebuilt host tools,
+    # the ZEPHYR_SDK_INSTALL_DIR environment variable must be unset.
+    unset ZEPHYR_SDK_INSTALL_DIR
+
+    echo "Toolchain: GNU Arm Embedded ($ZEPHYR_TOOLCHAIN_VARIANT)"
+    echo "GNUARMEMB_TOOLCHAIN_PATH: $GNUARMEMB_TOOLCHAIN_PATH"
+
+    # Add toolchain to PATH for convenience.
+    export PATH="$GNUARMEMB_TOOLCHAIN_PATH/bin:$PATH"
+}
+
+################################################################################
+# Configure the development environment for the Zephyr SDK toolchain.
+#
+# Will:
+# - set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr'
+# - set ZEPHYR_SDK_INSTALL_DIR to the toolchain path
+# - source $ZEPHYR_SDK_INSTALL_DIR/environment-setup-x86_64-pokysdk-linux
+#   (adds the SDK toolchain to PATH)
+#
+# SYNOPSIS
+#   zef_toolchain_zephyr_sdk <arg_path>
+#
+#   - <arg_path>: absolute path to the toolchain
+#
+zef_toolchain_zephyr_sdk() {
+    local arg_path="$1"
+
+    export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+    export ZEPHYR_SDK_INSTALL_DIR="$arg_path"
+
+    if [ -f "$ZEPHYR_SDK_INSTALL_DIR/environment-setup-x86_64-pokysdk-linux" ]; then
+        # Add zephyr-sdk/sysroots/x86_64-pokysdk-linux/usr/bin to PATH.
+        . "$ZEPHYR_SDK_INSTALL_DIR/environment-setup-x86_64-pokysdk-linux"
+    fi
+
+    echo "Toolchain: Zephyr SDK ($ZEPHYR_TOOLCHAIN_VARIANT)"
+    echo "ZEPHYR_SDK_INSTALL_DIR: $ZEPHYR_SDK_INSTALL_DIR"
+}
+
+################################################################################
+# Add West commands auto-completion (bash).
+#
+# Will create the completion file if needed.
+#
+# SYNOPSIS
+#   zef_autocomp_add_bash
+#
+zef_autocomp_add_bash() {
+    local west_completion_path="$VIRTUAL_ENV/west-completion.bash"
+
+    if [ ! -f  "$west_completion_path" ]; then
+        zef_autocomp_update_bash "$west_completion_path"
+    fi
+
+    if [ -f  "$west_completion_path" ]; then
+        echo "West (bash) completion: $west_completion_path"
+        . "$west_completion_path"
+    fi
+}
+
+################################################################################
+# Add West commands auto-completion (zsh).
+#
+# Will create the completion file if needed.
+#
+# SYNOPSIS
+#   zef_autocomp_add_zsh
+#
+zef_autocomp_add_zsh() {
+    local west_completion_path="$VIRTUAL_ENV/west-completion.zsh"
+
+    if [ ! -f  "$west_completion_path" ]; then
+        zef_autocomp_update_zsh "$west_completion_path"
+    fi
+
+    if [ -f  "$west_completion_path" ]; then
+        echo "West (zsh) completion: $west_completion_path"
+        # https://stackoverflow.com/questions/3249432/can-a-bash-tab-completion-script-be-used-in-zsh
+        autoload -U +X bashcompinit && bashcompinit
+        . "$west_completion_path"
+    fi
+}
+
+################################################################################
+# Generate West commands completion file (bash).
+#
+# SYNOPSIS
+#   zef_autocomp_update_bash <path>
+#
+#   - <path>: path to completion file
+#
+zef_autocomp_update_bash() {
+    local arg_path="$1"
+    echo "West bash completion: generating ..."
+    west completion bash > "$arg_path"
+}
+
+################################################################################
+# Generate West commands completion file (zsh).
+#
+# SYNOPSIS
+#   zef_autocomp_update_zsh <path>
+#
+#   - <path>: path to completion file
+#
+zef_autocomp_update_zsh() {
+    local arg_path="$1"
+    echo "West zsh completion: generating ..."
+    west completion bash > "$arg_path"
+    # Generated completion file uses the shopt bash built-in
+    # which does not have immediate zsh counterpart.
+    #
+    # See:
+    # - https://github.com/ohmyzsh/ohmyzsh/issues/8614
+    # - https://stackoverflow.com/questions/71729812/is-there-a-zsh-equivalent-to-shopt-s-nullglob
+    # - https://opendev.org/airship/airshipctl/src/branch/master/cmd/completion/completion.go
+    sed -i '/shopt/d' "$arg_path" || zef_abort
+    sed -i '/previous_extglob/d' "$arg_path" || zef_abort
+    sed -i '/# Restore/d' "$arg_path" || zef_abort
+}
+
+################################################################################
+# Remove West commands auto-completion from the shell (bash or zsh).
+#
+# SYNOPSIS
+#   zef_autocomp_remove
+#
+zef_autocomp_remove() {
+    if complete -p west > /dev/null 2>&1; then
+        complete -r west
+    fi
+}
+
+
+################################################################################
+# Initialize a new Python venv.
+#
+# SYNOPSIS
+#   zef_venv_create <path>
+#
+#  - <path> absolute or relative path to the virtual environment,
+#    e.g. ~/tmp/.venv
+#
+zef_venv_create() {
+    local arg_path="$1"
+    if [ -n "$arg_path" ]; then
+        arg_path="$(realpath -m $arg_path)"
+    else
+        echo 'Where ?'
+        zef_abort
+    fi
+    if [ -d "$arg_path" ]; then
+        echo "Directory exists: $arg_path"
+        zef_continue_yn
+        rm -rf "$arg_path"
+    fi
+
+    python -m venv "$arg_path" || zef_abort
+    . "$arg_path/bin/activate" || zef_abort
+    pip install -q --upgrade pip setuptools wheel || zef_abort
+}
+
+
+# Exit the function stack without exiting shell.
+#
+zef_abort() {
+    kill -INT $$
+}
+
+# Abort if no workspace.
+#
+zef_assert_workspace() {
+    if [ -z "$ZEF_BASE" ]; then
+        echo 'No active Zephyr workspace.'
+        kill -INT $$
+    fi
+}
+
+# Abort if no workspace.
+#
+zef_assert_no_workspace() {
+    if [ -n "$ZEF_BASE" ]; then
+        echo 'A Zephyr workspace is already active.'
+        kill -INT $$
+    fi
+}
+
+# Continue/abort prompt.
+#
+zef_continue_yn() {
+    local arg_msg="$1"
+    if [ -n "$arg_msg" ]; then
+        echo "$arg_msg"
+    fi
+    echo -n 'Continue [yN]: '
+    read yes_no
+    if [[ ! "$yes_no" =~ [yY] ]]; then
+        echo "Goodbye."
+        # Exit the function stack without exiting shell.
+        kill -INT $$
+    fi
+}
