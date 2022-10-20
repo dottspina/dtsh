@@ -5,11 +5,16 @@
 """Host system tools helpers."""
 
 
+from typing import Any
+
 import os
 import re
 import sys
+import yaml
 from pathlib import Path
 from subprocess import Popen, PIPE
+
+from devicetree.edtlib import Loader as edtlib_YamlLoader
 
 
 class CMakeCache(object):
@@ -192,3 +197,90 @@ class GCCArm(object):
                 self._toolchain = m.groups()[0]
                 self._version = m.groups()[1]
                 self._build_date = m.groups()[2]
+
+
+class GitHub(object):
+    """GitHub helper.
+    """
+
+    def __init__(self,
+                 user: str = "zephyrproject-rtos",
+                 project: str = "zephyr") -> None:
+        """Initialize helper.
+
+        Arguments:
+        user -- GitHub user, defaults to "zephyr-rtos"
+        project - GitHub project, defaults to "zephyr"
+        """
+        self._user = user
+        self._project = project
+
+    @property
+    def home(self) -> str:
+        """Home URL.
+        """
+        return f"https://github.com/{self._user}/{self._project}"
+
+    def get_tag(self, tag: str):
+        """Returns a tag URL.
+        """
+        return f"{self.home}/releases/tag/{tag}"
+
+    def get_commit(self, commit: str):
+        """Returns a commit URL.
+        """
+        return f"{self.home}/commit/{commit}"
+
+
+class YamlFile(object):
+    """YAML binding file.
+    """
+
+    _yaml: Any | None
+    _content: str | None
+
+    def __init__(self, path: str):
+        """
+        """
+        yaml_file = None
+        try:
+            yaml_file = open(path, mode='r', encoding="utf-8")
+            self._content = yaml_file.read().strip()
+            self._yaml = yaml.load(self._content, edtlib_YamlLoader)
+        except IOError:
+            self._content = None
+            self._yaml = None
+        finally:
+            if yaml_file:
+                yaml_file.close()
+
+    @property
+    def content(self) -> str | None:
+        """Returns the YAML file content, or None.
+        """
+        return self._content
+
+    @property
+    def include(self) -> list[str]:
+        """Returns the list of included YAML files.
+        """
+        inc_names = list[str]()
+        if self._yaml:
+            yaml_include = self._yaml.get('include')
+            if isinstance(yaml_include, str):
+                inc_names.append(yaml_include)
+            elif isinstance(yaml_include, list):
+                for name in yaml_include:
+                    inc_names.append(name)
+        return inc_names
+
+    def get(self, key: str) -> Any | None:
+        """Access YAML content by key.
+
+        Argument:
+        key -- the YAML key
+        Returns the mapped content value, or None.
+        """
+        if self._yaml:
+            return self._yaml.get(key)
+        return None
