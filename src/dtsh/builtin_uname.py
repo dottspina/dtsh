@@ -219,17 +219,23 @@ Filter detailed toolchain information:
 
     def _uname_long(self, vt: DtshVt) -> None:
         view = DtshTuiMemo()
-        if self.with_all or self.with_kernel_version:
+        # When no explicit choice, and long format,
+        # we'll show all available info.
+        def_all = not (self.with_flag('-v')
+                       or self.with_flag('-m')
+                       or self.with_flag('-t'))
+
+        if self.with_all or def_all or self.with_kernel_version:
             view.add_entry("zephyr kernel", self._mk_layout_zephyr_kernel())
 
-        if self.with_all or self.with_toolchain:
+        if self.with_all or def_all or self.with_toolchain:
             if self._dtsh.uname.zephyr_toolchain:
                 content = ZephyrToolchainForm(self._dtsh.uname).as_renderable()
             else:
                 content = None
             view.add_entry("toolchain", content)
 
-        if self.with_all or self.with_machine:
+        if self.with_all or def_all or self.with_machine:
             view.add_entry("board", self._mk_layout_board())
 
         view.show(vt, self.with_pager)
