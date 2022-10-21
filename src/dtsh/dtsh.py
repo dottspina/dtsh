@@ -673,16 +673,20 @@ class DtshUname(object):
 
     @property
     def board(self) -> str | None:
-        """Returns the value of the CMake cached variable BOARD,
-        or None if unavailable.
+        """Returns the best guess fo the board (try BOARD environment variable
+        and CMake cache) or None if unavailable.
         """
-        found_board = self._cmake_cache.get('BOARD')
+        # 1st, try environmant variable.
+        found_board = os.getenv('BOARD')
         if not found_board:
-            # More likely than above.
-            found_board = self._cmake_cache.get('CACHED_BOARD')
-            if (not found_board) and self.board_dir:
-                # Fallback: extract BOARD from BOARD_DIR
-                found_board = os.path.basename(self.board_dir)
+            # Then try CMake cache.
+            found_board = self._cmake_cache.get('BOARD')
+            if not found_board:
+                # More likely than above.
+                found_board = self._cmake_cache.get('CACHED_BOARD')
+                if (not found_board) and self.board_dir:
+                    # Fallback: extract BOARD from BOARD_DIR
+                    found_board = os.path.basename(self.board_dir)
         return found_board
 
     @property
