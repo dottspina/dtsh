@@ -345,7 +345,7 @@ or one of its built-ins (e.g. ~man ls~).
 
 *** System information
 
-**dtsh** may also expose /system/ information, including:
+*dtsh* may also expose /system/ information, including:
 
 - the Zephyr kernel version, e.g. ~zephyr-3.1.0~, with a link to the corresponding
   release notes when available
@@ -357,7 +357,7 @@ or one of its built-ins (e.g. ~man ls~).
 Retrieving this information may involve environment variables (e.g. ~ZEPHYR_BASE~),
 CMake cached variables (e.g. ~BOARD_DIR~), and  ~git~ or ~GCC~.
 
-Refer to `man uname` for details.
+Refer to ~man uname~ for details.
 
 ** User interface
 
