@@ -691,8 +691,8 @@ class DtshUname(object):
 
     @property
     def board_dts_file(self) -> str | None:
-        """Returns the value of the CMake cached variable BOARD,
-        or None if unavailable.
+        """Returns the best guess for the the DTS file path (relies on
+        CMake cache), or None if unavailable.
         """
         if self.board_dir and self.board:
             path = os.path.join(self.board_dir, f'{self.board}.dts')
@@ -702,8 +702,8 @@ class DtshUname(object):
 
     @property
     def board_binding_file(self) -> str | None:
-        """Returns the value of the CMake cached variable BOARD,
-        or None if unavailable.
+        """Returns the best guess for the board binding file path (relies on
+        CMake cache), or None if unavailable.
         """
         if self.board_dir and self.board:
             path = os.path.join(self.board_dir, f'{self.board}.yaml')
