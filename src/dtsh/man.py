@@ -406,6 +406,7 @@ We also try to re-use *well-known* option names, e.g. `-r` for *reverse sort* or
 
 ### Built-ins
 
+- `uname`     print system information
 - `alias`     print defined aliases
 - `chosen`    print chosen configuration
 - `pwd`       print current working node's path
@@ -429,6 +430,59 @@ which is essentially a view of its (YAML) bindings: e.g.  `man --compat nordic,n
 
 `man` should eventually also serve as an entry point to external useful or normative documents,
 e.g. the Devicetree Specifications or the Zephyr project&rsquo;s documentation.
+
+### System information
+
+**dtsh** may also expose *system* information, including:
+
+- the Zephyr kernel version, e.g. `zephyr-3.1.0`, with a link to the corresponding
+  release notes when available
+- board information, based on the content of its YAML binding file,
+  with a link to the corresponding documentation when the board
+  is [supported by Zephyr](https://docs.zephyrproject.org/latest/boards/index.html)
+- the configured *toolchain*, either Zephyr SDK or GNU Arm Embedded
+
+For example:
+
+    BOARD
+		Board directory: $ZEPHYR_BASE/boards/arm/nrf52840dk_nrf52840
+		Name:            nRF52840-DK-NRF52840 (Supported Boards)
+		Board:           nrf52840dk_nrf52840 (DTS)
+
+		nrf52840dk_nrf52840.yaml
+
+		identifier: nrf52840dk_nrf52840
+		name: nRF52840-DK-NRF52840
+		type: mcu
+		arch: arm
+		ram: 256
+		flash: 1024
+		toolchain:
+		  - zephyr
+		  - gnuarmemb
+		  - xtools
+		supported:
+		  - adc
+		  - arduino_gpio
+		  - arduino_i2c
+		  - arduino_spi
+		  - ble
+		  - counter
+		  - gpio
+		  - i2c
+		  - i2s
+		  - ieee802154
+		  - pwm
+		  - spi
+		  - usb_cdc
+		  - usb_device
+		  - watchdog
+		  - netif:openthread
+
+Retrieving this information may involve environment variables (e.g. `ZEPHYR_BASE`
+or `ZEPHYR_TOOLCHAIN_VARIANT`), CMake cached variables, `git` or GCC.
+
+Refer to `man uname` for details.
 
 ## USER INTERFACE
 
