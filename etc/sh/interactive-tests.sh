@@ -17,20 +17,20 @@ if [ -n "$arg_zephyr_base" ]; then
     TEST_ZEPHYR_BASE="$arg_zephyr_base"
     TEST_WEST_BASE=$(realpath -m "$arg_zephyr_base/..")
 else
-    TEST_WEST_BASE=$(realpath -m /mnt/platform/zephyr-rtos/workspaces/zephyr-sandbox)
+    TEST_WEST_BASE=$(realpath -m /mnt/platform/embedded/zephyr-rtos/workspaces/zephyr-sandbox)
     TEST_ZEPHYR_BASE="$TEST_WEST_BASE/zephyr"
 fi
 if [ -n "$arg_zephyr_sdk" ]; then
     TEST_ZEPHYR_SDK_DIR=$(realpath -m "$arg_zephyr_sdk")
 else
-    TEST_ZEPHYR_SDK_DIR=$(realpath -m /mnt/platform/zephyr-rtos/SDKs/zephyr-sdk-0.15)
+    TEST_ZEPHYR_SDK_DIR=$(realpath -m /mnt/platform/embedded/zephyr-rtos/sdk/zephyr-sdk-0.15)
 fi
 unset arg_zephyr_base
 unset arg_zephyr_sdk
 
 
-TEST_GCCARM10_DIR=$(realpath -m /mnt/platform/gcc-arm/gcc-arm-none-eabi-10)
-TEST_GCCARM11_DIR=$(realpath -m /mnt/platform/gcc-arm/gcc-arm-none-eabi-11)
+TEST_GCCARM10_DIR=$(realpath -m /mnt/platform/embedded/arm-gnu/gcc-arm-none-eabi-10)
+TEST_GCCARM11_DIR=$(realpath -m /mnt/platform/embedded/arm-gnu/gcc-arm-none-eabi-11)
 
 TEST_DIR="$DTSH_HOME/tmp-tests"
 
