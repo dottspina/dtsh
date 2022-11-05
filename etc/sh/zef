@@ -630,9 +630,14 @@ zef_continue_yn() {
     fi
     echo -n 'Continue [yN]: '
     read yes_no
-    if [[ ! "$yes_no" =~ [yY] ]]; then
-        echo "Goodbye."
-        # Exit the function stack without exiting shell.
-        kill -INT $$
-    fi
+    case "$yes_no" in
+        y|Y)
+            ;;
+        *)
+            echo "Goodbye."
+            # Exit the function stack without exiting shell.
+            kill -INT $$
+            ;;
+    esac
+
 }

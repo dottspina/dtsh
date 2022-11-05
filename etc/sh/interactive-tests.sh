@@ -58,9 +58,13 @@ TEST_BOARD_NANO='arduino_nano_33_ble'
 test_run_yn() {
     echo -n 'Run test [yN]: '
     read yes_no
-    if [[ "$yes_no" =~ [yY] ]]; then
-        return 1
-    fi
+    case "$yes_no" in
+        y|Y)
+            return 1
+            ;;
+        *)
+            ;;
+    esac
     return 0
 }
 
