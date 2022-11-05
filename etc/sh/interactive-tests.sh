@@ -38,7 +38,7 @@ TEST_DTS_EDTLIB="$DTSH_HOME/tests/test.dts"
 TEST_BINDINGS_EDTLIB="$DTSH_HOME/tests/bindings"
 
 TEST_PROJECT_SENSOR="$TEST_ZEPHYR_BASE/samples/sensor/bme680"
-TEST_PROJECT_CAN="$TEST_ZEPHYR_BASE/samples/drivers/can"
+TEST_PROJECT_CAN="$TEST_ZEPHYR_BASE/samples/drivers/can/counter"
 TEST_PROJECT_COAP="$TEST_ZEPHYR_BASE/samples/net/sockets/coap_client"
 TEST_PROJECT_USB="$TEST_ZEPHYR_BASE/samples/subsys/usb/testusb"
 TEST_PROJECT_BLE="$TEST_ZEPHYR_BASE/samples/bluetooth/eddystone"
