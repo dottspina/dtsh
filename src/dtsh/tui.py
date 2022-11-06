@@ -347,6 +347,9 @@ class DtshTui:
 
     @staticmethod
     def mk_txt_node_label(node: Node, with_status: bool = False) -> Text:
+        """Returns a rich Text element for the node 'label' property's value,
+        or an empty Text().
+        """
         if not node.label:
             return Text()
         txt = Text(node.label, DtshTui.style(DtshTui.STYLE_DT_LABEL))
@@ -356,6 +359,9 @@ class DtshTui:
 
     @staticmethod
     def mk_txt_node_labels(node: Node, with_status: bool = False) -> Text:
+        """Returns a rich Text element with all DT labels for the node,
+        in the order they appear in the DT source, or an empty Text().
+        """
         if not node.labels:
             return Text()
         txt_labels = list[Text]()
@@ -365,6 +371,21 @@ class DtshTui:
                 DtshTui.txt_dim(txt)
             txt_labels.append(txt)
         txt = Text(', ', DtshTui.style(DtshTui.STYLE_DEFAULT)).join(txt_labels)
+        return txt
+
+    @staticmethod
+    def mk_txt_node_all_labels(node: Node, with_status: bool = False) -> Text:
+        """Returns a rich Text element with all known labels for the node,
+        or an empty Text().
+
+        See:
+        - mk_txt_node_label()
+        - mk_txt_node_labels()
+        """
+        txt = DtshTui.mk_txt_node_label(node, with_status=with_status)
+        if len(txt.plain) > 0:
+            txt.append_text(Text(', ', DtshTui.style(DtshTui.STYLE_DEFAULT)))
+        txt.append_text(DtshTui.mk_txt_node_labels(node, with_status=with_status))
         return txt
 
     @staticmethod
@@ -391,14 +412,6 @@ class DtshTui:
                 DtshTui.txt_update_link_file(txt, node.binding_path)
         if with_status and (node.status != 'okay'):
             DtshTui.txt_dim(txt)
-        return txt
-
-    @staticmethod
-    def mk_txt_node_all_labels(node: Node, with_status: bool = False) -> Text:
-        txt = DtshTui.mk_txt_node_label(node, with_status=with_status)
-        if len(txt.plain) > 0:
-            txt.append_text(Text(', ', DtshTui.style(DtshTui.STYLE_DEFAULT)))
-        txt.append_text(DtshTui.mk_txt_node_labels(node, with_status=with_status))
         return txt
 
     @staticmethod
