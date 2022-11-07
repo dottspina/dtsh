@@ -35,19 +35,25 @@ dtsh.compats = light_sea_green
 #
 dtsh.desc = medium_orchid3
 
-# Apply to a node's label properties.
-# color: deep_sky_blue1
+# Apply to a node's label property.
 #
-dtsh.labels = #00afff italic
+dtsh.labels = deep_sky_blue1 italic
 
 # Apply to a node's labels.
-# color: deep_sky_blue1
 #
-dtsh.label = #00afff
+dtsh.label = deep_sky_blue2
 
-# Apply to descriptions bus (DT bindings)
+# Apply to a bus device.
 #
-dtsh.bus = dark_khaki bold
+dtsh.bus = cadet_blue bold
+
+# Indicates a node is on a bus.
+#
+dtsh.on_bus = cadet_blue
+
+# Apply to a node interrupt numbers and names.
+#
+dtsh.irq = yellow3
 
 # Apply to a node's aliases.
 #

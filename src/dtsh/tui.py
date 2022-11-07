@@ -12,7 +12,7 @@ import configparser
 import os
 import yaml
 
-from devicetree.edtlib import Loader as edtlib_YamlLoader
+from devicetree.edtlib import ControllerAndData, Loader as edtlib_YamlLoader
 from devicetree.edtlib import Node, Binding, Property, PropertySpec, Register
 
 from rich import box
@@ -25,7 +25,7 @@ from rich.text import Text
 from rich.theme import Theme
 from rich.tree import Tree
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt
+from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt, DtshError
 
 
 class DtshTui:
@@ -64,6 +64,8 @@ class DtshTui:
     STYLE_DT_PROPERTY = 'dtsh.property'
     STYLE_DT_DESC = 'dtsh.desc'
     STYLE_DT_BUS = 'dtsh.bus'
+    STYLE_DT_ON_BUS = 'dtsh.on_bus'
+    STYLE_DT_IRQ = 'dtsh.irq'
     STYLE_DT_OKAY = 'dtsh.okay'
     STYLE_DT_NOT_OKAY = 'dtsh.not_okay'
     STYLE_DT_INCLUDE = 'dtsh.include'
@@ -270,6 +272,88 @@ class DtshTui:
         txt = Text(DtshTui.get_node_nick(node))
         if with_status and (node.status != 'okay'):
             DtshTui.txt_dim(txt)
+        return txt
+
+    @staticmethod
+    def mk_txt_node_name(node: Node, with_status: bool = False) -> Text:
+        txt = Text(node.name)
+        if with_status and (node.status != 'okay'):
+            DtshTui.txt_dim(txt)
+        return txt
+
+    @staticmethod
+    def mk_txt_node_bus_device(node: Node, with_status: bool = False) -> Text:
+        if (not node.bus) and (not node.on_bus):
+            return Text()
+        if node.bus:
+            txt = DtshTui.mk_txt(node.bus, DtshTui.style(DtshTui.STYLE_DT_BUS))
+        else:
+            txt = DtshTui.mk_txt(f"on {node.on_bus}",
+                                 DtshTui.style(DtshTui.STYLE_DT_ON_BUS))
+        if with_status and (node.status != 'okay'):
+            DtshTui.txt_dim(txt)
+        return txt
+
+    @staticmethod
+    def mk_txt_node_registers(node: Node,
+                              with_status: bool = False) -> RenderableType:
+        if not node.regs:
+            return Text()
+        reg_rows = list[Text]()
+        for reg in node.regs:
+            txt = DtshTui.mk_txt_node_register(reg)
+            if with_status and (node.status != 'okay'):
+                DtshTui.txt_dim(txt)
+            reg_rows.append(txt)
+        if len (reg_rows) == 1:
+            return reg_rows[0]
+        grid = DtshTui.mk_grid(1)
+        for reg_row in reg_rows:
+            grid.add_row(reg_row)
+        return grid
+
+    @staticmethod
+    def mk_txt_node_register(reg: Register) -> Text:
+        reg_addr = hex(reg.addr) if (reg.addr is not None) else hex(0)
+        reg_size = hex(reg.size) if (reg.size is not None) else None
+        if reg_size is not None:
+            return Text(f"<{reg_addr} {reg_size}>")
+        return Text(f"<{reg_addr}>")
+
+    @staticmethod
+    def mk_txt_node_interrupts(node: Node,
+                               with_status: bool = False) -> RenderableType:
+        if not node.interrupts:
+            return Text()
+        irq_rows = list[Text]()
+        for irq in node.interrupts:
+            txt = DtshTui.mk_txt_node_irq(irq)
+            if with_status and (node.status != 'okay'):
+                DtshTui.txt_dim(txt)
+            irq_rows.append(txt)
+        if len(irq_rows) == 1:
+            return irq_rows[0]
+        grid = DtshTui.mk_grid(1)
+        for irq_row in irq_rows:
+            grid.add_row(irq_row)
+        return grid
+
+    @staticmethod
+    def mk_txt_node_irq(ctrl_data: ControllerAndData) -> Text:
+        irq = ctrl_data.data.get('irq')
+        level = ctrl_data.data.get('priority')
+        if (irq is not None) and (level is not None):
+            if ctrl_data.name:
+                txt = Text(f"{ctrl_data.name}[{irq}]",
+                           DtshTui.style(DtshTui.STYLE_DT_IRQ))
+            else:
+                txt = Text(f"IRQ_{irq}", DtshTui.style(DtshTui.STYLE_DT_IRQ))
+            txt.append_text(DtshTui.mk_txt(f"/{level}"))
+        else:
+            irq_data = list[Text]()
+            for k, v in irq.data.items():
+                irq_data.append(DtshTui.mk_txt(f"{k}:{str(v)}"))
+            txt = Text(" ").join(irq_data)
         return txt
 
     @staticmethod
@@ -1041,6 +1125,325 @@ class DtshTuiForm(DtshTuiWidget):
         """Implements DtshTuiWidget.as_renderable().
         """
         return self._form
+
+
+############################################################################
+# Flexible node table with format string support.
+############################################################################
+
+class LsNodeColumn(object):
+    """Nodes table view column.
+    """
+
+    # E.g. "b"
+    _spec: str
+
+    # E.g. "Bus"
+    _header: str
+
+    def __init__(self, spec: str, header: str) -> None:
+        """
+        Arguments:
+        spec -- the column's format specifier, e.g. "N" for the node name
+        header -- the column's header, e.g. "Name"
+        """
+        self._spec = spec
+        self._header = header
+
+    @property
+    def spec(self) -> str:
+        """The column's format specifier.
+        """
+        return self._spec
+
+    @property
+    def header(self) -> str:
+        """The column's header.
+        """
+        return self._header
+
+    @abstractmethod
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        """Returns a rich view for the colum information,
+        or an empty Text() element when the node does not define
+        the requested information.
+        """
+
+class LsColumnNodeName(LsNodeColumn):
+    """The node name (DTSpec 2.2.1).
+
+    Format specifier is "N".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("N", "Name")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_name(node, with_status=True)
+
+
+class LsColumnNodeAddr(LsNodeColumn):
+    """The unit-address component of the node name.
+
+    Format specifier is "a".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("a", "Address")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_addr(node, with_status=True)
+
+
+class LsColumnNodeNick(LsNodeColumn):
+    """The node name with the unit address component striped.
+
+    Format specifier is "n".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("n", "Name")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_nick(node, with_status=True)
+
+
+class LsColumnNodeDesc(LsNodeColumn):
+    """A summary of the desricription string from the node binding.
+
+    Format specifier is "d".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("d", "Description")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_desc_short(node, with_status=True)
+
+
+class LsColumnNodePath(LsNodeColumn):
+    """The node path name (DT 2.2.3).
+
+    Format specifier is "p".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("p", "Path")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        txt = DtshTui.mk_txt(node.path)
+        if node.status != 'okay':
+            DtshTui.txt_dim(txt)
+        return txt
+
+
+class LsColumnNodeLabel(LsNodeColumn):
+    """The node label that is the value of its 'label' property.
+
+    Format specifier is "l".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("l", "Label")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_label(node, with_status=True)
+
+
+class LsColumnNodeLabels(LsNodeColumn):
+    """All known labels for the node, apppending the DT labels
+    to its 'label' property value.
+
+    Format specifier is "L".
+    """
+
+    def __init__(self) -> None:
+        """Format specifier is "L".
+        """
+        super().__init__("L", "Labels")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_all_labels(node, with_status=True)
+
+
+class LsColumnNodeStatus(LsNodeColumn):
+    """The node status that is the value of its 'status' property (DTSpec 2.3.4).
+
+    Format specifier is "s".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("s", "Status")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_status(node)
+
+
+class LsColumnNodeCompatible(LsNodeColumn):
+    """The value of the compatible property for the node (DTSpec 2.3.1),
+    should be ordered from most to lesser specific.
+
+    Format specifier is "c".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("c", "Compatible")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_compats(node, shell, with_status=True)
+
+
+class LsColumnNodeBinding(LsNodeColumn):
+    """The compatible from the binding that matched the node.
+
+    Format specifier is "C".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("C", "Binding")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_binding(node,
+                                           with_link=True,
+                                           with_status=True)
+
+class LsColumnNodeAliases(LsNodeColumn):
+    """The aliases for the node, fetched from /aliases.
+
+    Format specifier is "A".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("A", "Aliases")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_aliases(node, with_status=True)
+
+
+class LsColumnNodeBus(LsNodeColumn):
+    """The bus device information for the node.
+
+    Format specifier is "b".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("b", "Bus")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_bus_device(node, with_status=True)
+
+
+class LsColumnNodeReg(LsNodeColumn):
+    """The bus device information for the node.
+
+    Format specifier is "r".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("r", "Registers")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_registers(node, with_status=True)
+
+
+class LsColumnNodeInterrupts(LsNodeColumn):
+    """The interrupts generated by this node.
+
+    Format specifier is "i".
+    """
+
+    def __init__(self) -> None:
+        super().__init__("i", "Interrupts")
+
+    def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
+        return DtshTui.mk_txt_node_interrupts(node, with_status=True)
+
+
+class LsNodeTable(object):
+    """Configurable table view for a list of nodes.
+
+    Visible columns are configured through a format string, e.g. "naLcd".
+
+    Defined format specifiers:
+
+        | Specifier | Format                                    | DTSpec  |
+        |-----------|-------------------------------------------|---------|
+        | `N`       | The node name                             | 2.2.1   |
+        | `a`       | The unit-address                          |         |
+        | `n`       | The node name with the address striped    |         |
+        | `d`       | The description from the node binding     |         |
+        | `p`       | The node path name                        | 2.2.3   |
+        | `l`       | The node 'label' property                 |         |
+        | `L`       | All known labels for the node             |         |
+        | `s`       | The node 'status' property                | 2.3.4   |
+        | `c`       | The 'compatible' property for the node    | 2.3.1   |
+        | `C`       | The node binding (aka matched compatible) |         |
+        | `A`       | The node aliases                          |         |
+        | `b`       | The bus device information for the node   |         |
+        | `r`       | The node 'reg' property                   | 2.3.6   |
+        | `i`       | The interrupts generated by the node      | 2.4.1.1 |
+    """
+
+    _dtsh: Dtsh
+
+    # The columns for the requested format.
+    _cols: list[LsNodeColumn]
+
+    # The actual view.
+    _grid: Table
+
+    DEFAULT_FMT = "naLAcd"
+
+    def __init__(self, shell: Dtsh, fmt: str | None = None) -> None:
+        """Initialize a new node table.
+
+        Arguments:
+        shell -- the client DT shell
+        fmt -- the format string, defaults to "naLAcd".
+
+        Raises DtshError when the format specifiers string is invalid.
+        """
+        self._dtsh = shell
+        self._cols = list[LsNodeColumn]()
+        for spec in (fmt or LsNodeTable.DEFAULT_FMT):
+            col = LsNodeTable._colspecs.get(spec)
+            if not col:
+                raise DtshError(f"unknwon format specifier {spec}")
+            self._cols.append(col)
+        self._grid = DtshTui.mk_grid_simple_head(
+            [col.header for col in self._cols]
+        )
+
+    def add_node_row(self, node: Node) -> None:
+        """Add a node to the table.
+        """
+        colviews = [col.mk_view(node, self._dtsh) for col in self._cols]
+        self._grid.add_row(*colviews)
+
+    def as_view(self) -> Table:
+        """Returns the view for the node table.
+        """
+        return self._grid
+
+    # Available columns.
+    _colspecs: dict[str, LsNodeColumn] = {
+        col.spec: col for col in [
+            LsColumnNodeName(),
+            LsColumnNodeAddr(),
+            LsColumnNodeNick(),
+            LsColumnNodeDesc(),
+            LsColumnNodePath(),
+            LsColumnNodeLabel(),
+            LsColumnNodeLabels(),
+            LsColumnNodeStatus(),
+            LsColumnNodeCompatible(),
+            LsColumnNodeBinding(),
+            LsColumnNodeAliases(),
+            LsColumnNodeBus(),
+            LsColumnNodeReg(),
+            LsColumnNodeInterrupts(),
+        ]
+    }
 
 
 ############################################################################
