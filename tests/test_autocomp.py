@@ -74,13 +74,15 @@ def test_autocomp_option_name():
 
     # 'ls [-d] [-l] [-r] [-R] [--pager] [-h --help]'
     completions = completer.autocomplete('ls -', '-')
-    assert len(completions) == 6
-    assert completions[4] == '-h'
-    assert completions[5] == '--pager'
+    assert len(completions) == 7
+    assert completions[4] == '-f'
+    assert completions[5] == '-h'
+    assert completions[6] == '--pager'
     completions = completer.autocomplete('ls --', '--')
-    assert len(completions) == 2
-    assert completions[0] == '--pager'
-    assert completions[1] == '--help'
+    assert len(completions) == 3
+    assert completions[0] == '--format'
+    assert completions[1] == '--pager'
+    assert completions[2] == '--help'
 
 
 def test_autocomp_nodes():

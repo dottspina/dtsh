@@ -288,8 +288,10 @@ class DtshTui:
         if node.bus:
             txt = DtshTui.mk_txt(node.bus, DtshTui.style(DtshTui.STYLE_DT_BUS))
         else:
-            txt = DtshTui.mk_txt(f"on {node.on_bus}",
-                                 DtshTui.style(DtshTui.STYLE_DT_ON_BUS))
+            txt = DtshTui.mk_txt("on_").append_text(
+                Text(str(node.on_bus),
+                     DtshTui.style(DtshTui.STYLE_DT_ON_BUS))
+            )
         if with_status and (node.status != 'okay'):
             DtshTui.txt_dim(txt)
         return txt
@@ -351,7 +353,7 @@ class DtshTui:
             txt.append_text(DtshTui.mk_txt(f"/{level}"))
         else:
             irq_data = list[Text]()
-            for k, v in irq.data.items():
+            for k, v in ctrl_data.data.items():
                 irq_data.append(DtshTui.mk_txt(f"{k}:{str(v)}"))
             txt = Text(" ").join(irq_data)
         return txt
@@ -1672,7 +1674,8 @@ class DtNodeListView(DtshTuiView):
                  node_map: dict[str, list[Node]],
                  shell: Dtsh,
                  with_no_content: bool = False,
-                 with_rich_fmt: bool = False) -> None:
+                 with_rich_fmt: bool = False,
+                 fmt: str | None = None) -> None:
         """Initialize the view.
 
         Arguments:
@@ -1682,7 +1685,7 @@ class DtNodeListView(DtshTuiView):
         with_rich_fmt -- if True, will produce "rich output"
         """
         if with_rich_fmt:
-            self._init_rich_view(node_map, shell, with_no_content)
+            self._init_rich_view(node_map, shell, with_no_content, fmt)
         else:
             self._init_default_view(node_map, with_no_content)
 
@@ -1716,12 +1719,14 @@ class DtNodeListView(DtshTuiView):
     def _init_rich_view(self,
                         node_map: dict[str, list[Node]],
                         shell: Dtsh,
-                        with_no_content: bool) -> None:
+                        with_no_content: bool,
+                        fmt: str | None) -> None:
         if with_no_content:
-            self._view = self._mk_node_grid()
+            ls_table = LsNodeTable(shell, fmt)
             for path, _ in node_map.items():
                 node = shell.path2node(path)
-                self._grid_add_node_row(self._view, node, shell)
+                ls_table.add_node_row(node)
+            self._view = ls_table.as_view()
         else:
             self._view = DtshTui.mk_grid(1)
             N = len(node_map)
@@ -1729,30 +1734,13 @@ class DtNodeListView(DtshTuiView):
             for path, content in node_map.items():
                 self._view.add_row(Text(f"{path}:", DtshTui.style('bold')))
                 if content:
-                    v_content = self._mk_node_grid()
+                    ls_table = LsNodeTable(shell, fmt)
                     for node in content:
-                        self._grid_add_node_row(v_content, node, shell)
-                    self._view.add_row(v_content)
+                        ls_table.add_node_row(node)
+                    self._view.add_row(ls_table.as_view())
                 if n < (N - 1):
                     self._view.add_row(None)
                 n += 1
-
-    def _mk_node_grid(self) -> Table:
-        return DtshTui.mk_grid_simple_head(
-            [
-                'Name', 'Address', 'Labels', 'Aliases', 'Compatible', 'Description'
-            ]
-        )
-
-    def _grid_add_node_row(self, grid:Table, node: Node, shell: Dtsh) -> None:
-        grid.add_row(
-            DtshTui.mk_txt_node_nick(node, with_status=True),
-            DtshTui.mk_txt_node_addr(node, with_status=True),
-            DtshTui.mk_txt_node_all_labels(node, with_status=True),
-            DtshTui.mk_txt_node_aliases(node, with_status=True),
-            DtshTui.mk_txt_node_compats(node, shell, with_status=True),
-            DtshTui.mk_txt_node_desc_short(node, with_status=True),
-        )
 
 
 class DtNodeTreeView(DtshTuiView):
