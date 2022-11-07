@@ -1147,6 +1147,12 @@ class Dtsh(object):
             raise DtshCommandFailedError(cmd, e.msg, e)
 
     @staticmethod
+    def is_node_enabled(node: Node):
+        """Returns True if the node is enabled according to its status.
+        """
+        return node.status in ['ok', 'okay']
+
+    @staticmethod
     def nodename(path: str) -> str:
         """Strip directory and suffix ('/') components from a node's path.
 
