@@ -219,10 +219,7 @@ Path                                Bus   Interrupts
 
     @property
     def arg_fmt(self) -> str | None:
-        opt = self.option('-f')
-        if (opt is not None) and (opt.value is not None):
-            return str(opt.value)
-        return None
+        return self.arg_value('-f')
 
     def parse_argv(self, argv: list[str]) -> None:
         """Overrides DtshCommand.parse_argv().
