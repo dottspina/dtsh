@@ -336,6 +336,22 @@ class DtshCommand(object):
             return opt.is_flag() and (opt.value == True)
         return False
 
+    def arg_value(self, name) -> str | None:
+        """Access an argument value.
+
+        Arguments:
+        name -- the option name
+
+        Returns the argument value, None if the option was not provided on
+        the command line, or if the option is a flag.
+        """
+        opt = self.option(name)
+        # Note that parse_argv() would have failed if the argument
+        # if actually defined as an argument (parse error otherwise).
+        if opt and (not opt.is_flag()) and (opt.value is not None):
+            return str(opt.value)
+        return None
+
     def reset(self) -> None:
         """Reset command options and parameters.
         """
