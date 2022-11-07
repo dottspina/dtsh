@@ -215,7 +215,7 @@ Path                                Bus   Interrupts
 
     @property
     def with_rich_fmt(self) -> bool:
-        return self.with_flag('-l')
+        return (self.arg_fmt is not None) or self.with_flag('-l')
 
     @property
     def arg_fmt(self) -> str | None:
