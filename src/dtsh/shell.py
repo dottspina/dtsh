@@ -7,6 +7,7 @@
 import os
 
 from devicetree.edtlib import EDT
+from dtsh.builtin_find import DtshBuiltinFind
 
 from dtsh.dtsh import Dtsh, DtshUname, DtshError
 from dtsh.builtin_pwd import DtshBuiltinPwd
@@ -40,6 +41,7 @@ class DevicetreeShell(Dtsh):
                 DtshBuiltinTree(self),
                 DtshBuiltinCat(self),
                 DtshBuiltinUname(self),
+                DtshBuiltinFind(self),
                 DtshBuiltinMan(self)
                 ]:
             self._builtins[cmd.name] = cmd
