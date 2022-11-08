@@ -287,10 +287,10 @@ zef_checkout() {
 zef_env() {
     echo "VIRTUAL_ENV: $VIRTUAL_ENV"
     echo "ZEPHYR_BASE: $ZEPHYR_BASE"
-    if [ "$ZEPHYR_TOOLCHAIN_VARIANT" -eq 'gnuarmemb' ]; then
+    if [ "$ZEPHYR_TOOLCHAIN_VARIANT" = 'gnuarmemb' ]; then
         echo 'Toolchain: GNU Arm Embedded'
         echo "GNUARMEMB_TOOLCHAIN_PATH: $GNUARMEMB_TOOLCHAIN_PATH"
-    elif [ "$ZEPHYR_TOOLCHAIN_VARIANT" -eq 'zephyr' ]; then
+    elif [ "$ZEPHYR_TOOLCHAIN_VARIANT" = 'zephyr' ]; then
         echo 'Toolchain: Zephyr SDK'
         echo "ZEPHYR_SDK_INSTALL_DIR: $ZEPHYR_SDK_INSTALL_DIR"
     else
