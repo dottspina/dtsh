@@ -192,10 +192,8 @@ where:
 - ~<dts-file>~: path to the devicetree source file in  [[https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html][DTS Format]] (~.dts~);
   if unspecified, defaults to ~$PWD/build/zephyr/zephyr.dts~
 - ~<binding-dir>~: directory to search for  [[https://yaml.org/][YAML]] binding files;
-  if unspecified, and the environment variable ~ZEPHYR_BASE~ is set,
-  defaults to [[https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located][Zephyr bindings search path]]
-
-⚠ See  [[https://github.com/dottspina/dtsh/issues/1][Incomplete Zephyr bindings search path #1]] for details and limitations.
+  if unspecified, but the environment variable ~ZEPHYR_BASE~ is set,
+  defaults to the [[https://github.com/dottspina/dtsh#zephyr-bindings-search-path][Zephyr bindings search path]] bellow
 
 To open an arbitrary DTS file with custom bindings:
 
@@ -220,6 +218,27 @@ How to exit: q, or quit, or exit, or press Ctrl-D
 /
 ❯
 #+end_example
+
+*** Zephyr bindings search path
+
+When no bindings are explicitly provided, ~dtsh~ will try to reassemble the /bindings search path/ Zephyr would rely on at build time (see  [[https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located][Where bindings are located]]):
+
+- the zephyr repository: ~$ZEPHYR_BASE/dts/bindings~
+- the application source directory: ~APPLICATION_SOURCE_DIR/dts/bindings~;  if ~dtsh~ fails to access  the CMake
+  variable ~APPLICATION_SOURCE_DIR~, will fallback to ~$PWD/dts/bindings~ (assuming the current directory is
+  the /project/ directory)
+- the board directory: ~BOARD_DIR/dts/bindings~; if  ~dtsh~ fails to access  the CMake variable ~BOARD_DIR~, will
+  fallback to ~$ZEPHYR_BASE/boards~ (to include /all/ Zephyr defined boards) plus ~$PWD/boards~ (to include a possible
+  custom boards directory)
+- any directories in ~DTS_ROOT~: all ~DTS_ROOT/**/dts/bindings~ directories ~dtsh~ will find if the CMake variable
+  ~DTS_ROOT~ is available
+- any module that defines a ~dts_root~ in its build: ~dtsh~ does NOT honor this part of the search path,
+  and likely will not until a test case is submitted for investigation
+
+Only the ~ZEPHYR_BASE~ environment variable is required, and will typically suffice to setup an
+appropriate bindings search path.
+
+See also issue [[https://github.com/dottspina/dtsh/issues/1#issuecomment-1278281428][Incomplete Zephyr bindings #1]].
 
 ** Zephyr integration
 
