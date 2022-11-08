@@ -18,12 +18,13 @@ and how bindings describe and constrain its content.
 
 It's still in its inception phase:
 
-- while the current feature set might already prove helpful to beginners,
-  it may also quickly frustrate more knowledgeable users
-- possible bugs could instead confuse beginners (unfortunately)
+- while the current feature set may already prove helpful to beginners,
+  it might also quickly frustrate more knowledgeable users
+- possible bugs could instead disastrously confuse beginners
 - should install and run more or less Out Of The Box™ on most modern Linux distributions,
   mileage may vary on other platforms
-- should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files: this does NOT directly apply to the devicetree use by the Linux kernel
+- should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files:
+  unfortunately, this does NOT directly apply to the devicetree use by the Linux kernel
 
 All kinds of feedback and contribution are encouraged: please refer to the bottom CONTRIBUTE section.
 #+end_quote
@@ -35,8 +36,28 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
   - [[https://github.com/dottspina/dtsh#zephyr-integration][Zephyr integration]]
 - [[https://github.com/dottspina/dtsh#users-guide][User's guide]]
   - [[https://github.com/dottspina/dtsh#the-shell][The shell]]
+    - [[https://github.com/dottspina/dtsh#file-system-metaphot][Fle system metaphor]]
+    - [[https://github.com/dottspina/dtsh#the-command-string][The command string]]
+    - [[https://github.com/dottspina/dtsh#output-redirection][Output redirection]]
+    - [[https://github.com/dottspina/dtsh#built-ins][Built-ins]]
+    - [[https://github.com/dottspina/dtsh#manual-pages][Manual pages]]
+    - [[https://github.com/dottspina/dtsh#system-information][System information]]
+    - [[https://github.com/dottspina/dtsh#find-nodes][Find nodes]]
   - [[https://github.com/dottspina/dtsh#user-interface][User interface]]
+    - [[https://github.com/dottspina/dtsh#the-prompt][The prompt]]
+    - [[https://github.com/dottspina/dtsh#commands-history][Commands history]]
+    - [[https://github.com/dottspina/dtsh#auto-completion][Auto-completion]]
+    - [[https://github.com/dottspina/dtsh#the-pager][The pager]]
+    - [[https://github.com/dottspina/dtsh#external-links][External links]]
+    - [[https://github.com/dottspina/dtsh#keybindings][Keybindings]]
+    - [[https://github.com/dottspina/dtsh#theme][Theme]]
   - [[https://github.com/dottspina/dtsh#how-to][How To]]
+    - [[https://github.com/dottspina/dtsh#soc-overview][SoC overview]]
+    - [[https://github.com/dottspina/dtsh#board-definition][Board definition]]
+    - [[https://github.com/dottspina/dtsh#compatibles-overview][Compatibles overview]]
+    - [[https://github.com/dottspina/dtsh#bus-devices-overview][Bus devices overview]]
+    - [[https://github.com/dottspina/dtsh#interrupts-overview][Interrupts overview]]
+    - [[https://github.com/dottspina/dtsh#commands-cheat-sheet][Commands Cheat Sheet]]
 - [[https://github.com/dottspina/dtsh#contribute][Contribute]]
 - [[https://github.com/dottspina/dtsh#references][References]]
 
@@ -49,14 +70,14 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 # Install dtsh in a dedicated Python virtual environment
 $ python -m venv --prompt dtsh .venv
 $ . .venv/bin/activate
-$ pip install dtsh
+$ pip install --upgrade dtsh
 
 # Setting ZEPHYR_BASE will help dtsh in building a default bindings search path
 export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
 
 # Open an existing DTS file, using Zephyr bindings
 $ dtsh /path/to/build/zephyr/zephyr.dts
-dtsh (0.1.0a3): Shell-like interface to a devicetree
+dtsh (0.1.0a4): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -81,8 +102,8 @@ To get the /big picture/:
 
 - may be this [[https://youtu.be/pc2AMx1iPPE][short abrupt video]], that at least illustrates the main /shell metaphor/, the auto-completion behavior
    and the most useful keybindings
-- if already comfortable with Zephyr, running the [[https://github.com/dottspina/dtsh#interactive-tests][interactive tests]]
-   is probably the preferred route to explore ~dsh~
+- if already comfortable with Zephyr, try running the [[https://github.com/dottspina/dtsh#interactive-tests][interactive tests]] to explore ~dtsh~ with various configurations
+    and DTS source files
 
 ** Requirements
 
@@ -104,7 +125,7 @@ The minimal requirement is set to Python 3.7, with proper support for [[https://
 
 All ~dtsh~ software requirements are Python libraries that will be installed as direct dependencies:
 
-- DT sources and bindings /parser/, devicetree model: ~edtlib~, now maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]])
+- DT sources and bindings /parser/, devicetree model: ~edtlib~, maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]])
 - « rich text and beautiful formatting in the terminal »: [[https://www.textualize.io/][Textualize]] /rich/ API ([[https://github.com/Textualize/rich][GitHub]], [[https://pypi.org/project/rich/][PyPI]])
 
 *** CMake
@@ -150,7 +171,7 @@ Install from [[https://pypi.org/project/dtsh/][PyPI]] in a dedicated Python virt
 python -m venv --prompt dtsh .venv
 . .venv/bin/activate
 pip install --upgrade pip setuptools
-pip install dtsh
+pip install --upgrade dtsh
 #+end_src
 
 *** Uninstall
@@ -173,7 +194,8 @@ where:
 - ~<binding-dir>~: directory to search for  [[https://yaml.org/][YAML]] binding files;
   if unspecified, and the environment variable ~ZEPHYR_BASE~ is set,
   defaults to [[https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located][Zephyr bindings search path]]
-  (may require CMake, see [[https://github.com/dottspina/dtsh/issues/1][Incomplete Zephyr bindings search path #1]] for details)
+
+⚠ See  [[https://github.com/dottspina/dtsh/issues/1][Incomplete Zephyr bindings search path #1]] for details and limitations.
 
 To open an arbitrary DTS file with custom bindings:
 
@@ -191,7 +213,7 @@ $ dtsh /path/to/foobar.dts
 On startup, ~dtsh~ will output a banner, followed by the first prompt:
 
 #+begin_example
-dtsh (0.1.0a3): Shell-like interface to a devicetree
+dtsh (0.1.0a4): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -258,6 +280,8 @@ To remove ~dtsh~ from a Zephyr workspace:
 pip uninstall dtsh rich
 #+end_src
 
+⚠ Be sure to NOT uninstall packages otherwise used within the Python virtual environment, e.g. ~rich~.
+
 * User's guide
 
 The preferred entry point to the ~dtsh~ documentation should be its manual pages:
@@ -282,12 +306,12 @@ allowing ~dtsh~ to also support relative paths.
 A leading ~.~ represents the current working node, and ~..~ its parent.
 The devicetree root node is its own parent.
 
-To designate properties, ~dtsh~ use ~$~ as a separator between DT path names and [[https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names][property names]]
+To designate properties, ~dtsh~ uses ~$~ as a separator between DT path names and [[https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names][property names]]
 (should be safe since ~$~ is an invalid character for both node and property names).
 
 Some commands support filtering or /globbing/ with trailing wild-cards ~*~.
 
-*** Command string
+*** The command string
 
 The ~dtsh~ command string is based on the [[https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html][GNU getopt]] syntax.
 
@@ -316,9 +340,50 @@ An option may support:
 
 Short option names can combine: ~-lR~ is equivalent to ~-l -R~.
 
+An Option may also require an argument, e.g. ~find /soc --interrupt 12~.
+
 Options semantic should be consistent across commands, e.g. ~-l~ always means /long format/.
 
 We also try to re-use /well-known/ option names, e.g. ~-r~ for /reverse sort/ or ~-R~ for /recursive/.
+
+ℹ Trigger ~TAB~ completion after a single ~-~ to /pull/ a summary of a command's options, e.g:
+
+#+begin_example
+❯ find -[TAB][TAB]
+-c                    print nodes count
+-q                    quiet, only print nodes count
+-l                    use rich listing format
+-f <fmt>              visible columns format string
+-h --help             print usage summary
+--name <pattern>      find by name
+--compat <pattern>    find by compatible
+--bus <pattern>       find by bus device
+--interrupt <pattern> find by interrupt
+--enabled-only        search only enabled nodes
+--pager               page command output
+❯ find -
+#+end_example
+
+*** Output redirection
+
+Command output redirection uses the well-known syntax:
+
+#+begin_example
+CMD [OPTIONS] [PARAMS] > PATH
+#+end_example
+
+where ~PATH~ is the absolute or relative path to the file the command output will be redirected to.
+
+Depending on the extension, the command output may be saved as an HTML page (~.html~),  an SVG image (~.svg~),
+or a text file (default).
+
+For example:
+
+#+begin_example
+/
+❯ ls -l soc > soc.html
+
+#+end_example
 
 *** Built-ins
 
@@ -331,6 +396,8 @@ We also try to re-use /well-known/ option names, e.g. ~-r~ for /reverse sort/ or
 | ~ls~       | list devicetree nodes                     |
 | ~tree~     | list devicetree nodes in tree-like format |
 | ~cat~      | concatenate and print devicetree content  |
+| ~find~     | find devicetree nodes                     |
+| ~uname~    | print system information                  |
 | ~man~      | open a manual page                        |
 
 *** Manual pages
@@ -338,10 +405,10 @@ We also try to re-use /well-known/ option names, e.g. ~-r~ for /reverse sort/ or
 As expected, the ~man~ command will open the manual page for the shell itself (~man dtsh~),
 or one of its built-ins (e.g. ~man ls~).
 
- ~man~ may also open a manual page for a [[https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#compatible][compatible]], which is essentially a view of its (YAML) bindings: e.g.  ~man --compat nordic,nrf-radio~
+Additionally,  ~man~ can also open a manual page for a [[https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#compatible][compatible]], which is essentially a view of its (YAML) bindings: e.g.  ~man --compat nordic,nrf-radio~
 
-  ~man~ should eventually also serve as an entry point to external useful or normative documents,
-  e.g. the Devicetree Specifications or the Zephyr project's documentation.
+~man~ should eventually also serve as an entry point to external useful or normative documents,
+e.g. the Devicetree Specifications or the Zephyr project's documentation.
 
 *** System information
 
@@ -358,6 +425,23 @@ Retrieving this information may involve environment variables (e.g. ~ZEPHYR_BASE
 CMake cached variables (e.g. ~BOARD_DIR~), and  ~git~ or ~GCC~.
 
 Refer to ~man uname~ for details.
+
+*** Find nodes
+
+The ~find~ command permits to search the devicetree by:
+
+- node names
+- compatible strings
+- bus devices
+- interrupt names or numbers
+
+For example, the command line bellow would list all enabled bus devices that generate IRQs :
+
+#+begin_example
+❯ find --enabled-only --bus * --interrupt *
+#+end_example
+
+~find~ is quite versatile and supports a handful of options. Refer to its extensive manual page (~man find~).
 
 ** User interface
 
@@ -431,28 +515,14 @@ On the contrary, the ~man~ command uses the pager by default and defines a ~--no
    that should open in the system's default web browser
 
 How these links will appear in the console, and whether they are /actionable/ or not,
-eventually depend on the terminal.
+eventually depend on the terminal and the desktop environment.
 
-*** Output redirection
-
-Command output redirection uses the well-known syntax:
-
-#+begin_example
-CMD [OPTIONS] [PARAMS] > PATH
-#+end_example
-
-where ~PATH~ is the absolute or relative path to the file the command output will be redirected to.
-
-Depending on the extension, the command output may be saved as an HTML page (~.html~),  an SVG image (~.svg~),
-or a text file (default).
-
-For example:
-
-#+begin_example
-/
-❯ ls -l soc > soc.html
-
-#+end_example
+⚠ In particular, the environment may assume DTS files are DTS audio streams
+(e.g. the VLC media player could have registered itself for handling the ~.dts~ file extension).
+In this case, the external link won't open in the default text editor,
+possibly without any error message.
+A work-around is to configure the desktop environment to open DTS files with
+a text editor (e.g. with the /Open with/ paradigm).
 
 *** Keybindings
 
@@ -503,7 +573,42 @@ Try  ~ls -lR --pager /soc~
 
 Try ~uname -ml~
 
-*** Options Cheat Sheet
+*** Compatibles overview
+
+Try ~find / --compat * -l~ to list all nodes that have a ~compatible~ DT property.
+
+ℹ See also the ~TAB~ completion for the ~man --compat~ command.
+
+*** Bus devices overview
+
+Try ~find / --bus * -f pibcd~
+
+Use the ~--enabled-only~ flag to filter out disabled bus devices.
+
+*** Interrupts overview
+
+Try ~find / --interrupt * -f picd~
+
+Use the ~--enabled-only~ flag to filter out disabled IRQs.
+
+*** Commands Cheat Sheet
+
+To list all commands and their short descriptions (press ~TAB~ twice at the prompt):
+
+#+begin_example
+/
+❯[TAB][TAB]
+pwd    print current working node's path
+alias  print defined aliases
+chosen print chosen configuration
+cd     change current working node
+ls     list devicetree nodes
+tree   list devicetree nodes in tree-like format
+cat    concatenate and print devicetree content
+uname  print system information
+find   find devicetree nodes
+man    open a manual page
+#+end_example
 
 Command options list:
 
@@ -518,7 +623,7 @@ option names):
 
 #+begin_example
 /
-❯ ls -
+❯ ls -[TAB][TAB]
 -d        list node itself, not its content
 -l        use rich listing format
 -r        reverse order while sorting
@@ -527,9 +632,12 @@ option names):
 --pager   page command output
 #+end_example
 
+Command manual page: ~man ls~
+
 * Contribute
 
-All kinds of feedback and contribution are encouraged: open an [[https://github.com/dottspina/dtsh/issues/new][issue]]  or a [[https://github.com/dottspina/dtsh/pulls][pull request]] with the appropriate [[https://github.com/dottspina/dtsh/issues/labels][label]].
+All kinds of feedback and contribution are encouraged: open an [[https://github.com/dottspina/dtsh/issues/new][issue]]  or a [[https://github.com/dottspina/dtsh/pulls][pull request]] with the appropriate [[https://github.com/dottspina/dtsh/issues/labels][label]]
+(if unsure, just ignore labels).
 
 | Label                |                                           |
 |----------------------+-------------------------------------------|
@@ -556,9 +664,7 @@ When the documentation is lacking, confusing or incorrect, please open issues wi
 
 ** Report bugs
 
-This software is still in alpha state, and is tested mostly with the DTS files generated when
-building a few Zephyr sample applications for the nRF52840 DK [[https://docs.zephyrproject.org/latest/boards/arm/nrf52840dk_nrf52840/doc/index.html][board]]: bugs are expected,
-please open issues with the ~bug~ label.
+This software is still in alpha state:bugs are expected, please open issues with the ~bug~ label.
 
 ** Hacking dtsh
 

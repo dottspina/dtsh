@@ -19,7 +19,7 @@ its bindings:
 ::
 
    $ dtsh build/gzephyr/zephyr.dts
-   dtsh (0.1.0a3): Shell-like interface to a devicetree
+   dtsh (0.1.0a4): Shell-like interface to a devicetree
    Help: man dtsh
    How to exit: q, or quit, or exit, or press Ctrl-D
 

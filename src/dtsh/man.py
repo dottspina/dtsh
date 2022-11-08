@@ -90,7 +90,7 @@ class DtshManPage(object):
         bar = DtshTui.mk_grid_statusbar()
         bar.add_row(
             DtshTui.mk_txt_bold(Dtsh.API_VERSION),
-            DtshTui.mk_txt('Shell-like interface to devicetrees'),
+            DtshTui.mk_txt('Shell-like interface with devicetrees'),
             DtshTui.mk_txt_bold('DTSH')
         )
         self._view.add_row(bar)
@@ -341,6 +341,9 @@ where:
     if unspecified, and the environment variable `ZEPHYR_BASE` is set,
     defaults to [Zephyr&rsquo;s bindings](https://docs.zephyrproject.org/latest/build/dts/bindings.html#where-bindings-are-located)
 
+ℹ See [Incomplete Zephyr bindings search path #1](https://github.com/dottspina/dtsh/issues/1)
+for details and limitations.
+
 To open an arbitrary DTS file with custom bindings:
 
     $ dtsh /path/to/foobar.dts /path/to/custom/bindings /path/to/other/custom/bindings
@@ -367,7 +370,7 @@ allowing `dtsh` to also support relative paths.
 A leading `.` represents the current working node, and `..` its parent.
 The devicetree root node is its own parent.
 
-To designate properties, `dtsh` use `$` as a separator between DT path names and [property names](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names)
+To designate properties, `dtsh` uses `$` as a separator between DT path names and [property names](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#property-names)
 (should be safe since `$` is an invalid character for both node and property names).
 
 Some commands support filtering or *globbing* with trailing wild-cards `*`.
@@ -400,21 +403,46 @@ An option may support:
 
 Short option names can combine: `-lR` is equivalent to `-l -R`.
 
+An Option may also require an argument, e.g. `find /soc --interrupt 12`.
+
 Options semantic should be consistent across commands, e.g. `-l` always means *long format*.
 
 We also try to re-use *well-known* option names, e.g. `-r` for *reverse sort* or `-R` for *recursive*.
 
+
+ℹ Trigger `TAB` completion after a single `-` to *pull* a summary
+of a command's options, e.g:
+
+```
+❯ find -[TAB][TAB]
+-c                    print nodes count
+-q                    quiet, only print nodes count
+-l                    use rich listing format
+-f <fmt>              visible columns format string
+-h --help             print usage summary
+--name <pattern>      find by name
+--compat <pattern>    find by compatible
+--bus <pattern>       find by bus device
+--interrupt <pattern> find by interrupt
+--enabled-only        search only enabled nodes
+--pager               page command output
+❯ find -
+```
+
 ### Built-ins
 
-- `uname`     print system information
-- `alias`     print defined aliases
-- `chosen`    print chosen configuration
-- `pwd`       print current working node's path
-- `cd`        change current working node
-- `ls`        list devicetree nodes
-- `tree`      list devicetree nodes in tree-like format
-- `cat`       concatenate and print devicetree content
-- `man`       open a manual page
+    | Built-in   |                                           |
+    |------------+-------------------------------------------|
+    | alias      | print defined aliases                     |
+    | chosen     | print chosen configuration                |
+    | pwd        | print current working node's path         |
+    | cd         | change current working node               |
+    | ls         | list devicetree nodes                     |
+    | tree       | list devicetree nodes in tree-like format |
+    | cat        | concatenate and print devicetree content  |
+    | find       | find devicetree nodes                     |
+    | uname      | print system information                  |
+    | man        | open a manual page                        |
 
 Use `man <built-in>` to print a command's manual page,
 e.g. `man ls`.
@@ -424,7 +452,7 @@ e.g. `man ls`.
 As expected, the `man` command will open the manual page for the shell itself (`man dtsh`),
 or one of its built-ins (e.g. `man ls`).
 
-`man` may also open a manual page for a
+Additionally, `man` can also open a manual page for a
 [compatible](https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#compatible),
 which is essentially a view of its (YAML) bindings: e.g.  `man --compat nordic,nrf-radio`
 
@@ -445,44 +473,62 @@ e.g. the Devicetree Specifications or the Zephyr project&rsquo;s documentation.
 For example:
 
     BOARD
-		Board directory: $ZEPHYR_BASE/boards/arm/nrf52840dk_nrf52840
-		Name:            nRF52840-DK-NRF52840 (Supported Boards)
-		Board:           nrf52840dk_nrf52840 (DTS)
+        Board directory: $ZEPHYR_BASE/boards/arm/nrf52840dk_nrf52840
+        Name:            nRF52840-DK-NRF52840 (Supported Boards)
+        Board:           nrf52840dk_nrf52840 (DTS)
 
-		nrf52840dk_nrf52840.yaml
+        nrf52840dk_nrf52840.yaml
 
-		identifier: nrf52840dk_nrf52840
-		name: nRF52840-DK-NRF52840
-		type: mcu
-		arch: arm
-		ram: 256
-		flash: 1024
-		toolchain:
-		  - zephyr
-		  - gnuarmemb
-		  - xtools
-		supported:
-		  - adc
-		  - arduino_gpio
-		  - arduino_i2c
-		  - arduino_spi
-		  - ble
-		  - counter
-		  - gpio
-		  - i2c
-		  - i2s
-		  - ieee802154
-		  - pwm
-		  - spi
-		  - usb_cdc
-		  - usb_device
-		  - watchdog
-		  - netif:openthread
+        identifier: nrf52840dk_nrf52840
+        name: nRF52840-DK-NRF52840
+        type: mcu
+        arch: arm
+        ram: 256
+        flash: 1024
+        toolchain:
+          - zephyr
+          - gnuarmemb
+          - xtools
+        supported:
+          - adc
+          - arduino_gpio
+          - arduino_i2c
+          - arduino_spi
+          - ble
+          - counter
+          - gpio
+          - i2c
+          - i2s
+          - ieee802154
+          - pwm
+          - spi
+          - usb_cdc
+          - usb_device
+          - watchdog
+          - netif:openthread
 
 Retrieving this information may involve environment variables (e.g. `ZEPHYR_BASE`
 or `ZEPHYR_TOOLCHAIN_VARIANT`), CMake cached variables, `git` or GCC.
 
 Refer to `man uname` for details.
+
+### Find nodes
+
+The `find` command permits to search the devicetree by:
+
+- node names
+- compatible strings
+- bus devices
+- interrupt names or numbers
+
+For example, the command line bellow would list all enabled bus devices
+that generate IRQs :
+
+
+    ❯ find --enabled-only --bus * --interrupt *
+
+`find` is quite versatile and supports a handful of options.
+Refer to its extensive manual page (`man find`).
 
 ## USER INTERFACE
 
@@ -555,9 +601,15 @@ and defines a `--no-pager` option to disable it.
     that should open in the system&rsquo;s default web browser
 
 How these links will appear in the console, and whether they are *actionable* or not,
-eventually depend on the terminal.
+eventually depend on the terminal and the desktop environment.
 
 This is an example of such links: [Device Tree What It Is](https://elinux.org/Device_Tree_What_It_Is)
+
+ℹ In particular, the environment may assume DTS files are DTS audio streams
+(e.g. the VLC media player could have registered itself for handling the `.dts` file extension).
+In this case, the external link won't open, possibly without any error message.
+A work-around is to configure the desktop environment to open DTS files with
+a text editor (e.g. with the *Open with* paradigm).
 
 ### Output redirection
 

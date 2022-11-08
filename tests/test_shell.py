@@ -57,6 +57,13 @@ def test_shell_builtins():
     assert shell.builtin('pwd') is not None
     assert shell.builtin('cd') is not None
     assert shell.builtin('ls') is not None
+    assert shell.builtin('tree') is not None
+    assert shell.builtin('cat') is not None
+    assert shell.builtin('alias') is not None
+    assert shell.builtin('chosen') is not None
+    assert shell.builtin('find') is not None
+    assert shell.builtin('uname') is not None
+    assert shell.builtin('man') is not None
 
     with pytest.raises(DtshCommandNotFoundError):
        shell.exec_command_string('unsupported-builtin', DtshVt())

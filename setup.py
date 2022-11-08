@@ -42,7 +42,7 @@ setup(
     # See also: https://peps.python.org/pep-0440/
     #
     # Required.
-    version="0.1.0a3",
+    version="0.1.0a4",
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:

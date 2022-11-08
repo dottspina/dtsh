@@ -75,6 +75,9 @@ dtsh_build() {
 
 
 dtsh_dist_test() {
+    echo "DTSH_HOME: $DTSH_HOME"
+    zef_continue_yn
+
     dtsh_build
     echo
     echo '**** Setup dist environment'
@@ -100,6 +103,9 @@ dtsh_dist_test() {
 
 
 dtsh_dist_release() {
+    echo "DTSH_HOME: $DTSH_HOME"
+    zef_continue_yn
+
     dtsh_build
     echo
     echo '**** Setup dist environment'
@@ -113,7 +119,7 @@ dtsh_dist_release() {
     echo "Source dist: $src_dist"
     echo "Wheel dist:  $whl_dist"
     echo "WARNING: will publish on PyPI!!"
-    zef_confirm_yn
+    zef_continue_yn
     echo '**** Uploading to PyPI'
     python -m twine upload "$src_dist" "$whl_dist" || zef_abort
     echo 'done.'
