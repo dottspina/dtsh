@@ -302,30 +302,18 @@ class DtshTui:
         return txt
 
     @staticmethod
-    def mk_txt_node_registers(node: Node,
-                              with_status: bool = False) -> RenderableType:
-        if not node.regs:
-            return Text()
-        reg_rows = list[Text]()
+    def mk_txt_node_register(node: Node,
+                             with_status: bool = False) -> Text:
         for reg in node.regs:
-            txt = DtshTui.mk_txt_node_register(reg)
-            if with_status and (node.status != 'okay'):
-                DtshTui.txt_dim(txt)
-            reg_rows.append(txt)
-        if len (reg_rows) == 1:
-            return reg_rows[0]
-        grid = DtshTui.mk_grid(1)
-        for reg_row in reg_rows:
-            grid.add_row(reg_row)
-        return grid
-
-    @staticmethod
-    def mk_txt_node_register(reg: Register) -> Text:
-        reg_addr = hex(reg.addr) if (reg.addr is not None) else hex(0)
-        reg_size = hex(reg.size) if (reg.size is not None) else None
-        if reg_size is not None:
-            return Text(f"<{reg_addr} {reg_size}>")
-        return Text(f"<{reg_addr}>")
+            if (reg.addr is not None) and (reg.addr == node.unit_addr):
+                if reg.size is not None:
+                    txt = Text(f"<{hex(reg.addr)} {hex(reg.size)}>")
+                else:
+                    txt = Text(f"<{hex(reg.addr)}>")
+                if with_status and not Dtsh.is_node_enabled(reg.node):
+                    DtshTui.txt_dim(txt)
+                return txt
+        return Text()
 
     @staticmethod
     def mk_txt_node_interrupts(node: Node,
@@ -1347,10 +1335,10 @@ class LsColumnNodeReg(LsNodeColumn):
     """
 
     def __init__(self) -> None:
-        super().__init__("r", "Registers")
+        super().__init__("r", "Register")
 
     def mk_view(self, node: Node, shell: Dtsh) -> RenderableType:
-        return DtshTui.mk_txt_node_registers(node, with_status=True)
+        return DtshTui.mk_txt_node_register(node, with_status=True)
 
 
 class LsColumnNodeInterrupts(LsNodeColumn):
