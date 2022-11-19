@@ -1497,10 +1497,12 @@ class DtshError(Exception):
     """Base exception for devicetree shell errors.
     """
 
-    _msg: str
+    _msg: str | None
     _cause: Exception | None
 
-    def __init__(self, msg: str, cause: Exception | None = None) -> None:
+    def __init__(self,
+                 msg: str | None,
+                 cause: Exception | None = None) -> None:
         """Create an error.
 
         Arguments:
@@ -1515,7 +1517,7 @@ class DtshError(Exception):
     def msg(self) -> str:
         """The error message.
         """
-        return self._msg
+        return self._msg or ''
 
     @property
     def cause(self) -> Exception | None:
@@ -1530,7 +1532,7 @@ class DtshCommandUsageError(DtshError):
 
     def __init__(self,
                  command: DtshCommand,
-                 msg: str,
+                 msg: str | None = None,
                  cause: Exception | None = None) -> None:
         """Create a new error.
 
