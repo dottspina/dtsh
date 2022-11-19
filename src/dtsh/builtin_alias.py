@@ -9,8 +9,9 @@ from typing import Tuple
 
 from rich.table import Table
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
+from dtsh.dtsh import Dtsh, DtshCommand, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError
+from dtsh.dtsh import DtshCommandFlagLongFmt
 from dtsh.tui import DtshTui
 
 
@@ -52,7 +53,7 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
             "print defined aliases",
             True,
             [
-                DtshCommandOption('use rich listing format', 'l', None, None),
+                DtshCommandFlagLongFmt(),
             ]
         )
         self._dtsh = shell
@@ -63,24 +64,16 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
         """
         return super().usage + ' [ALIAS]'
 
-    @property
-    def with_rich_fmt(self) -> bool:
-        return self.with_flag('-l')
-
     def parse_argv(self, argv: list[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
         if self._params:
             arg_aliases = [self._params[0]]
         else:
@@ -88,7 +81,7 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
 
         if self.with_pager:
             vt.pager_enter()
-        if self.with_rich_fmt:
+        if self.with_longfmt:
             grid = self._mk_grid_aliases_rich(arg_aliases)
         else:
             grid = self._mk_grid_aliases(arg_aliases)
