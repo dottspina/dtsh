@@ -9,8 +9,9 @@ from typing import Tuple
 
 from rich.table import Table
 
-from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
+from dtsh.dtsh import Dtsh, DtshCommand, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError
+from dtsh.dtsh import DtshCommandFlagLongFmt
 from dtsh.tui import DtshTui
 
 
@@ -48,7 +49,7 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
             "print chosen configuration",
             True,
             [
-                DtshCommandOption('use rich output', 'l', None, None),
+                DtshCommandFlagLongFmt(),
             ]
         )
         self._dtsh = shell
@@ -59,24 +60,16 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
         """
         return super().usage + ' [CHOICE]'
 
-    @property
-    def with_rich_fmt(self) -> bool:
-        return self.with_flag('-l')
-
     def parse_argv(self, argv: list[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
         if self._params:
             arg_chosen = [self._params[0]]
         else:
@@ -84,7 +77,7 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
 
         if self.with_pager:
             vt.pager_enter()
-        if self.with_rich_fmt:
+        if self.with_longfmt:
             grid = self._mk_grid_chosen_rich(arg_chosen)
         else:
             grid = self._mk_grid_chosen(arg_chosen)
