@@ -1387,20 +1387,18 @@ class LsNodeTable(object):
     # The actual view.
     _grid: Table
 
-    DEFAULT_FMT = "naLAcd"
-
-    def __init__(self, shell: Dtsh, fmt: str | None = None) -> None:
+    def __init__(self, shell: Dtsh, longfmt: str) -> None:
         """Initialize a new node table.
 
         Arguments:
         shell -- the client DT shell
-        fmt -- the format string, defaults to "naLAcd".
+        longfmt -- the visible columns format string
 
         Raises DtshError when the format specifiers string is invalid.
         """
         self._dtsh = shell
         self._cols = list[LsNodeColumn]()
-        for spec in (fmt or LsNodeTable.DEFAULT_FMT):
+        for spec in longfmt:
             col = LsNodeTable._colspecs.get(spec)
             if not col:
                 raise DtshError(f"unknwon format specifier {spec}")
@@ -1663,24 +1661,33 @@ class DtNodeListView(DtshTuiView):
     # View rich table layout.
     _view: Table
 
+    # Default columns.
+    DEFAULT_LONGFMT = 'naLAcd'
+
     def __init__(self,
                  node_map: dict[str, list[Node]],
                  shell: Dtsh,
                  with_no_content: bool = False,
-                 with_rich_fmt: bool = False,
-                 fmt: str | None = None) -> None:
+                 with_longfmt: bool = False,
+                 longfmt: str | None = None) -> None:
         """Initialize the view.
 
         Arguments:
         node_map -- maps node paths to contents (aka child nodes)
         shell -- the context shell
         with_no_content -- if True, will show nodes, not their content
-        with_rich_fmt -- if True, will produce "rich output"
+        with_longfmt -- if True, use long (aka rich) listing format
+        longfmt -- specifies visible columns, implies long format if not None
         """
-        if with_rich_fmt:
-            self._init_rich_view(node_map, shell, with_no_content, fmt)
+        if with_longfmt and not longfmt:
+            # '-l' defaults columns.
+            longfmt = DtNodeListView.DEFAULT_LONGFMT
+        
+        if longfmt:
+            # '-f' implies '-l'.
+            self._init_view_longfmt(node_map, shell, with_no_content, longfmt)
         else:
-            self._init_default_view(node_map, with_no_content)
+            self._init_view_default(node_map, with_no_content)
 
     def show(self, vt: DtshVt, with_pager: bool = False) -> None:
         """Implements DtshTView.show().
@@ -1691,7 +1698,7 @@ class DtNodeListView(DtshTuiView):
         if with_pager:
             vt.pager_exit()
 
-    def _init_default_view(self,
+    def _init_view_default(self,
                            node_map: dict[str, list[Node]],
                            with_no_content: bool) -> None:
         self._view = DtshTui.mk_grid(1)
@@ -1709,13 +1716,13 @@ class DtNodeListView(DtshTuiView):
                     self._view.add_row(None)
                 n += 1
 
-    def _init_rich_view(self,
-                        node_map: dict[str, list[Node]],
-                        shell: Dtsh,
-                        with_no_content: bool,
-                        fmt: str | None) -> None:
+    def _init_view_longfmt(self,
+                           node_map: dict[str, list[Node]],
+                           shell: Dtsh,
+                           with_no_content: bool,
+                           longfmt: str) -> None:
         if with_no_content:
-            ls_table = LsNodeTable(shell, fmt)
+            ls_table = LsNodeTable(shell, longfmt)
             for path, _ in node_map.items():
                 node = shell.path2node(path)
                 ls_table.add_node_row(node)
@@ -1727,7 +1734,7 @@ class DtNodeListView(DtshTuiView):
             for path, content in node_map.items():
                 self._view.add_row(Text(f"{path}:", DtshTui.style('bold')))
                 if content:
-                    ls_table = LsNodeTable(shell, fmt)
+                    ls_table = LsNodeTable(shell, longfmt)
                     for node in content:
                         ls_table.add_node_row(node)
                     self._view.add_row(ls_table.as_view())
