@@ -9,6 +9,7 @@ from typing import Tuple
 from devicetree.edtlib import Node
 
 from dtsh.dtsh import DtshCommand, DtshCommandOption, Dtsh, DtshAutocomp, DtshVt
+from dtsh.dtsh import DtshCommandFlagLongFmt, DtshCommandArgLongFmt
 from dtsh.dtsh import DtshCommandUsageError
 from dtsh.tui import DtNodeListView
 
@@ -187,10 +188,10 @@ Path                                Bus   Interrupts
             True,
             [
                 DtshCommandOption('list node itself, not its content', 'd', None, None),
-                DtshCommandOption('use rich listing format', 'l', None, None),
                 DtshCommandOption('reverse order while sorting', 'r', None, None),
                 DtshCommandOption('list node contents recursively', 'R', None, None),
-                DtshCommandOption('visible columns format string', 'f', 'format', 'fmt'),
+                DtshCommandFlagLongFmt(),
+                DtshCommandArgLongFmt()
             ]
         )
         self._dtsh = shell
@@ -213,28 +214,16 @@ Path                                Bus   Interrupts
     def with_reverse(self) -> bool:
         return self.with_flag('-r')
 
-    @property
-    def with_rich_fmt(self) -> bool:
-        return (self.arg_fmt is not None) or self.with_flag('-l')
-
-    @property
-    def arg_fmt(self) -> str | None:
-        return self.arg_value('-f')
-
     def parse_argv(self, argv: list[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
         if self._params:
             arg_path = self._dtsh.realpath(self._params[0])
         else:
@@ -268,8 +257,8 @@ Path                                Bus   Interrupts
         view = DtNodeListView(node_map,
                               self._dtsh,
                               self.with_no_content,
-                              self.with_rich_fmt,
-                              self.arg_fmt)
+                              self.with_longfmt,
+                              self.arg_longfmt)
         view.show(vt, self.with_pager)
 
     def autocomplete_param(self, prefix: str) -> Tuple[int,list]:

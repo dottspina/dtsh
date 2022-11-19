@@ -79,10 +79,9 @@ def test_autocomp_option_name():
     assert completions[5] == '-h'
     assert completions[6] == '--pager'
     completions = completer.autocomplete('ls --', '--')
-    assert len(completions) == 3
-    assert completions[0] == '--format'
-    assert completions[1] == '--pager'
-    assert completions[2] == '--help'
+    assert len(completions) == 2
+    assert completions[0] == '--pager'
+    assert completions[1] == '--help'
 
 
 def test_autocomp_nodes():
