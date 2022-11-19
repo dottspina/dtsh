@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshUname, DtshVt
+from dtsh.dtsh import DtshCommandFlagLongFmt
 from dtsh.dtsh import DtshCommandUsageError
 from dtsh.systools import GitHub, YamlFile
 from dtsh.tui import DtshTui, DtshTuiBulletList, DtshTuiForm, DtshTuiMemo, DtshTuiYaml
@@ -123,7 +124,6 @@ Filter detailed toolchain information:
             "print system information",
             True,
             [
-                DtshCommandOption('use rich format', 'l', None, None),
                 DtshCommandOption('print Zephyr kernel version',
                                   'v',
                                   'kernel-version',
@@ -140,13 +140,10 @@ Filter detailed toolchain information:
                                   'a',
                                   'all',
                                   None),
+                DtshCommandFlagLongFmt(),
             ]
         )
         self._dtsh = shell
-
-    @property
-    def with_long_fmt(self) -> bool:
-        return self.with_flag('-l')
 
     @property
     def with_kernel_version(self) -> bool:
@@ -168,17 +165,13 @@ Filter detailed toolchain information:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
+        if len(self._params) > 0:
+            raise DtshCommandUsageError(self, 'too many parameters')
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 0:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
-        if self.with_long_fmt:
+        if self.with_longfmt:
             self._uname_long(vt)
         else:
             self._uname_brief(vt)
