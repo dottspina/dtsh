@@ -13,6 +13,7 @@ from typing import Tuple
 from devicetree.edtlib import Node
 
 from dtsh.dtsh import DtshCommand, DtshCommandOption, Dtsh, DtshAutocomp, DtshVt
+from dtsh.dtsh import DtshCommandFlagLongFmt, DtshCommandArgLongFmt
 from dtsh.dtsh import DtshCommandUsageError
 from dtsh.tui import LsNodeTable, DtshTui
 
@@ -356,8 +357,8 @@ just rely on `dtsh` command output redirection, e.g:
                 DtshCommandOption('search only enabled nodes', None, 'enabled-only', None),
                 DtshCommandOption('print nodes count',  'c',    None, None),
                 DtshCommandOption('quiet, only print nodes count',  'q',    None, None),
-                DtshCommandOption('use rich listing format', 'l', None, None),
-                DtshCommandOption('visible columns format string', 'f', None, 'fmt'),
+                DtshCommandFlagLongFmt(),
+                DtshCommandArgLongFmt()
             ]
         )
         self._dtsh = shell
@@ -387,14 +388,6 @@ just rely on `dtsh` command output redirection, e.g:
         return self.arg_value('--interrupt')
 
     @property
-    def arg_fmt(self) -> str | None:
-        return self.arg_value('-f')
-
-    @property
-    def with_rich_fmt(self) -> bool:
-        return (self.arg_fmt is not None) or self.with_flag('-l')
-
-    @property
     def with_only_enabled(self) -> bool:
         return self.with_flag('--enabled-only')
 
@@ -417,6 +410,8 @@ just rely on `dtsh` command output redirection, e.g:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
         if self.arg_pattern_name:
             self._criteria.append(FindByNameCriterion(self.arg_pattern_name))
         if self.arg_pattern_compat:
@@ -429,12 +424,6 @@ just rely on `dtsh` command output redirection, e.g:
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
         if self._params:
             arg_path = self._dtsh.realpath(self._params[0])
         else:
@@ -448,8 +437,12 @@ just rely on `dtsh` command output redirection, e.g:
                 vt.pager_enter()
 
             if not self.with_quiet:
-                if self.with_rich_fmt:
-                    self._write_found_long(vt)
+                longfmt = self.arg_longfmt
+                if self.with_longfmt and not longfmt:
+                   longfmt = self._mk_default_longmt()
+
+                if longfmt:
+                    self._write_found_long(vt, longfmt)
                 else:
                     self._write_found_default(vt)
 
@@ -484,26 +477,25 @@ just rely on `dtsh` command output redirection, e.g:
         for node in self._found:
             vt.write(node.path)
 
-    def _write_found_long(self, vt: DtshVt) -> None:
-        lsfmt = self.arg_fmt
-        if not lsfmt:
-            # Set visible columns depending on command options.
-            lsfmt = 'p'
-            if self.arg_pattern_name:
-                lsfmt += 'A'
-                lsfmt += 'L'
-            if self.arg_pattern_irq:
-                lsfmt += 'i'
-            if self.arg_pattern_bus:
-                lsfmt += 'b'
-            if self.arg_pattern_compat:
-                lsfmt += 'c'
-                lsfmt += 'd'
-        ls_table = LsNodeTable(self._dtsh, lsfmt)
+    def _write_found_long(self, vt: DtshVt, longfmt: str) -> None:
+        ls_table = LsNodeTable(self._dtsh, longfmt)
         for node in self._found:
             ls_table.add_node_row(node)
         vt.write(ls_table.as_view())
 
+    def _mk_default_longmt(self) -> str:
+        longfmt = 'p'
+        if self.arg_pattern_name:
+            longfmt += 'A'
+            longfmt += 'L'
+        if self.arg_pattern_irq:
+            longfmt += 'i'
+        if self.arg_pattern_bus:
+            longfmt += 'b'
+        if self.arg_pattern_compat:
+            longfmt += 'c'
+            longfmt += 'd'
+        return longfmt
 
 class FindByNameCriterion(FindCriterion):
     """Find nodes by names.
