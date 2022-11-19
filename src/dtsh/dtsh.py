@@ -187,7 +187,6 @@ class DtshCommandOption(object):
         """
         self._value = v
 
-
     def is_flag(self) -> bool:
         """Returns True if the option does not expect any value.
         """
@@ -197,6 +196,46 @@ class DtshCommandOption(object):
         """Reset this option's value, typically before parsing a command string.
         """
         self._value = None
+
+
+class DtshCommandFlagHelp(DtshCommandOption):
+    """Common "help" flag ('-h', '--help).
+
+    If True, print usage summary.
+    """
+
+    def __init__(self) -> None:
+        super().__init__('print usage summary', 'h', 'help', None)
+
+
+class DtshCommandFlagLongFmt(DtshCommandOption):
+    """Common "long format" flag ('-l')
+
+    If True, use long (aka rich) listing format.
+    """
+
+    def __init__(self) -> None:
+        super().__init__('use long (rich) listing format', 'l', None, None)
+
+
+class DtshCommandArgLongFmt(DtshCommandOption):
+    """Common "long format" command argument ('-f')
+
+    Specifies columns for a node table.
+    """
+
+    def __init__(self) -> None:
+        super().__init__('visible columns format string', 'f', None, 'fmt')
+
+
+class DtshCommandFlagPager(DtshCommandOption):
+    """Common "page output" flag ('--pager')
+
+    If True, page command output.
+    """
+
+    def __init__(self) -> None:
+        super().__init__('page command output', None, 'pager', None)
 
 
 class DtshCommand(object):
@@ -231,12 +270,8 @@ class DtshCommand(object):
         self._options = list[DtshCommandOption]()
         self._options.extend(options)
         if with_pager:
-            self._options.append(
-                DtshCommandOption('page command output', None, 'pager', None)
-            )
-        self._options.append(
-            DtshCommandOption('print usage summary', 'h', 'help', None)
-        )
+            self._options.append(DtshCommandFlagPager())
+        self._options.append(DtshCommandFlagHelp())
 
     @property
     def name(self) -> str:
@@ -303,6 +338,18 @@ class DtshCommand(object):
     @property
     def with_usage_summary(self) -> bool:
         return self.with_flag('-h')
+
+    @property
+    def with_help(self) -> bool:
+        return self.with_flag('-h')
+
+    @property
+    def with_longfmt(self) -> bool:
+        return self.with_flag('-l')
+
+    @property
+    def arg_longfmt(self) -> str | None:
+        return self.arg_value('-f')
 
     def option(self, name: str) -> DtshCommandOption | None:
         """Access a supported option.
