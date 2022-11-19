@@ -26,6 +26,7 @@ from rich.theme import Theme
 from rich.tree import Tree
 
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshVt, DtshError
+from dtsh.config import DtshConfig
 
 
 class DtshTui:
@@ -943,19 +944,10 @@ class DtshTui:
 
     @staticmethod
     def _load_theme() -> Theme:
-        theme = None
-        theme_path = os.path.join(Dtsh.cfg_dir_path(), 'theme')
-        if os.path.isfile(theme_path):
-            try:
-                theme = Theme.from_file(open(theme_path))
-            except Exception:
-                pass
-        if not theme:
-            theme_path = os.path.join(os.path.dirname(__file__), 'theme')
-            theme = Theme.from_file(open(theme_path))
+        theme = DtshConfig.rich_read_theme()
         # load custom dtsh config
         config = configparser.ConfigParser()
-        config.read_file(open(theme_path))
+        config.read_file(open(DtshConfig.get_theme_path()))
         for name, value in config.items('dtsh'):
             if name == 'dtsh.prompt.wchar':
                 DtshTui.PROMPT_WCHAR = value

@@ -1294,14 +1294,6 @@ class Dtsh(object):
 
         return path_prefix + path
 
-    @staticmethod
-    def cfg_dir_path() -> str:
-        xdg_cfg_dir = os.environ.get('XDG_CONFIG_HOME')
-        if not xdg_cfg_dir:
-            home = os.path.expanduser('~')
-            xdg_cfg_dir = os.path.join(home, '.config')
-        return os.path.join(xdg_cfg_dir, 'dtsh')
-
     def _init_bindings(self) -> None:
         # EDT.compat2nodes includes all compatibles matched by a devicetree node.
         # See also EDT._init_luts().

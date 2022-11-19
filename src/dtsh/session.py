@@ -22,6 +22,7 @@ from dtsh.shell import DevicetreeShell
 from dtsh.term import DevicetreeTerm
 from dtsh.autocomp import DevicetreeAutocomp
 from dtsh.tui import DtshTui
+from dtsh.config import DtshConfig
 
 
 class DevicetreeShellSession(DtshSession):
@@ -43,7 +44,7 @@ class DevicetreeShellSession(DtshSession):
         self._term = term
         self._last_err = None
 
-        self.readline_read_history()
+        DtshConfig.readline_read_history()
 
     @property
     def term(self) -> DevicetreeTerm:
@@ -106,7 +107,7 @@ class DevicetreeShellSession(DtshSession):
         """Overrides DtshSession.close().
         """
         self._term.write('bye.', style=DtshTui.style_italic())
-        self.readline_write_history()
+        DtshConfig.readline_write_history()
         sys.exit(0)
 
     def banner(self):
@@ -144,20 +145,6 @@ class DevicetreeShellSession(DtshSession):
             )
         )
         self._term.write()
-
-    def readline_hist_path(self) -> str:
-        return os.path.join(Dtsh.cfg_dir_path(), 'history')
-
-    def readline_read_history(self):
-        hist_path = self.readline_hist_path()
-        if os.path.isfile(hist_path):
-            readline.read_history_file(hist_path)
-
-    def readline_write_history(self):
-        cfg_path = Dtsh.cfg_dir_path()
-        if not os.path.isdir(cfg_path):
-            os.mkdir(cfg_path)
-        readline.write_history_file(self.readline_hist_path())
 
     @staticmethod
     def open(dt_source_path: str | None = None,
