@@ -351,7 +351,10 @@ def test_dtsh_command_options():
         '--version',
         '--pager'
     ]
-    CMD_LS.parse_argv(argv)
+
+    with pytest.raises(DtshCommandUsageError):
+        # Triggered by the '--help' flag.
+        CMD_LS.parse_argv(argv)
     assert CMD_LS.with_flag('-h')
     assert CMD_LS.with_flag('--help')
     assert CMD_LS.with_flag('-r')

@@ -83,8 +83,11 @@ class DevicetreeShellSession(DtshSession):
                 self._last_err = e
                 self._term.write(f'dtsh: Command not found: {e.name}')
             except DtshCommandUsageError as e:
-                self._last_err = e
-                self._term.write(f'{e.command.name}: {e.msg}')
+                if e.command.with_help:
+                    self._term.write(e.command.usage)
+                else:
+                    self._last_err = e
+                    self._term.write(f'{e.command.name}: {e.msg}')
             except DtshCommandFailedError as e:
                 self._last_err = e
                 self._term.write(f'{e.command.name}: {e.msg}')

@@ -431,6 +431,10 @@ class DtshCommand(object):
                 else:
                     opt.value = True
 
+        if self.with_help:
+            # Should print usage summary, see DevicetreeShellSession.run().
+            raise DtshCommandUsageError(self)
+
     def autocomplete_option(self, prefix: str) -> list[DtshCommandOption]:
         """Auto-complete a command's options name.
 
