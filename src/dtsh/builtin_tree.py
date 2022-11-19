@@ -8,6 +8,7 @@
 from typing import Tuple
 
 from dtsh.dtsh import Dtsh, DtshVt, DtshCommand, DtshCommandOption, DtshAutocomp
+from dtsh.dtsh import DtshCommandFlagLongFmt
 from dtsh.dtsh import DtshCommandUsageError
 
 from dtsh.tui import DtNodeTreeView
@@ -115,8 +116,8 @@ Assuming the current working node is the devicetree's root:
             'list devicetree nodes in tree-like format',
             True,
             [
-                DtshCommandOption('use rich listing format', 'l', None, None),
                 DtshCommandOption('max display depth of the tree', 'L', 'depth', 'level'),
+                DtshCommandFlagLongFmt(),
             ]
         )
         self._dtsh = shell
@@ -128,14 +129,10 @@ Assuming the current working node is the devicetree's root:
         return super().usage + ' [PATH]'
 
     @property
-    def with_rich_fmt(self) -> bool:
-        return self.with_flag('-l')
-
-    @property
-    def arg_level(self) -> int:
+    def arg_level(self) -> str | None:
         """Maximum display depth, 0 to follow all non disabled nodes.
         """
-        return self._level
+        return self.arg_value('-L')
 
     def reset(self) -> None:
         """Overrides DtshCommand.reset().
@@ -147,26 +144,20 @@ Assuming the current working node is the devicetree's root:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
-
-        opt = self.option('-L')
-        if opt and opt.value:
+        if len(self._params) > 1:
+            raise DtshCommandUsageError(self, 'too many parameters')
+        if self.arg_level is not None:
             try:
-                self._level = int(opt.value)
+                self._level = int(self.arg_level)
             except ValueError:
                 raise DtshCommandUsageError(
                     self,
-                    f"'{opt.value}' is not a valid level"
+                    f"'{self.arg_level}' is not a valid level"
                 )
 
     def execute(self, vt: DtshVt) -> None:
         """Implements DtshCommand.execute().
         """
-        if self.with_usage_summary:
-            vt.write(self.usage)
-            return
-        if len(self._params) > 1:
-            raise DtshCommandUsageError(self, 'too many parameters')
-
         if self._params:
             arg_path = self._dtsh.realpath(self._params[0])
         else:
@@ -176,8 +167,8 @@ Assuming the current working node is the devicetree's root:
 
         view = DtNodeTreeView(root,
                               self._dtsh,
-                              self.arg_level,
-                              self.with_rich_fmt)
+                              self._level,
+                              self.with_longfmt)
         view.show(vt, self.with_pager)
 
     def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
