@@ -7,6 +7,7 @@
 
 import os
 import readline
+import sys
 
 from rich.theme import Theme
 
@@ -18,7 +19,44 @@ class DtshConfig(object):
     """
 
     @staticmethod
-    def xdg_config_home(enforce: bool = False) -> str:
+    def usr_config_base_posix() -> str:
+        """User configuration directory (Linux).
+
+        On Linux, the user configuration is $XDG_CONFIG_HOME/dtsh.
+
+        According to the XDG Base Directory Specification,
+        should default to ~/.config/dtsh if XDG_CONFIG_HOME is not set.
+
+        See:
+        - https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        """
+        cfg_base = os.environ.get('XDG_CONFIG_HOME')
+        if not cfg_base:
+            cfg_base = os.path.join(os.path.expanduser('~'), '.config')
+        return os.path.join(cfg_base, 'dtsh')
+
+    @staticmethod
+    def usr_config_base_nt() -> str:
+        r"""User configuration directory (Windows).
+
+        On Windows (NT+), the user configuration is %LOCALAPPDATA%\dtsh,
+        and should default to ~\AppData\Local\Dtsh.
+        """
+        cfg_base = os.environ.get('LOCALAPPDATA')
+        if not cfg_base:
+            cfg_base = os.path.join(os.path.expanduser('~'), 'AppData', 'Local')
+        return os.path.join(cfg_base, 'Dtsh')
+
+    @staticmethod
+    def usr_config_base_darwin() -> str:
+        """User configuration directory (macOS).
+
+        On macOS, default to ~/Library/Dtsh.
+        """
+        return os.path.join(os.path.expanduser('~'), 'Libray', 'Dtsh')
+
+    @staticmethod
+    def usr_config_base(enforce: bool = False) -> str:
         """Returns the user's configuration directory for dtsh sessions.
 
         Arguments:
@@ -27,10 +65,12 @@ class DtshConfig(object):
 
         Raises IOError when the requested directory can't be initialized.
         """
-        cfg_dir = os.environ.get('XDG_CONFIG_HOME')
-        if not cfg_dir:
-            cfg_dir = os.path.join(os.path.expanduser('~'), '.config')
-        cfg_dir = os.path.join(cfg_dir, 'dtsh')
+        if sys.platform == 'darwin':
+            cfg_dir = DtshConfig.usr_config_base_darwin()
+        elif os.name == 'nt':
+            cfg_dir = DtshConfig.usr_config_base_nt()
+        else:
+            cfg_dir = DtshConfig.usr_config_base_posix()
         if enforce and not os.path.isdir(cfg_dir):
             os.mkdir(cfg_dir)
         return cfg_dir
@@ -41,13 +81,13 @@ class DtshConfig(object):
 
         Raises IOError when the configuration directory can't be initialized.
         """
-        return os.path.join(DtshConfig.xdg_config_home(True), 'history')
+        return os.path.join(DtshConfig.usr_config_base(True), 'history')
 
     @staticmethod
     def get_theme_path() -> str:
         """Returns the rich theme's path.
         """
-        theme_path = os.path.join(DtshConfig.xdg_config_home(), 'theme')
+        theme_path = os.path.join(DtshConfig.usr_config_base(), 'theme')
         if not os.path.isfile(theme_path):
             # Fallback to default theme.
             theme_path = os.path.join(os.path.dirname(__file__), 'theme')
