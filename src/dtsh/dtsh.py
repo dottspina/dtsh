@@ -336,10 +336,6 @@ class DtshCommand(object):
         return self.with_flag('--pager')
 
     @property
-    def with_usage_summary(self) -> bool:
-        return self.with_flag('-h')
-
-    @property
     def with_help(self) -> bool:
         return self.with_flag('-h')
 

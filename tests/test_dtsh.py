@@ -363,7 +363,7 @@ def test_dtsh_command_options():
     assert CMD_LS.with_flag('--recursive')
     assert CMD_LS.with_flag('--version')
     assert not CMD_LS.with_flag('-l')
-    assert CMD_LS.with_usage_summary
+    assert CMD_LS.with_help
     assert CMD_LS.with_pager
     opt_alias = CMD_LS.option('-a')
     assert opt_alias is not None
@@ -378,7 +378,7 @@ def test_dtsh_command_options():
     assert not CMD_LS.with_flag('--recursive')
     assert not CMD_LS.with_flag('--version')
     assert not CMD_LS.with_flag('-l')
-    assert not CMD_LS.with_usage_summary
+    assert not CMD_LS.with_help
     assert not CMD_LS.with_pager
     opt_alias = CMD_LS.option('-a')
     assert opt_alias is not None
