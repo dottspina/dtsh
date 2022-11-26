@@ -426,11 +426,8 @@ class ZephyrBoardForm(DtshTuiForm):
 
         r_board = DtshTui.mk_txt(uname.board, style='dtsh.board')
         if uname.board_dts_file:
-            r_dts = DtshTui.mk_txt_link(
-                "DTS",
-                f'file:{uname.board_dts_file}',
-                style='dtsh.default'
-            )
+            r_dts = DtshTui.mk_txt("DTS")
+            DtshTui.txt_update_link_file(r_dts, uname.board_dts_file)
             r_board.append_text(DtshTui.mk_txt(' ('))
             r_board.append_text(r_dts)
             r_board.append_text(DtshTui.mk_txt(')'))

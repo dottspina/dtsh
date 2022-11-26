@@ -10,6 +10,7 @@ from typing import ClassVar
 
 import configparser
 import os
+import pathlib
 import yaml
 
 from devicetree.edtlib import ControllerAndData, Loader as edtlib_YamlLoader
@@ -248,7 +249,8 @@ class DtshTui:
 
     @staticmethod
     def txt_update_link_file(txt: Text, path: str) -> None:
-        txt.stylize(Style(link=f'file:{path}'))
+        uri = pathlib.Path(path).as_uri()
+        txt.stylize(Style(link=uri))
 
     @staticmethod
     def txt_dim(txt: Text) -> None:
@@ -1026,11 +1028,9 @@ class DtshTuiYaml(DtshTuiWidget):
         """
         self._grid = DtshTui.mk_grid(1)
         if with_title:
-            r_name = DtshTui.mk_txt_link(
-                os.path.basename(path),
-                f"file:{path}",
-                style='dtsh.basename'
-            )
+            r_name = DtshTui.mk_txt(os.path.basename(path),
+                                    style='dtsh.basename')
+            DtshTui.txt_update_link_file(r_name, path)
             self._grid.add_row(r_name)
             self._grid.add_row()
         self._grid.add_row(DtshTui.mk_yaml(path))
