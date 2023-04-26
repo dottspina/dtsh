@@ -287,17 +287,20 @@ class DtshTui:
     @staticmethod
     def mk_txt_node_bus_device(node: Node, with_status: bool = False) -> Text:
         txt = Text()
-        if node.bus:
+        if node.buses:
+            buses: List[str] = node.buses
             txt = txt.append_text(
-                DtshTui.mk_txt(node.bus, DtshTui.style(DtshTui.STYLE_DT_BUS))
+                DtshTui.mk_txt(' '.join(buses),
+                               DtshTui.style(DtshTui.STYLE_DT_BUS))
             )
-        if node.on_bus:
+        if node.on_buses:
+            buses: List[str] = node.on_buses
             prefix = "on "
             if len(txt.plain) > 0:
                 prefix = " " + prefix
             txt = txt.append_text(DtshTui.mk_txt(prefix))
             txt = txt.append_text(
-                DtshTui.mk_txt(str(node.on_bus),
+                DtshTui.mk_txt(' '.join(buses),
                                DtshTui.style(DtshTui.STYLE_DT_ON_BUS))
             )
         if (len(txt.plain) > 0) and with_status and (node.status != 'okay'):
