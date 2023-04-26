@@ -5,7 +5,7 @@
 """Built-in 'alias' command."""
 
 
-from typing import Tuple
+from typing import Tuple, List
 
 from rich.table import Table
 
@@ -64,7 +64,7 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
         """
         return super().usage + ' [ALIAS]'
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -89,16 +89,16 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
         if self.with_pager:
             vt.pager_exit()
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
-        completions = list[str]()
+        completions: List[str] = []
         for alias in self._dtsh.dt_aliases:
             if alias.startswith(prefix) and (len(alias) > len(prefix)):
                 completions.append(alias)
         return (DtshAutocomp.MODE_ANY, completions)
 
-    def _mk_grid_aliases(self, arg_aliases: list[str]) -> Table:
+    def _mk_grid_aliases(self, arg_aliases: List[str]) -> Table:
         grid = DtshTui.mk_grid(3)
         for alias in arg_aliases:
             try:
@@ -115,7 +115,7 @@ watchdog0 → /soc/watchdog@40010000 nordic,nrf-wdt
             grid.add_row(txt_alias, txt_arrow, txt_path)
         return grid
 
-    def _mk_grid_aliases_rich(self, arg_aliases: list[str]) -> Table:
+    def _mk_grid_aliases_rich(self, arg_aliases: List[str]) -> Table:
         grid = DtshTui.mk_grid(4)
         for alias in arg_aliases:
             try:

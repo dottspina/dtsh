@@ -4,7 +4,7 @@
 
 """Auto-completion with GNU readline for devicetree shells."""
 
-from collections import OrderedDict
+from typing import cast, Any, Dict, List
 
 from devicetree.edtlib import Node, Binding, Property
 
@@ -17,7 +17,7 @@ class DevicetreeAutocomp(DtshAutocomp):
 
     # Maps completion state (strings) and model (objects).
     #
-    _autocomp_state: OrderedDict[str, object]
+    _autocomp_state: Dict[str, Any]
 
     # Autocomp mode.
     #
@@ -28,7 +28,7 @@ class DevicetreeAutocomp(DtshAutocomp):
         """
         self._dtsh = shell
         self._mode = DtshAutocomp.MODE_ANY
-        self._autocomp_state = OrderedDict[str, object]()
+        self._autocomp_state = {}
 
     @property
     def count(self) -> int:
@@ -37,13 +37,13 @@ class DevicetreeAutocomp(DtshAutocomp):
         return len(self._autocomp_state)
 
     @property
-    def hints(self) -> list[str]:
+    def hints(self) -> List[str]:
         """Implements DtshAutocomp.hints().
         """
         return list(self._autocomp_state.keys())
 
     @property
-    def model(self) -> list:
+    def model(self) -> List[Any]:
         """Implements DtshAutocomp.model().
         """
         return list(self._autocomp_state.values())
@@ -63,7 +63,7 @@ class DevicetreeAutocomp(DtshAutocomp):
     def autocomplete(self,
                      cmdline: str,
                      prefix: str,
-                     cursor: int = 0) -> list[str]:
+                     cursor: int = 0) -> List[str]: # pyright: ignore reportUnusedVariable
         """Implements DtshAutocomp.autocomplete().
         """
         self.reset()
@@ -112,7 +112,7 @@ class DevicetreeAutocomp(DtshAutocomp):
     def _autocomp_with_params(self, cmd:DtshCommand, prefix: str) -> None:
         self._mode, model = cmd.autocomplete_param(prefix)
         if self._mode == DtshAutocomp.MODE_DT_NODE:
-            for node in list[Node](model):
+            for node in cast(List[Node], model):
                 hint = node.path
                 if node.children:
                     # Prepare auto-completion state for TABing
@@ -121,14 +121,14 @@ class DevicetreeAutocomp(DtshAutocomp):
                     hint += '/'
                 self._autocomp_state[hint] = node
         elif self._mode == DtshAutocomp.MODE_DT_PROP:
-            for prop in list[Property](model):
+            for prop in cast(List[Property], model):
                 hint = f'{prop.node.path}${prop.name}'
                 self._autocomp_state[hint] = prop
         elif self._mode == DtshAutocomp.MODE_DT_BINDING:
-            for binding in list[Binding](model):
+            for binding in cast(List[Binding], model):
                 self._autocomp_state[binding.compatible] = binding
         elif self._mode == DtshAutocomp.MODE_DTSH_CMD:
-            for cmd in list[DtshCommand](model):
+            for cmd in cast(List[DtshCommand], model):
                 self._autocomp_state[cmd.name] = cmd
         else:
             for completion in model:

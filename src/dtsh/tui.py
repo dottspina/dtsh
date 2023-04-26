@@ -6,7 +6,7 @@
 
 
 from abc import abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Optional, Union, List, Dict
 
 import configparser
 import os
@@ -33,7 +33,7 @@ from dtsh.config import DtshConfig
 class DtshTui:
 
     # DTSH theme.
-    _theme: ClassVar[Theme|None] = None
+    _theme: ClassVar[Union[Theme, None]] = None
 
     # Common UTF-8 symbols.
     #
@@ -214,14 +214,14 @@ class DtshTui:
         return Text(msg, style='dtsh.warning')
 
     @staticmethod
-    def mk_txt_desc(desc: str | None) -> Text:
+    def mk_txt_desc(desc: Optional[str]) -> Text:
         if not desc:
             return Text("No description available.",
                         DtshTui.style(DtshTui.STYLE_APOLOGY))
         return Text(desc.strip(), DtshTui.style(DtshTui.STYLE_DT_DESC))
 
     @staticmethod
-    def mk_txt_desc_short(desc: str | None) -> Text:
+    def mk_txt_desc_short(desc: Optional[str]) -> Text:
         if not desc:
             return Text()
         desc_lines = desc.strip().split('\n')
@@ -235,7 +235,7 @@ class DtshTui:
     @staticmethod
     def mk_txt_link(label: str,
                     url: str,
-                    style: StyleType | None = None) -> Text:
+                    style: Optional[StyleType] = None) -> Text:
         """Returns a text link.
 
         Arguments:
@@ -323,7 +323,7 @@ class DtshTui:
                                with_status: bool = False) -> RenderableType:
         if not node.interrupts:
             return Text()
-        irq_rows = list[Text]()
+        irq_rows: List[Text] = []
         for irq in node.interrupts:
             txt = DtshTui.mk_txt_node_irq(irq)
             if with_status and (node.status != 'okay'):
@@ -348,7 +348,7 @@ class DtshTui:
                 txt = Text(f"IRQ_{irq}", DtshTui.style(DtshTui.STYLE_DT_IRQ))
             txt.append_text(DtshTui.mk_txt(f"/{level}"))
         else:
-            irq_data = list[Text]()
+            irq_data: List[Text] = []
             for k, v in ctrl_data.data.items():
                 irq_data.append(DtshTui.mk_txt(f"{k}:{str(v)}"))
             txt = Text(" ").join(irq_data)
@@ -370,7 +370,7 @@ class DtshTui:
         # Skip path_segments[0] == ''.
         path_segments = path_segments[1:]
 
-        txt_segments = list[Text]()
+        txt_segments: List[Text] = []
         for i, seg in enumerate(path_segments):
             if (i == 0) or (i == len(path_segments) - 1):
                 txt_segments.append(
@@ -413,7 +413,7 @@ class DtshTui:
                             with_status: bool = False) -> Text:
         if not node.compats:
             return Text()
-        txt_bindings = list[Text]()
+        txt_bindings: List[Text] = []
         for compat in node.compats:
             txt = Text(compat, DtshTui.style(DtshTui.STYLE_DT_COMPATS))
             if compat == node.matching_compat:
@@ -446,7 +446,7 @@ class DtshTui:
         """
         if not node.labels:
             return Text()
-        txt_labels = list[Text]()
+        txt_labels: List[Text] = []
         for label in node.labels:
             txt = Text(label, DtshTui.style(DtshTui.STYLE_DT_LABELS))
             if with_status and (node.status != 'okay'):
@@ -474,7 +474,7 @@ class DtshTui:
     def mk_txt_node_aliases(node: Node, with_status: bool = False) -> Text:
         if not node.aliases:
             return Text()
-        txt_aliases = list[Text]()
+        txt_aliases: List[Text] = []
         for alias in node.aliases:
             txt_aliases.append(Text(alias, DtshTui.style(DtshTui.STYLE_DT_ALIAS)))
         txt = Text(' ').join(txt_aliases)
@@ -570,7 +570,7 @@ class DtshTui:
     ############################################################################
 
     @staticmethod
-    def mk_command_hints_display(model: list[DtshCommand]) -> Table:
+    def mk_command_hints_display(model: List[DtshCommand]) -> Table:
         """Layout command completion hints.
 
         Arguments:
@@ -584,7 +584,7 @@ class DtshTui:
         return tab
 
     @staticmethod
-    def mk_option_hints_display(model: list[DtshCommandOption]) -> Table:
+    def mk_option_hints_display(model: List[DtshCommandOption]) -> Table:
         """Layout option completion hints.
 
         Arguments:
@@ -598,7 +598,7 @@ class DtshTui:
         return tab
 
     @staticmethod
-    def mk_node_hints_display(model: list[Node]) -> Table:
+    def mk_node_hints_display(model: List[Node]) -> Table:
         """Layout node completion hints.
 
         Arguments:
@@ -623,7 +623,7 @@ class DtshTui:
         return tab
 
     @staticmethod
-    def mk_property_hints_display(model: list[Property]) -> Table:
+    def mk_property_hints_display(model: List[Property]) -> Table:
         """Layout property completion hints.
 
         Arguments:
@@ -644,7 +644,7 @@ class DtshTui:
         return tab
 
     @staticmethod
-    def mk_binding_hints_display(model: list[Binding]) -> Table:
+    def mk_binding_hints_display(model: List[Binding]) -> Table:
         """Layout bindings completion hints.
 
         Arguments:
@@ -786,7 +786,7 @@ class DtshTui:
 
     @staticmethod
     def mk_node_tree_item(node: Node,
-                          width: list[int],
+                          width: List[int],
                           with_status: bool = False) -> Table:
         grid = DtshTui.mk_grid(3)
         for i, w in enumerate(width):
@@ -847,9 +847,9 @@ class DtshTui:
             DtshTui.mk_branch_binding_path(inc_path, branch, shell)
 
     @staticmethod
-    def _yaml_include_as_paths(yaml_py, shell: Dtsh) -> list[str]:
+    def _yaml_include_as_paths(yaml_py, shell: Dtsh) -> List[str]:
         # Paths for the YAML files included with "include:" statements.
-        inc_paths = list[str]()
+        inc_paths: List[str] = []
         # See edtlib.Binding._merge_includes()
         yaml_inc = yaml_py.get('include')
         if isinstance(yaml_inc, str):
@@ -909,8 +909,8 @@ class DtshTui:
         return grid
 
     @staticmethod
-    def mk_form(name_style: Style | None = None,
-                value_style: Style | None = None ) -> Table:
+    def mk_form(name_style: Optional[Style] = None,
+                value_style: Optional[Style] = None ) -> Table:
         form = DtshTui.mk_grid(2)
         if name_style:
             form.columns[0].style = name_style
@@ -923,7 +923,7 @@ class DtshTui:
         form.add_row(name, val)
 
     @staticmethod
-    def mk_grid_simple_head(cols: list[str]) -> Table:
+    def mk_grid_simple_head(cols: List[str]) -> Table:
         grid = Table.grid(padding=(0, 1))
         grid.box = box.SIMPLE_HEAD
         grid.show_header = True
@@ -988,8 +988,8 @@ class DtshTuiBulletList(DtshTuiWidget):
     _bullet: str
 
     def __init__(self,
-                 label: str | Text,
-                 bullet: str  | None = None) -> None:
+                 label: Union[str, Text],
+                 bullet: Optional[str] = None) -> None:
         """Initialize the widget.
 
         Arguments:
@@ -1001,7 +1001,7 @@ class DtshTuiBulletList(DtshTuiWidget):
         self._bullet = bullet or f"    {DtshTui.WCHAR_BULLET} "
         self._grid.add_row(label)
 
-    def add_item(self, item: str | Text) -> None:
+    def add_item(self, item: Union[str, Text]) -> None:
         """
         """
         r_item = DtshTui.mk_txt(self._bullet)
@@ -1058,8 +1058,8 @@ class DtshTuiForm(DtshTuiWidget):
     _value_style: StyleType
 
     def __init__(self,
-                 label_style: StyleType | None = None,
-                 value_style: StyleType | None = None) -> None:
+                 label_style: Optional[StyleType] = None,
+                 value_style: Optional[StyleType] = None) -> None:
         """
         Arguments:
         label_style --
@@ -1073,9 +1073,9 @@ class DtshTuiForm(DtshTuiWidget):
 
     def add_field(self,
                   label: str,
-                  value: str | None,
+                  value: Optional[str],
                   default: str = "Unknown",
-                  style: StyleType | None = None) -> None:
+                  style: Optional[StyleType] = None) -> None:
         """Add a string field.
 
         Arguments:
@@ -1094,7 +1094,7 @@ class DtshTuiForm(DtshTuiWidget):
 
     def add_field_rich(self,
                        label: str,
-                       value: Text | None,
+                       value: Optional[Text],
                        default: str = "Unknown") -> None:
         """Add a rich field.
 
@@ -1374,7 +1374,7 @@ class LsNodeTable(object):
     _dtsh: Dtsh
 
     # The columns for the requested format.
-    _cols: list[LsNodeColumn]
+    _cols: List[LsNodeColumn]
 
     # The actual view.
     _grid: Table
@@ -1389,7 +1389,7 @@ class LsNodeTable(object):
         Raises DtshError when the format specifiers string is invalid.
         """
         self._dtsh = shell
-        self._cols = list[LsNodeColumn]()
+        self._cols = []
         for spec in longfmt:
             col = LsNodeTable._colspecs.get(spec)
             if not col:
@@ -1411,7 +1411,7 @@ class LsNodeTable(object):
         return self._grid
 
     # Available columns.
-    _colspecs: dict[str, LsNodeColumn] = {
+    _colspecs: Dict[str, LsNodeColumn] = {
         col.spec: col for col in [
             LsColumnNodeName(),
             LsColumnNodeAddr(),
@@ -1557,7 +1557,7 @@ class DtshTuiMemo(DtshTuiPortraitView):
         super().__init__(expand=expand)
         self._indent_size = indent_size
 
-    def add_entry(self, name: str, content: RenderableType | None) -> None:
+    def add_entry(self, name: str, content: Optional[RenderableType]) -> None:
         """Add a named entry to the memo.
 
         Arguments:
@@ -1657,11 +1657,11 @@ class DtNodeListView(DtshTuiView):
     DEFAULT_LONGFMT = 'naLAcd'
 
     def __init__(self,
-                 node_map: dict[str, list[Node]],
+                 node_map: Dict[str, List[Node]],
                  shell: Dtsh,
                  with_no_content: bool = False,
                  with_longfmt: bool = False,
-                 longfmt: str | None = None) -> None:
+                 longfmt: Optional[str] = None) -> None:
         """Initialize the view.
 
         Arguments:
@@ -1691,7 +1691,7 @@ class DtNodeListView(DtshTuiView):
             vt.pager_exit()
 
     def _init_view_default(self,
-                           node_map: dict[str, list[Node]],
+                           node_map: Dict[str, List[Node]],
                            with_no_content: bool) -> None:
         self._view = DtshTui.mk_grid(1)
         N = len(node_map)
@@ -1709,7 +1709,7 @@ class DtNodeListView(DtshTuiView):
                 n += 1
 
     def _init_view_longfmt(self,
-                           node_map: dict[str, list[Node]],
+                           node_map: Dict[str, List[Node]],
                            shell: Dtsh,
                            with_no_content: bool,
                            longfmt: str) -> None:
@@ -1797,7 +1797,7 @@ class DtNodeTreeView(DtshTuiView):
         # Decrease depth on return.
         self._depth -= 1
 
-    def _get_branch_width(self, root: Node) -> list[int]:
+    def _get_branch_width(self, root: Node) -> List[int]:
         width_addr = 0
         width_nick = 0
         for _, node in root.children.items():

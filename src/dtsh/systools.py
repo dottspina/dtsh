@@ -5,7 +5,7 @@
 """Host system tools helpers."""
 
 
-from typing import Any
+from typing import Any, Dict, List, Union
 
 import os
 import re
@@ -22,7 +22,7 @@ class CMakeCache(object):
     """
 
     # CMake cached variables name to value.
-    _cache: dict[str,str]
+    _cache: Dict[str,str]
 
     def __init__(self, build_dir: str) -> None:
         """Initialize the CMake helper with a build directory content.
@@ -33,7 +33,7 @@ class CMakeCache(object):
         Argument:
         build_dir -- path to a valid CMake build directory
         """
-        self._cache = dict[str,str]()
+        self._cache = {}
         try:
             argv = [
                 'cmake.exe' if os.name == 'nt' else 'cmake',
@@ -54,7 +54,7 @@ class CMakeCache(object):
             # Silently fail (cmake is probably unavailable).
             pass
 
-    def get(self, name: str) -> str | None:
+    def get(self, name: str) -> Union[str, None]:
         """Access CMake cached variables.
 
         Arguments:
@@ -81,7 +81,7 @@ class Git(object):
         """
         self._git = 'git.exe' if os.name == 'nt' else 'git'
 
-    def get_head_commit(self, repo_path: str) -> str | None:
+    def get_head_commit(self, repo_path: str) -> Union[str, None]:
         """Returns git -C $ZEPHYR_BASE log -n 1 --pretty=format:"%h", or None.
         """
         rev = None
@@ -105,10 +105,10 @@ class Git(object):
             pass
         return rev
 
-    def get_head_tags(self, repo_path: str) -> list[str]:
+    def get_head_tags(self, repo_path: str) -> List[str]:
         """Returns git tag --points-at HEAD, or None.
         """
-        tags = list[str]()
+        tags: List[str] = []
         try:
             argv = [
                 self._git,
@@ -135,16 +135,16 @@ class GCCArm(object):
     """
 
     # Resolved path to arm-none-eabi-gcc.
-    _gcc: str | None
+    _gcc: Union[str, None]
 
     # Toolchain, e.g.: GNU Arm Embedded Toolchain 10.3-2021.10
-    _toolchain: str | None
+    _toolchain: Union[str, None]
 
     # GCC version.
-    _version: str | None
+    _version: Union[str, None]
 
     # Build date, e.g. 20210824
-    _build_date: str | None
+    _build_date: Union[str, None]
 
     def __init__(self, gnuarm_dir: str) -> None:
         """Initialize helper for host operating system.
@@ -173,15 +173,15 @@ class GCCArm(object):
                 pass
 
     @property
-    def toolchain(self) -> str | None:
+    def toolchain(self) -> Union[str, None]:
         return self._toolchain
 
     @property
-    def version(self) -> str | None:
+    def version(self) -> Union[str, None]:
         return self._version
 
     @property
-    def build_date(self) -> str | None:
+    def build_date(self) -> Union[str, None]:
         return self._build_date
 
     def _init_version(self, cmake_stdout: str) -> None:
@@ -236,8 +236,8 @@ class YamlFile(object):
     """YAML binding file.
     """
 
-    _yaml: Any | None
-    _content: str | None
+    _yaml: Union[Any, None]
+    _content: Union[str, None]
 
     def __init__(self, path: str):
         """
@@ -255,16 +255,16 @@ class YamlFile(object):
                 yaml_file.close()
 
     @property
-    def content(self) -> str | None:
+    def content(self) -> Union[str, None]:
         """Returns the YAML file content, or None.
         """
         return self._content
 
     @property
-    def include(self) -> list[str]:
+    def include(self) -> List[str]:
         """Returns the list of included YAML files.
         """
-        inc_names = list[str]()
+        inc_names: List[str] = []
         if self._yaml:
             yaml_include = self._yaml.get('include')
             if isinstance(yaml_include, str):
@@ -274,7 +274,7 @@ class YamlFile(object):
                     inc_names.append(name)
         return inc_names
 
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str) -> Union[Any, None]:
         """Access YAML content by key.
 
         Argument:

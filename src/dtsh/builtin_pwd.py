@@ -5,6 +5,8 @@
 """Built-in 'pwd' command."""
 
 
+from typing import List
+
 from dtsh.dtsh import Dtsh, DtshCommand, DtshVt
 from dtsh.dtsh import DtshCommandUsageError
 
@@ -42,7 +44,7 @@ EXAMPLES
         )
         self._dtsh = shell
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)

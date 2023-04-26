@@ -7,6 +7,7 @@
 import re
 
 from abc import abstractmethod
+from typing import List, Union
 
 from devicetree.edtlib import Binding
 
@@ -151,8 +152,8 @@ class DtshManPageBuiltin(DtshManPage):
                     content_vstr = content_vstr[i:]
                     break
             # Parse all sections.
-            sec_name: str | None = None
-            sec_vstr: list[str] | None = None
+            sec_name: Union[str, None] = None
+            sec_vstr: Union[List[str], None] = None
             for line in content_vstr:
                 line = line.rstrip()
                 if self._is_section_header(line):
@@ -160,7 +161,7 @@ class DtshManPageBuiltin(DtshManPage):
                     if sec_name and sec_vstr:
                         self._add_section(sec_name, sec_vstr)
                     # Init new section's content.
-                    sec_vstr = list[str]()
+                    sec_vstr = []
                     sec_name = line
                 else:
                     # Append line to current section.
@@ -173,7 +174,7 @@ class DtshManPageBuiltin(DtshManPage):
     def _is_section_header(self, line: str) -> bool:
         return self._re.match(line) is not None
 
-    def _add_section(self, name: str, vstr: list[str]) -> None:
+    def _add_section(self, name: str, vstr: List[str]) -> None:
         md_src = '\n'.join(vstr)
         md = Markdown(md_src)
         self._add_named_content(name, md)
@@ -287,8 +288,8 @@ class DtshManPageDtsh(DtshManPage):
 
     def _add_content_as_sections(self):
         # Parse all sections.
-        sec_name: str | None = None
-        sec_vstr: list[str] | None = None
+        sec_name: Union[str, None] = None
+        sec_vstr: Union[List[str], None] = None
         content_vstr = _DTSH_MAN_PAGE.strip().splitlines()
         for line in content_vstr:
             line = line.rstrip()
@@ -297,7 +298,7 @@ class DtshManPageDtsh(DtshManPage):
                 if sec_name and sec_vstr:
                     self._add_section(sec_name, sec_vstr)
                 # Init new section's content.
-                sec_vstr = list[str]()
+                sec_vstr = []
                 sec_name = line
             else:
                 # Append line to current section.
@@ -311,7 +312,7 @@ class DtshManPageDtsh(DtshManPage):
     def _is_section_header(self, line: str) -> bool:
         return self._re.match(line) is not None
 
-    def _add_section(self, name: str, vstr: list[str]) -> None:
+    def _add_section(self, name: str, vstr: List[str]) -> None:
         md_src = '\n'.join(vstr)
         md = Markdown(md_src)
         self._add_named_content(name, md)

@@ -5,7 +5,7 @@
 """Built-in 'tree' command."""
 
 
-from typing import Tuple
+from typing import Tuple, List, Union
 
 from dtsh.dtsh import Dtsh, DtshVt, DtshCommand, DtshCommandOption, DtshAutocomp
 from dtsh.dtsh import DtshCommandFlagLongFmt
@@ -129,7 +129,7 @@ Assuming the current working node is the devicetree's root:
         return super().usage + ' [PATH]'
 
     @property
-    def arg_level(self) -> str | None:
+    def arg_level(self) -> Union[str, None]:
         """Maximum display depth, 0 to follow all non disabled nodes.
         """
         return self.arg_value('-L')
@@ -140,7 +140,7 @@ Assuming the current working node is the devicetree's root:
         super().reset()
         self._level = 0
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -171,7 +171,7 @@ Assuming the current working node is the devicetree's root:
                               self.with_longfmt)
         view.show(vt, self.with_pager)
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
         return (DtshAutocomp.MODE_DT_NODE,

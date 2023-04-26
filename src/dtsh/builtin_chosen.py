@@ -5,7 +5,7 @@
 """Built-in 'chosen' command."""
 
 
-from typing import Tuple
+from typing import List, Tuple
 
 from rich.table import Table
 
@@ -60,7 +60,7 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
         """
         return super().usage + ' [CHOICE]'
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -85,16 +85,16 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
         if self.with_pager:
             vt.pager_exit()
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
-        completions = list[str]()
+        completions: List[str] = []
         for choice in self._dtsh.dt_chosen:
             if choice.startswith(prefix) and (len(choice) > len(prefix)):
                 completions.append(choice)
         return (DtshAutocomp.MODE_ANY, completions)
 
-    def _mk_grid_chosen(self, arg_chosen: list[str]) -> Table:
+    def _mk_grid_chosen(self, arg_chosen: List[str]) -> Table:
         grid = DtshTui.mk_grid(3)
         for choice in arg_chosen:
             try:
@@ -111,7 +111,7 @@ zephyr,entropy → /soc/random@4000d000 nordic,nrf-rng
             grid.add_row(txt_choice, txt_arrow, txt_path)
         return grid
 
-    def _mk_grid_chosen_rich(self, arg_chosen: list[str]) -> Table:
+    def _mk_grid_chosen_rich(self, arg_chosen: List[str]) -> Table:
         grid = DtshTui.mk_grid(4)
         for choice in arg_chosen:
             try:

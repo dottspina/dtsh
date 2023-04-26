@@ -5,7 +5,7 @@
 """Built-in 'cat' command."""
 
 
-from typing import Tuple
+from typing import Tuple, List
 
 from dtsh.dtsh import Dtsh, DtshError, DtshVt, DtshCommand, DtshAutocomp
 from dtsh.dtsh import DtshCommandUsageError
@@ -78,7 +78,7 @@ Description
         """
         return super().usage + ' PATH'
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides Dtsh.parse_argv().
         """
         super().parse_argv(argv)
@@ -108,7 +108,7 @@ Description
 
         view.show(vt, self.with_pager)
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
         # <node-path> := /<node-name>/.../<node-name>

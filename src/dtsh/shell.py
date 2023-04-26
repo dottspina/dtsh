@@ -5,9 +5,9 @@
 """Devicetree shell PoC implementation."""
 
 import os
+from typing import List, Optional
 
 from devicetree.edtlib import EDT
-from dtsh.builtin_find import DtshBuiltinFind
 
 from dtsh.dtsh import Dtsh, DtshUname, DtshError
 from dtsh.builtin_pwd import DtshBuiltinPwd
@@ -16,6 +16,7 @@ from dtsh.builtin_chosen import DtshBuiltinChosen
 from dtsh.builtin_cd import DtshBuiltinCd
 from dtsh.builtin_ls import DtshBuiltinLs
 from dtsh.builtin_tree import DtshBuiltinTree
+from dtsh.builtin_find import DtshBuiltinFind
 from dtsh.builtin_cat import DtshBuiltinCat
 from dtsh.builtin_man import DtshBuiltinMan
 from dtsh.builtin_uname import DtshBuiltinUname
@@ -47,8 +48,8 @@ class DevicetreeShell(Dtsh):
             self._builtins[cmd.name] = cmd
 
     @staticmethod
-    def create(dt_source_path: str | None = None,
-               dt_bindings_path: list[str] | None = None) -> Dtsh:
+    def create(dt_source_path: Optional[str] = None,
+               dt_bindings_path: Optional[List[str]] = None) -> Dtsh:
         """Create a shell-like interface to a devicetree .
 
         Factory method that loads a devicetree source file and its bindings

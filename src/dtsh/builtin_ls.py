@@ -5,7 +5,7 @@
 """Built-in 'ls' command."""
 
 
-from typing import Tuple
+from typing import Tuple, Dict, List
 from devicetree.edtlib import Node
 
 from dtsh.dtsh import DtshCommand, DtshCommandOption, Dtsh, DtshAutocomp, DtshVt
@@ -214,7 +214,7 @@ Path                                Bus   Interrupts
     def with_reverse(self) -> bool:
         return self.with_flag('-r')
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -240,7 +240,7 @@ Path                                Bus   Interrupts
         if self.with_reverse:
             roots.reverse()
 
-        node_map = dict[str, list[Node]]()
+        node_map: Dict[str, List[Node]] = {}
         for root in roots:
             if self.with_no_content:
                 node_map[root.path] = []
@@ -261,7 +261,7 @@ Path                                Bus   Interrupts
                               self.arg_longfmt)
         view.show(vt, self.with_pager)
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
         return (DtshAutocomp.MODE_DT_NODE,
@@ -269,8 +269,8 @@ Path                                Bus   Interrupts
 
     def _follow_node_content(self,
                              parent: Node,
-                             node_map: dict[str, list[Node]]) -> None:
-        node_map[parent.path] = list[Node]()
+                             node_map: Dict[str, List[Node]]) -> None:
+        node_map[parent.path] = []
         for _, node in parent.children.items():
             node_map[parent.path].append(node)
             self._follow_node_content(node, node_map)

@@ -4,6 +4,8 @@
 
 """Rich terminal for devicetree shells."""
 
+from typing import Union
+
 import readline
 
 from rich.console import Console, PagerContext
@@ -20,7 +22,7 @@ class DevicetreeTerm(DtshVt):
     """
 
     _console: Console
-    _pager: PagerContext | None
+    _pager: Union[PagerContext, None]
 
     def __init__(self,
                  readline_comp_hook = None,

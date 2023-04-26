@@ -8,7 +8,7 @@
 import re
 
 from abc import abstractmethod
-from typing import Tuple
+from typing import Tuple, List, Union
 
 from devicetree.edtlib import Node
 
@@ -339,10 +339,10 @@ just rely on `dtsh` command output redirection, e.g:
 ```
 """
     # Search criteria.
-    _criteria: list[FindCriterion]
+    _criteria: List[FindCriterion]
 
     # Nodes matched during the last search.
-    _found: list[Node]
+    _found: List[Node]
 
     def __init__(self, shell: Dtsh) -> None:
         super().__init__(
@@ -362,8 +362,8 @@ just rely on `dtsh` command output redirection, e.g:
             ]
         )
         self._dtsh = shell
-        self._criteria = list[FindCriterion]()
-        self._found = list[Node]()
+        self._criteria = []
+        self._found = []
 
     @property
     def usage(self) -> str:
@@ -372,19 +372,19 @@ just rely on `dtsh` command output redirection, e.g:
         return super().usage + ' [PATH]'
 
     @property
-    def arg_pattern_name(self) -> str | None:
+    def arg_pattern_name(self) -> Union[str, None]:
         return self.arg_value('--name')
 
     @property
-    def arg_pattern_compat(self) -> str | None:
+    def arg_pattern_compat(self) -> Union[str, None]:
         return self.arg_value('--compat')
 
     @property
-    def arg_pattern_bus(self) -> str | None:
+    def arg_pattern_bus(self) -> Union[str, None]:
         return self.arg_value('--bus')
 
     @property
-    def arg_pattern_irq(self) -> str | None:
+    def arg_pattern_irq(self) -> Union[str, None]:
         return self.arg_value('--interrupt')
 
     @property
@@ -406,7 +406,7 @@ just rely on `dtsh` command output redirection, e.g:
         self._found.clear()
         self._criteria.clear()
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -453,7 +453,7 @@ just rely on `dtsh` command output redirection, e.g:
             if self.with_pager:
                 vt.pager_exit()
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
         return (DtshAutocomp.MODE_DT_NODE,
@@ -522,7 +522,7 @@ class FindByNameCriterion(FindCriterion):
     CLASS_NODE_NAME = r'[\w,.+\-]*'
 
     # Pattern for regular expression type search, None for plain text search.
-    _re: re.Pattern | None
+    _re: Union[re.Pattern, None]
 
     def __init__(self, pattern: str) -> None:
         """Initialize criterion.
@@ -571,7 +571,7 @@ class FindByCompatCriterion(FindCriterion):
     CLASS_COMPATIBLE = r'[a-z0-9\-,]*'
 
     # Pattern for regular expression type search, None for plain text search.
-    _re: re.Pattern | None
+    _re: Union[re.Pattern, None]
 
     def __init__(self, pattern: str) -> None:
         """Initialize criterion.
@@ -622,7 +622,7 @@ class FindByBusCriterion(FindCriterion):
     CLASS_BUS = r'[\w]*'
 
     # Pattern for regular expression type search, None for plain text search.
-    _re: re.Pattern | None
+    _re: Union[re.Pattern, None]
 
     def __init__(self, pattern: str) -> None:
         """Initialize criterion.
@@ -683,11 +683,11 @@ class FindByIrqCriterion(FindCriterion):
     CLASS_IRQ_NAME = r'[\w\-]*'
 
     # Search by IRQ number, None for search by IRQ name.
-    _irq_num: int | None
+    _irq_num: Union[int, None]
 
     # Search by IRQ name: pattern for regular expression type search,
     # None for plain text search.
-    _re: re.Pattern | None
+    _re: Union[re.Pattern, None]
 
     def __init__(self, pattern: str) -> None:
         """Initialize criterion.

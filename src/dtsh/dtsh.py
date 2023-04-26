@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from abc import abstractmethod
-from typing import ClassVar, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 from devicetree.edtlib import EDT, EDTError, Node, Binding, Property
 
@@ -84,16 +84,16 @@ class DtshCommandOption(object):
     """
 
     _desc: str
-    _shortname: str | None
-    _longname: str | None
-    _arg: str | None
-    _value: bool | str | None
+    _shortname: Union[str, None]
+    _longname: Union[str, None]
+    _arg: Union[str, None]
+    _value: Union[str, bool, None]
 
     def __init__(self,
                  desc: str,
-                 shortname: str | None,
-                 longname: str | None,
-                 arg: str | None = None) -> None:
+                 shortname: Optional[str],
+                 longname: Optional[str],
+                 arg: Optional[str] = None) -> None:
         """Define a command option.
 
         Arguments:
@@ -118,7 +118,7 @@ class DtshCommandOption(object):
         return self._desc
 
     @property
-    def shortname(self) -> str | None:
+    def shortname(self) -> Union[str, None]:
         """The option's short name, e.g. 'v'.
 
         This name does not include the '-' prefix,
@@ -130,7 +130,7 @@ class DtshCommandOption(object):
         return self._shortname
 
     @property
-    def longname(self) -> str | None:
+    def longname(self) -> Union[str, None]:
         """The option's long name, e.g. 'verbose'.
 
         This name does not include the '--' prefix,
@@ -142,7 +142,7 @@ class DtshCommandOption(object):
         return self._longname
 
     @property
-    def argname(self) -> str | None:
+    def argname(self) -> Union[str, None]:
         """The option's argument name, or None if the options is a flag.
         """
         return self._arg
@@ -164,7 +164,7 @@ class DtshCommandOption(object):
         return txt
 
     @property
-    def value(self) -> bool | str | None:
+    def value(self) -> Union[str, bool, None]:
         """The option's value.
 
         Before a command's options are parsed, this value is None.
@@ -176,7 +176,7 @@ class DtshCommandOption(object):
         return self._value
 
     @value.setter
-    def value(self, v: bool | str):
+    def value(self, v: Union[bool, str]) -> None:
         """Set the option's value.
 
         The options values are typically set when parsing a command string.
@@ -247,15 +247,15 @@ class DtshCommand(object):
     # Description, e.g. 'list nodes content'.
     _desc: str
     # Supported options.
-    _options: list[DtshCommandOption]
+    _options: List[DtshCommandOption]
     # Parsed parameters (command string components that are not parsed options).
-    _params: list[str]
+    _params: List[str]
 
     def __init__(self,
                  name: str,
                  desc: str,
                  with_pager: bool = False,
-                 options: list[DtshCommandOption] = []) -> None:
+                 options: List[DtshCommandOption] = []) -> None:
         """Defines a devicetree shell command.
 
         Arguments:
@@ -266,8 +266,8 @@ class DtshCommand(object):
         """
         self._name = name
         self._desc= desc
-        self._params = list[str]()
-        self._options = list[DtshCommandOption]()
+        self._params = []
+        self._options = []
         self._options.extend(options)
         if with_pager:
             self._options.append(DtshCommandFlagPager())
@@ -295,7 +295,7 @@ class DtshCommand(object):
         return txt
 
     @property
-    def options(self) -> list[DtshCommandOption]:
+    def options(self) -> List[DtshCommandOption]:
         """Available options.
         """
         return self._options
@@ -316,7 +316,7 @@ class DtshCommand(object):
         return shortopts
 
     @property
-    def getopt_long(self) -> list[str]:
+    def getopt_long(self) -> List[str]:
         """Long options specification list compatible with GNU getopt.
 
         e.g. ['help','alias='] when the option supports a flag '--help',
@@ -344,10 +344,10 @@ class DtshCommand(object):
         return self.with_flag('-l')
 
     @property
-    def arg_longfmt(self) -> str | None:
+    def arg_longfmt(self) -> Union[str, None]:
         return self.arg_value('-f')
 
-    def option(self, name: str) -> DtshCommandOption | None:
+    def option(self, name: str) -> Union[DtshCommandOption, None]:
         """Access a supported option.
 
         Arguments:
@@ -379,7 +379,7 @@ class DtshCommand(object):
             return opt.is_flag() and (opt.value == True)
         return False
 
-    def arg_value(self, name) -> str | None:
+    def arg_value(self, name) -> Union[str, None]:
         """Access an argument value.
 
         Arguments:
@@ -402,7 +402,7 @@ class DtshCommand(object):
             opt.reset()
         self._params.clear()
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Parse command line arguments, setting options and parameters.
 
         Arguments:
@@ -431,7 +431,7 @@ class DtshCommand(object):
             # Should print usage summary, see DevicetreeShellSession.run().
             raise DtshCommandUsageError(self)
 
-    def autocomplete_option(self, prefix: str) -> list[DtshCommandOption]:
+    def autocomplete_option(self, prefix: str) -> List[DtshCommandOption]:
         """Auto-complete a command's options name.
 
         Arguments:
@@ -439,7 +439,7 @@ class DtshCommand(object):
 
         Returns a list of matching options.
         """
-        completions = list[DtshCommandOption]()
+        completions: List[DtshCommandOption] = []
 
         if prefix == '-':
             # Match all options, sorting with short names first.
@@ -466,8 +466,8 @@ class DtshCommand(object):
         return completions
 
     def autocomplete_argument(self,
-                              arg: DtshCommandOption,
-                              prefix: str) -> list[str]:
+                              arg: DtshCommandOption, # pyright: ignore reportUnusedVariable
+                              prefix: str) -> List[str]: # pyright: ignore reportUnusedVariable
         """Auto-complete a command's option value (aka argument).
 
         Arguments:
@@ -478,7 +478,7 @@ class DtshCommand(object):
         """
         return []
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]: # pyright: ignore reportUnusedVariable
         """Auto-complete a command's parameter value.
 
         Completions are represented by the tagged list of possible
@@ -516,36 +516,36 @@ class DtshUname(object):
     _dts_path: str
 
     # Resolved binding directories.
-    _binding_dirs: list[str]
+    _binding_dirs: List[str]
 
     # Resolved $ZEPHYR_BASE.
-    _zephyr_base: str | None
+    _zephyr_base: Union[str, None]
 
     # Resolved $ZEPHYR_SDK_INSTALL_DIR.
-    _zephyr_sdk_dir: str | None
+    _zephyr_sdk_dir: Union[str, None]
 
     # Cached $ZEPHYR_SDK_INSTALL_DIR/sdk_version file content.
-    _zephyr_sdk_version: str | None
+    _zephyr_sdk_version: Union[str, None]
 
     # Resolved $GNUARMEMB_TOOLCHAIN_PATH.
-    _gnuarm_dir: str | None
+    _gnuarm_dir: Union[str, None]
 
     # $ZEPHYR_TOOLCHAIN_VARIANT ('gnuarmemb' or 'zephyr').
-    _zephyr_toolchain: str | None
+    _zephyr_toolchain: Union[str, None]
 
     # git -C $ZEPHYR_BASE log -n 1 --pretty=format:"%h"
-    _zephyr_rev: str | None
+    _zephyr_rev: Union[str, None]
 
     # git tag --points-at HEAD
-    _zephyr_tags: list[str]
+    _zephyr_tags: List[str]
 
     # Resolved BOARD_DIR (CMake).
-    _board_dir: str | None
+    _board_dir: Union[str, None]
 
     # CMake cached variables.
     _cmake_cache: CMakeCache
 
-    def __init__(self, dts_path:str, binding_dirs: list[str] | None) -> None:
+    def __init__(self, dts_path:str, binding_dirs: Optional[List[str]]) -> None:
         """Initialize system info.
 
         Arguments:
@@ -561,8 +561,8 @@ class DtshUname(object):
         except FileNotFoundError as e:
             raise DtshError(f"DTS file not found: {dts_path}", e)
 
-        self._binding_dirs = list[str]()
-        self._zephyr_tags = list[str]()
+        self._binding_dirs = []
+        self._zephyr_tags = []
         self._zephyr_base = None
         self._zephyr_sdk_dir = None
         self._zephyr_sdk_version = None
@@ -596,7 +596,7 @@ class DtshUname(object):
         return self._dts_path
 
     @property
-    def dt_binding_dirs(self) -> list[str]:
+    def dt_binding_dirs(self) -> List[str]:
         """Returns the DT bindings search path as a list of resolved path.
 
         When no bindings are specified by the dtsh command line,
@@ -641,28 +641,28 @@ class DtshUname(object):
         return self._binding_dirs
 
     @property
-    def zephyr_base(self) -> str | None:
+    def zephyr_base(self) -> Union[str, None]:
         """Returns the resolved path to the Zephyr kernel repository set by
         the environment variable ZEPHYR_BASE, or None if unset.
         """
         return self._zephyr_base
 
     @property
-    def zephyr_toolchain(self) -> str | None:
+    def zephyr_toolchain(self) -> Union[str, None]:
         """Returns the toolchain variant ('zephyr' or 'gnuarmemb') set by the
         environment variable ZEPHYR_TOOLCHAIN_VARIANT, or None if unset.
         """
         return self._zephyr_toolchain
 
     @property
-    def zephyr_sdk_dir(self) -> str | None:
+    def zephyr_sdk_dir(self) -> Union[str, None]:
         """Returns resolved path the Zephyr SDK directory set by the environment
         variable ZEPHYR_SDK_INSTALL_DIR, or None if unset.
         """
         return self._zephyr_sdk_dir
 
     @property
-    def gnuarm_dir(self) -> str | None:
+    def gnuarm_dir(self) -> Union[str, None]:
         """Value of the environment variable GNUARMEMB_TOOLCHAIN_PATH, or None.
         """
         """Returns the GCC Arm base directory set by the environment variable
@@ -671,7 +671,7 @@ class DtshUname(object):
         return self._gnuarm_dir
 
     @property
-    def zephyr_kernel_rev(self) -> str | None:
+    def zephyr_kernel_rev(self) -> Union[str, None]:
         """Returns the Zephyr kernel revision as given by
         git -C $ZEPHYR_BASE log -n 1 --pretty=format:"%h",
         or None when unavailable.
@@ -679,7 +679,7 @@ class DtshUname(object):
         return self._zephyr_rev
 
     @property
-    def zephyr_kernel_tags(self) -> list[str]:
+    def zephyr_kernel_tags(self) -> List[str]:
         """Returns the Zephyr kernel tags for the current
         repository state, as given by git tag --points-at HEAD,
         or None when unavailable.
@@ -687,7 +687,7 @@ class DtshUname(object):
         return self._zephyr_tags
 
     @property
-    def zephyr_kernel_version(self) -> str | None:
+    def zephyr_kernel_version(self) -> Union[str, None]:
         """Returns the Zephyr kernel version tag for the current
         repository state, e.g. 'zephyr-v3.1.0',
         or None if the state does not match a tagged Zephyr kernel release.
@@ -704,7 +704,7 @@ class DtshUname(object):
         return version
 
     @property
-    def zephyr_sdk_version(self) -> str | None:
+    def zephyr_sdk_version(self) -> Union[str, None]:
         """Returns the Zephyr SDK version set in the file
         $ZEPHYR_SDK_INSTALL_DIR/sdk_version, or None if unavailable.
         """
@@ -720,7 +720,7 @@ class DtshUname(object):
         return self._zephyr_sdk_version
 
     @property
-    def gnuarm_version(self) -> str | None:
+    def gnuarm_version(self) -> Union[str, None]:
         """Returns GCC Arm toolchain version, or None if unavailable.
         """
         if self._gnuarm_dir:
@@ -728,14 +728,14 @@ class DtshUname(object):
         return None
 
     @property
-    def board_dir(self) -> str | None:
+    def board_dir(self) -> Union[str, None]:
         """Returns the resolved path to the board directory set by
         the CMake cached variable BOARD_DIR, or None if unavailable.
         """
         return self._board_dir
 
     @property
-    def board(self) -> str | None:
+    def board(self) -> Union[str, None]:
         """Returns the best guess fo the board (try BOARD environment variable
         and CMake cache) or None if unavailable.
         """
@@ -753,7 +753,7 @@ class DtshUname(object):
         return found_board
 
     @property
-    def board_dts_file(self) -> str | None:
+    def board_dts_file(self) -> Union[str, None]:
         """Returns the best guess for the the DTS file path (relies on
         CMake cache), or None if unavailable.
         """
@@ -764,7 +764,7 @@ class DtshUname(object):
         return None
 
     @property
-    def board_binding_file(self) -> str | None:
+    def board_binding_file(self) -> Union[str, None]:
         """Returns the best guess for the board binding file path (relies on
         CMake cache), or None if unavailable.
         """
@@ -862,15 +862,15 @@ class Dtsh(object):
     _cwd: Node
 
     # Built-in commands.
-    _builtins: dict[str, DtshCommand]
+    _builtins: Dict[str, DtshCommand]
 
     # Cached bindings map.
-    _bindings: dict[str, Binding]
+    _bindings: Dict[str, Binding]
 
     # Cached available DT binding paths (including YAML files that do
     # not describe a compatible).
     # Memory trade-off: this map may contain about 2000 entries.
-    _binding2path: dict[str, str]
+    _binding2path: Dict[str, str]
 
     # Sysinfo.
     _uname: DtshUname
@@ -890,9 +890,9 @@ class Dtsh(object):
         self._edt = edt
         self._uname = uname
         self._cwd = self._edt.get_node('/')
-        self._builtins = dict[str, DtshCommand]()
-        self._bindings = dict[str, Binding]()
-        self._binding2path = dict[str, str]()
+        self._builtins = {}
+        self._bindings = {}
+        self._binding2path = {}
         self._init_binding_paths()
         self._init_bindings()
 
@@ -919,13 +919,13 @@ class Dtsh(object):
         return self._cwd.path
 
     @property
-    def builtins(self) -> list[DtshCommand]:
+    def builtins(self) -> List[DtshCommand]:
         """Available shell built-ins as a list.
         """
         return [cmd for _, cmd in self._builtins.items()]
 
     @property
-    def dt_bindings(self) -> dict[str, Binding]:
+    def dt_bindings(self) -> Dict[str, Binding]:
         """Map each compatible to its binding.
 
         This collection should include all compatibles that are both:
@@ -940,7 +940,7 @@ class Dtsh(object):
         """
         return self._bindings
 
-    def dt_binding(self, compat: str) -> Binding | None:
+    def dt_binding(self, compat: str) -> Union[Binding, None]:
         """Access bindings by their compatible.
 
         See Dtsh.dt_bindings() for limitations.
@@ -953,7 +953,7 @@ class Dtsh(object):
         """
         return self._bindings.get(compat)
 
-    def dt_binding_path(self, fname: str) -> str | None:
+    def dt_binding_path(self, fname: str) -> Union[str, None]:
         """Search binding directories for a given DT specification file name.
 
         Contrary to the Dtsh.dt_binding() API, this search is not limited
@@ -967,18 +967,18 @@ class Dtsh(object):
         return self._binding2path.get(fname)
 
     @property
-    def dt_aliases(self) -> dict[str, Node]:
-        aliases = dict[str, Node]()
+    def dt_aliases(self) -> Dict[str, Node]:
+        aliases: Dict[str, Node] = {}
         for alias, dt_node in self._edt._dt.alias2node.items():
             edt_node = self._edt.get_node(dt_node.path)
             aliases[alias] = edt_node
         return aliases
 
     @property
-    def dt_chosen(self) -> dict[str, Node]:
+    def dt_chosen(self) -> Dict[str, Node]:
         return self._edt.chosen_nodes
 
-    def builtin(self, name: str) -> DtshCommand | None:
+    def builtin(self, name: str) -> Union[DtshCommand, None]:
         """Access a built-in by command name.
 
         Arguments:
@@ -1099,7 +1099,7 @@ class Dtsh(object):
         path = self.realpath(path)
         self._cwd = self.path2node(path)
 
-    def ls(self, path: str) -> list[Node]:
+    def ls(self, path: str) -> List[Node]:
         """List a devicetree node's children.
 
         The path is first resolved (see `Dtsh.realpath()`) to:
@@ -1152,7 +1152,7 @@ class Dtsh(object):
             return [n for n in self.ls(dirpath) if n.path.startswith(prefix)]
         else:
             dirnode = self.path2node(path)
-            return list[Node](dirnode.children.values())
+            return list(dirnode.children.values())
 
     def exec_command_string(self, cmd_str: str, vt: DtshVt) -> None:
         """Execute a command string.
@@ -1349,7 +1349,7 @@ class Dtsh(object):
     def _init_binding_paths(self) -> None:
         # Mostly duplicates code from edtlib._binding_paths()
         # and edtlib.EDT._init_compat2binding().
-        yaml_paths = list[str]()
+        yaml_paths: List[str] = []
         for bindings_dir in self._edt.bindings_dirs:
             for root, _, filenames in os.walk(bindings_dir):
                 for filename in filenames:
@@ -1390,7 +1390,7 @@ class DtshAutocomp(object):
 
     @property
     @abstractmethod
-    def hints(self) -> list[str]:
+    def hints(self) -> List[str]:
         """Current completion state.
 
         This is the list of completion strings that match the last prefix
@@ -1399,7 +1399,7 @@ class DtshAutocomp(object):
 
     @property
     @abstractmethod
-    def model(self) -> list:
+    def model(self) -> List[Any]:
         """Current completion model.
 
         This is the model objects correponding to the current completion hints.
@@ -1425,7 +1425,7 @@ class DtshAutocomp(object):
     def autocomplete(self,
                      cmdline: str,
                      prefix: str,
-                     cursor: int = -1) -> list[str]:
+                     cursor: int = -1) -> List[str]:
         """Auto-complete command line.
 
         Arguments:
@@ -1438,7 +1438,7 @@ class DtshAutocomp(object):
         """
 
     @staticmethod
-    def autocomplete_with_nodes(prefix: str, shell: Dtsh) -> list[Node]:
+    def autocomplete_with_nodes(prefix: str, shell: Dtsh) -> List[Node]:
         """Helper function to auto-complete with a list of nodes.
 
         Arguments:
@@ -1447,7 +1447,7 @@ class DtshAutocomp(object):
 
         Returns a list of matching nodes.
         """
-        completions = list[Node]()
+        completions: List[Node] = []
 
         if prefix:
             path_prefix = shell.realpath(prefix)
@@ -1473,9 +1473,9 @@ class DtshAutocomp(object):
     @staticmethod
     def autocomplete_with_properties(node_prefix: str,
                                      prop_prefix: str,
-                                     shell: Dtsh) -> list[Property]:
+                                     shell: Dtsh) -> List[Property]:
 
-        completions = list[Property]()
+        completions: List[Property] = []
         path_prefix = shell.realpath(node_prefix)
         if shell.isnode(path_prefix):
             node = shell.path2node(path_prefix)
@@ -1489,12 +1489,12 @@ class DtshError(Exception):
     """Base exception for devicetree shell errors.
     """
 
-    _msg: str | None
-    _cause: Exception | None
+    _msg: Union[str, None]
+    _cause: Union[Exception, None]
 
     def __init__(self,
-                 msg: str | None,
-                 cause: Exception | None = None) -> None:
+                 msg: Optional[str],
+                 cause: Optional[Exception] = None) -> None:
         """Create an error.
 
         Arguments:
@@ -1512,7 +1512,7 @@ class DtshError(Exception):
         return self._msg or ''
 
     @property
-    def cause(self) -> Exception | None:
+    def cause(self) -> Union[Exception, None]:
         """The error cause as an exception, or None.
         """
         return self._cause
@@ -1524,8 +1524,8 @@ class DtshCommandUsageError(DtshError):
 
     def __init__(self,
                  command: DtshCommand,
-                 msg: str | None = None,
-                 cause: Exception | None = None) -> None:
+                 msg: Optional[str] = None,
+                 cause: Optional[Exception] = None) -> None:
         """Create a new error.
 
         Arguments:
@@ -1550,7 +1550,7 @@ class DtshCommandFailedError(DtshError):
     def __init__(self,
                  command: DtshCommand,
                  msg: str,
-                 cause: Exception | None = None) -> None:
+                 cause: Optional[Exception] = None) -> None:
         """Create a new error.
 
         Arguments:
@@ -1612,7 +1612,7 @@ class DtshSession(object):
 
     @property
     @abstractmethod
-    def last_err(self) -> DtshError | None:
+    def last_err(self) -> Union[DtshError, None]:
         """Last error triggered by a command execution.
         """
 

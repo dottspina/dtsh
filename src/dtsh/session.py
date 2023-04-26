@@ -5,6 +5,8 @@
 """Devicetree shell session."""
 
 
+from typing import cast, List, Optional, Union
+
 import os
 import re
 import readline
@@ -31,7 +33,7 @@ class DevicetreeShellSession(DtshSession):
 
     _dtsh: Dtsh
     _term: DevicetreeTerm
-    _last_err: DtshError | None
+    _last_err: Union[DtshError, None]
 
     def __init__(self, shell: Dtsh, term: DevicetreeTerm) -> None:
         """Creates a session.
@@ -52,7 +54,7 @@ class DevicetreeShellSession(DtshSession):
         return self._term
 
     @property
-    def last_err(self) -> DtshError | None:
+    def last_err(self) -> Union[DtshError, None]:
         return self._last_err
 
     def run(self):
@@ -147,8 +149,8 @@ class DevicetreeShellSession(DtshSession):
         self._term.write()
 
     @staticmethod
-    def open(dt_source_path: str | None = None,
-             dt_bindings_path: list[str] | None = None) -> DtshSession:
+    def open(dt_source_path: Optional[str] = None,
+             dt_bindings_path: Optional[List[str]] = None) -> DtshSession:
         """
         """
         global _session
@@ -172,13 +174,13 @@ class DevicetreeShellSession(DtshSession):
 
 
 # Shell session singleton state.
-_session: DevicetreeShellSession | None = None
-_autocomp: DevicetreeAutocomp | None = None
+_session: Union[DevicetreeShellSession, None] = None
+_autocomp: Union[DevicetreeAutocomp, None] = None
 
 
 # GNU readline completer function callback for rl_completion_matches().
 # MUST answer completions that actually match te given prefix.
-def readline_completions_hook(text: str, state: int) -> str | None:
+def readline_completions_hook(text: str, state: int) -> Union[str, None]:
     if _autocomp is None:
         return None
 
@@ -217,19 +219,19 @@ def readline_display_hook(substitution, matches, longest_match_length) -> None:
 
     if _autocomp.model:
         if _autocomp.mode == DtshAutocomp.MODE_DTSH_CMD:
-            model = list[DtshCommand](_autocomp.model)
+            model = cast(List[DtshCommand], _autocomp.model)
             view = DtshTui.mk_command_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DTSH_OPT:
-            model = list[DtshCommandOption](_autocomp.model)
+            model = cast(List[DtshCommandOption], _autocomp.model)
             view = DtshTui.mk_option_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_BINDING:
-            model = list[Binding](_autocomp.model)
+            model = cast(List[Binding], _autocomp.model)
             view = DtshTui.mk_binding_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_NODE:
-            model = list[Node](_autocomp.model)
+            model = cast(List[Node], _autocomp.model)
             view = DtshTui.mk_node_hints_display(model)
         elif _autocomp.mode == DtshAutocomp.MODE_DT_PROP:
-            model = list[Property](_autocomp.model)
+            model = cast(List[Property], _autocomp.model)
             view = DtshTui.mk_property_hints_display(model)
         else:
             # Autcomp mode MODE_ANY.
@@ -343,7 +345,7 @@ class FileStdoutVt(DtshVt):
         if s:
             svg = svg[:s.start()] + svg[s.end() + 1:]
         # Remove top padding
-        svg_vstr = list[str]()
+        svg_vstr: List[str] = []
         re_view = re.compile(_RE_SVG_VIEWPORT)
         re_rect = re.compile(_RE_SVG_RECT)
         re_trans = re.compile(_RE_SVG_TRANSFORM)

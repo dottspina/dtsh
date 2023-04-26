@@ -5,6 +5,8 @@
 """Built-in 'uname' command."""
 
 
+from typing import List, Union
+
 import os
 
 from rich.table import Table
@@ -161,7 +163,7 @@ Filter detailed toolchain information:
     def with_all(self) -> bool:
         return self.with_flag('-a')
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -233,7 +235,7 @@ Filter detailed toolchain information:
 
         view.show(vt, self.with_pager)
 
-    def _mk_layout_zephyr_kernel(self) -> Table | None:
+    def _mk_layout_zephyr_kernel(self) -> Union[Table, None]:
         if self._dtsh.uname.zephyr_base:
             layout = DtshTui.mk_grid(1)
             layout.add_row(ZephyrKernelForm(self._dtsh.uname).as_renderable())
@@ -251,7 +253,7 @@ Filter detailed toolchain information:
             return layout
         return None
 
-    def _mk_layout_board(self) -> Table | None:
+    def _mk_layout_board(self) -> Union[Table, None]:
         if self._dtsh.uname.board:
             layout = DtshTui.mk_grid(1)
             layout.add_row(ZephyrBoardForm(self._dtsh.uname).as_renderable())

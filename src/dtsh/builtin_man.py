@@ -5,7 +5,7 @@
 """Built-in 'man' command."""
 
 import readline
-from typing import Tuple
+from typing import Tuple, List
 
 from devicetree.edtlib import Binding
 
@@ -73,7 +73,7 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
     def with_no_pager(self) -> bool:
         return self.with_flag('--no-pager')
 
-    def parse_argv(self, argv: list[str]) -> None:
+    def parse_argv(self, argv: List[str]) -> None:
         """Overrides DtshCommand.parse_argv().
         """
         super().parse_argv(argv)
@@ -105,7 +105,7 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
         else:
             raise DtshCommandFailedError(self, f'page not found: {arg_page}')
 
-    def autocomplete_param(self, prefix: str) -> Tuple[int,list]:
+    def autocomplete_param(self, prefix: str) -> Tuple[int, List]:
         """Overrides DtshCommand.autocomplete_param().
         """
         # 1st, complete according to flags.
@@ -130,16 +130,16 @@ To open a the manual page for a DT compatible (ARMv7-M NVIC):
 
         return (DtshAutocomp.MODE_ANY, [])
 
-    def _autocomplete_dtsh_cmd(self, prefix: str) -> list[DtshCommand]:
-        completions = list[DtshCommand]()
+    def _autocomplete_dtsh_cmd(self, prefix: str) -> List[DtshCommand]:
+        completions: List[DtshCommand] = []
         if prefix.find('/') == -1:
             for cmd in self._dtsh.builtins:
                 if (not prefix) or (cmd.name.startswith(prefix) and (len(cmd.name) > len(prefix))):
                     completions.append(cmd)
         return completions
 
-    def _autocomplete_dt_binding(self, prefix: str) -> list[Binding]:
-        completions = list[Binding]()
+    def _autocomplete_dt_binding(self, prefix: str) -> List[Binding]:
+        completions: List[Binding] = []
         for compat, binding in self._dtsh.dt_bindings.items():
             if prefix:
                 if compat.startswith(prefix) and (len(compat) > len(prefix)):
