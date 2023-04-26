@@ -4,11 +4,11 @@
 
 """Built-in 'man' command."""
 
-import readline
 from typing import Tuple, List
 
 from devicetree.edtlib import Binding
 
+from dtsh.rl import readline
 from dtsh.dtsh import Dtsh, DtshCommand, DtshCommandOption, DtshAutocomp, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandUsageError, DtshCommandFailedError
 from dtsh.man import DtshManPageBinding, DtshManPageBuiltin, DtshManPageDtsh

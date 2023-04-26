@@ -6,11 +6,11 @@
 
 
 import os
-import readline
 import sys
 
 from rich.theme import Theme
 
+from dtsh.rl import readline
 from dtsh.dtsh import DtshError
 
 

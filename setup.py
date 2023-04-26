@@ -109,7 +109,11 @@ setup(
     # https://packaging.python.org/discussions/install-requires-vs-requirements/
     #
     # Requirements for both devicetree and dtsh.
-    install_requires=["PyYAML>=5.1", "rich", "Pygments"],
+    install_requires=[
+        "PyYAML>=5.1", "rich", "Pygments",
+        # Preferred GNU readline support for macOS.
+        "gnureadline;sys_platform=='darwin'",
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"

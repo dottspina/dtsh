@@ -9,7 +9,6 @@ from typing import cast, List, Optional, Union
 
 import os
 import re
-import readline
 import signal
 import sys
 
@@ -18,6 +17,7 @@ from devicetree.edtlib import Node, Binding, Property
 from rich.console import Console
 from rich.text import Text
 
+from dtsh.rl import readline
 from dtsh.dtsh import Dtsh, DtshAutocomp, DtshCommand, DtshCommandOption, DtshSession, DtshVt
 from dtsh.dtsh import DtshError, DtshCommandNotFoundError, DtshCommandUsageError, DtshCommandFailedError
 from dtsh.shell import DevicetreeShell

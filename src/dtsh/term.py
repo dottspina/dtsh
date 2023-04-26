@@ -6,10 +6,10 @@
 
 from typing import Union
 
-import readline
 
 from rich.console import Console, PagerContext
 
+from dtsh.rl import readline
 from dtsh.dtsh import DtshVt
 from dtsh.tui import DtshTui
 
