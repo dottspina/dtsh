@@ -1,0 +1,7 @@
+# Python requirements for development/tests.
+#
+mypy
+types-PyYAML
+pyright
+pylint
+pytest

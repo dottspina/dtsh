@@ -70,6 +70,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 # Install dtsh in a dedicated Python virtual environment
 $ python -m venv --prompt dtsh .venv
 $ . .venv/bin/activate
+$ pip install --upgrade pip setuptools
 $ pip install --upgrade dtsh
 
 # Setting ZEPHYR_BASE will help dtsh in building a default bindings search path
@@ -142,12 +143,6 @@ It's recommended to install ~dtsh~ in a dedicated Python virtual environment.
 A Python /best practice/ is to always install a consistent set of /scripts/ and their dependencies in a dedicated
 [[https://peps.python.org/pep-0405/][virtual environment]], with up-to-date ~pip~, ~setuptools~ and ~wheel~ packages.
 
-#+begin_src sh
-python -m venv .venv
-. .venv/bin/activate
-pip install --upgrade pip setuptools wheel
-#+end_src
-
 See also [[https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/][Installing packages using pip and virtual environments]].
 
 *** Install from sources
@@ -159,7 +154,7 @@ git clone https://github.com/dottspina/dtsh.git
 cd dtsh
 python -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip setuptools
 pip install .
 #+end_src
 
@@ -168,7 +163,7 @@ pip install .
 Install from [[https://pypi.org/project/dtsh/][PyPI]] in a dedicated Python virtual environment:
 
 #+begin_src sh
-python -m venv --prompt dtsh .venv
+python -m venv .venv
 . .venv/bin/activate
 pip install --upgrade pip setuptools
 pip install --upgrade dtsh
@@ -179,8 +174,9 @@ pip install --upgrade dtsh
 To remove ~dtsh~ and all its direct dependencies from a dedicated virtual environment:
 
 #+begin_src sh
-. /path/to/.venv/bin/activate
-pip uninstall dtsh rich Pygments devicetree
+cd dtsh
+. .venv/bin/activate
+pip uninstall dtsh rich Pygments
 #+end_src
 
 ** Run
@@ -242,64 +238,8 @@ See also issue [[https://github.com/dottspina/dtsh/issues/1#issuecomment-1278281
 
 ** Zephyr integration
 
-We'll assume a [[https://docs.zephyrproject.org/latest/develop/west/][west]]-managed Zephyr [[https://docs.zephyrproject.org/latest/develop/west/basics.html#example-workspace][workspace]] with a typical file layout
-(see [[https://docs.zephyrproject.org/latest/develop/getting_started/#get-zephyr-and-install-python-dependencies][Get Zephyr and install Python dependencies]]):
-
-#+begin_src
-zephyrproject/                 # Workspace topdir
-│
-│   # Per-workspace Python virtual environment, may be updated by west after manifest modification:
-├── .venv/
-│   └── bin                    # Python run-time and Zephyr tools (e.g. west, pylink, pyocd)
-│   └── lib                    # required Python libraries
-│
-├── .west/                     # marks the location of the workspace topdir
-│   └── config                 # per-workspace local configuration file
-│
-│   # The manifest repository, never modified by west after creation:
-├── zephyr/                    # .git/ repo
-│   └── west.yml               # manifest file
-│
-│   # Projects managed by west:
-├── modules/
-│   └── lib/
-│       └── tinycbor/          # .git/ project
-├── net-tools/                 # .git/ project
-└── [ ... other projects ...]
-#+end_src
-
-It's then possible to install ~dtsh~ in the same /command line development environment/ as ~west~:
-
-#+begin_src sh
-# Activate the Python venv as usual, e.g.:
-. /path/to/zephyrproject/.venv/bin/activate
-
-# Install latest dtsh release from PyPI
-pip install dtsh
-#+end_src
-
-And to simply run ~dtsh~ without any argument:
-
-#+begin_src sh
-# Activate the Python venv as usual, e.g.:
-. /path/to/zephyrproject/.venv/bin/activate
-# Set the Zephyr kernel environment as usual, e.g.:
-. /path/to/zephyrproject/zephyr/zephyr-env.sh
-
-# Build the Zephyr firmware as usual, e.g.:
-west build $ZEPHYR_BASE/samples/sensor/bme680
-# Open the generated DTS file build/zephyr/zephyr.dts using default bindings
-dtsh
-#+end_src
-
-To remove ~dtsh~ from a Zephyr workspace:
-
-#+begin_src sh
-. /path/to/zephyrproject/.venv/bin/activate
-pip uninstall dtsh rich
-#+end_src
-
-⚠ Be sure to NOT uninstall packages otherwise used within the Python virtual environment, e.g. ~rich~.
+*WARNING*: It's no longer advised to install ~dtsh~ within the same Python virtual environment
+as ~west~.
 
 * User's guide
 
@@ -698,7 +638,8 @@ git clone https://github.com/dottspina/dtsh.git
 cd dtsh
 python -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip setuptools
+pip install -r requirements-dev.txt
 pip install --editable .
 #+end_src
 
@@ -711,9 +652,6 @@ To run a few unit tests:
 #+begin_src sh
 cd dtsh
 . .venv/bin/activate
-# install test requirements
-pip install ".[test]"
-# run unit tests
 python -m pytest tests
 #+end_src
 

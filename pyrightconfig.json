@@ -1,0 +1,25 @@
+{
+  "include": [
+    "src",
+    "tests"
+  ],
+
+  "exclude": [
+    "tests/bindings"
+  ],
+
+  "pythonVersion": "3.8",
+  "pythonPlatform": "All",
+
+  "venvPath": ".",
+  "venv": ".venv",
+
+   "executionEnvironments": [
+     {
+      "root": "tests",
+      "extraPaths": [
+          "src"
+        ]
+     }
+   ]
+}
