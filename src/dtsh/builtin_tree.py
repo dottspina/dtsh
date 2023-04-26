@@ -108,7 +108,7 @@ Assuming the current working node is the devicetree's root:
 """
 
     # Maximum display depth, 0 to follow all non disabled nodes.
-    _level: int = 0
+    _level: int
 
     def __init__(self, shell: Dtsh):
         super().__init__(
@@ -121,6 +121,7 @@ Assuming the current working node is the devicetree's root:
             ]
         )
         self._dtsh = shell
+        self._level = 0
 
     @property
     def usage(self) -> str:
