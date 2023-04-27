@@ -638,19 +638,19 @@ class FindByBusCriterion(FindCriterion):
             self._re = re.compile(re_expr)
 
     def match(self, node: Node) -> bool:
-        if node.bus:
+        for bus in node.buses:
             if self._re:
-                if self._re.match(node.bus) is not None:
+                if self._re.match(bus) is not None:
                     return True
             else:
-                if node.bus.find(self._pattern) != -1:
+                if bus.find(self._pattern) != -1:
                     return True
-        if node.on_bus:
+        for bus in node.on_buses:
             if self._re:
-                if self._re.match(node.on_bus) is not None:
+                if self._re.match(bus) is not None:
                     return True
             else:
-                if node.on_bus.find(self._pattern) != -1:
+                if bus.find(self._pattern) != -1:
                     return True
         return False
 
