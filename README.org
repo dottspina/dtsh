@@ -21,14 +21,15 @@ It's still in its inception phase:
 - while the current feature set may already prove helpful to beginners,
   it might also quickly frustrate more knowledgeable users
 - possible bugs could instead disastrously confuse beginners
-- should install and run more or less Out Of The Box™ on most modern Linux distributions,
-  mileage may vary on other platforms
+- should install and run more or less Out Of The Box™ on most GNU/Linux distributions
+  and BSD-like systems (e.g. macOS); will likely refuse to run on Windows due to missing readline support
 - should be compatible with any source file in DTS format, but requires that the bindings are consistently available as YAML files:
   unfortunately, this does NOT directly apply to the devicetree use by the Linux kernel
 
 All kinds of feedback and contribution are encouraged: please refer to the bottom CONTRIBUTE section.
 #+end_quote
 
+- [[https://github.com/dottspina/dtsh#status][Status]]
 - [[https://github.com/dottspina/dtsh#get-started][Get started]]
   - [[https://github.com/dottspina/dtsh#requirements][Requirements]]
   - [[https://github.com/dottspina/dtsh#install][Install]]
@@ -43,6 +44,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
     - [[https://github.com/dottspina/dtsh#manual-pages][Manual pages]]
     - [[https://github.com/dottspina/dtsh#system-information][System information]]
     - [[https://github.com/dottspina/dtsh#find-nodes][Find nodes]]
+    - [[https://github.com/dottspina/dtsh#format-strings][Format strings]]
   - [[https://github.com/dottspina/dtsh#user-interface][User interface]]
     - [[https://github.com/dottspina/dtsh#the-prompt][The prompt]]
     - [[https://github.com/dottspina/dtsh#commands-history][Commands history]]
@@ -61,14 +63,27 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 - [[https://github.com/dottspina/dtsh#contribute][Contribute]]
 - [[https://github.com/dottspina/dtsh#references][References]]
 
-* Get started
+* Status
 
- ~dtsh~ is written in Python and has few requirements: it should install and run just fine on most /modern POSIX-like/
- operating systems.
+Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0a5][v0.1.0a5]] ([[https://pypi.org/project/dtsh/0.1.0a5/][PyPI]])
+
+*New and noteworthy*:
+
+- ([[https://github.com/dottspina/dtsh/commit/5e803ebdd3482db75dc752baa3cca6866750eff5][5e803eb]]) this release bundles the EDT library (~edtlib~) from Zephyr 3.3.0,
+    instead of installing the ~devicetree~ package from [[https://pypi.org/project/devicetree/][PyPI]]: this approach allows to update
+    the library implementation and API ~dtsh~ can depend on more frequently and reliably
+- ([[https://github.com/dottspina/dtsh/commit/14dc590db1dc1cba98d74143e7396bbe128ebd68][14dc590]]) on BSD-like systems (e.g. macOS), ~dtsh~ will try to install [[https://pypi.org/project/gnureadline/][gnureadline]] package,
+    and to load the ~readline~ package implementation from there instead of from the Python
+    standard library
+- ([[https://github.com/dottspina/dtsh/commit/aa0a96b7091c70a5941a0f65fda5fbc432e17756][aa0a96b]]) Python type hints has been fixed to avoid Python 3.9 and 3.10 syntax: ~dtsh~ should now
+    run fine on Python 3.8+ as expected
+- ([[https://github.com/dottspina/dtsh/commit/3c59fb0121e731d3de3b7658610124a7280a4f09][3c59fb0]]) platform dependent paths to configuration directory and files
+
+* Get started
 
 #+begin_example
 # Install dtsh in a dedicated Python virtual environment
-$ python -m venv --prompt dtsh .venv
+$ python -m venv .venv
 $ . .venv/bin/activate
 $ pip install --upgrade pip setuptools
 $ pip install --upgrade dtsh
@@ -78,7 +93,7 @@ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
 
 # Open an existing DTS file, using Zephyr bindings
 $ dtsh /path/to/build/zephyr/zephyr.dts
-dtsh (0.1.0a4): Shell-like interface to a devicetree
+dtsh (0.1.0a5): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -108,31 +123,43 @@ To get the /big picture/:
 
 ** Requirements
 
-Most ~dtsh~ requirements should already be fulfilled wherever a Zephyr development environment is installed.
+*** Host tools and libraries
 
-*** POSIX
+**** POSIX
 
 This is an abusive keyword for facilities most POSIX-like operating systems provide one way or another:
 
-- the [[https://tiswww.cwru.edu/php/chet/readline/rltop.html][GNU readline]] (or [[https://www.thrysoee.dk/editline/][editline]]) library we rely upon for command line auto-completion, commands history,
-   and standardized keybindings
+- the [[https://tiswww.cwru.edu/php/chet/readline/rltop.html][GNU readline]] library we rely upon for command line auto-completion, commands history,
+  and standardized keybindings
 - an ANSI ([[https://www.ecma-international.org/publications-and-standards/standards/ecma-48/][ECMA-48]]) terminal emulator, preferably 256 colors support and a font that includes unicode glyphs
    for a few common symbols
 - a /pager/, preferably with ANSI escape codes support, e.g. [[https://www.greenwoodsoftware.com/less/faq.html][less]]
 
-*** Python
+Note: on BSD-like systems, where the Python ~readline~ package will likely depend on [[https://www.thrysoee.dk/editline/][editline]],
+~dtsh~ will try to install ~gnureadline~ ([[https://pypi.org/project/gnureadline/][PyPI]]) and to load the ~readline~ package implementation
+from there instead of from the standard Python library.
 
-The minimal requirement is set to Python 3.7, with proper support for [[https://pip.pypa.io/en/stable/][pip]], [[https://setuptools.pypa.io/en/latest/setuptools.html][setuptools]] and [[https://peps.python.org/pep-0427/][wheel]].
-
-All ~dtsh~ software requirements are Python libraries that will be installed as direct dependencies:
-
-- DT sources and bindings /parser/, devicetree model: ~edtlib~, maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]])
-- « rich text and beautiful formatting in the terminal »: [[https://www.textualize.io/][Textualize]] /rich/ API ([[https://github.com/Textualize/rich][GitHub]], [[https://pypi.org/project/rich/][PyPI]])
-
-*** CMake
+**** CMake
 
 ~dtsh~ may need to access a few CMake cached variables for setting sensible default values,
 e.g. when building the default bindings search path.
+
+*** Python requirements
+
+The minimal requirement is set to Python 3.8, with proper support for virtual environments, [[https://pip.pypa.io/en/stable/][pip]], and [[https://setuptools.pypa.io/en/latest/setuptools.html][setuptools]].
+
+Most ~dtsh~ software requirements are common Python libraries that will be installed as declared dependencies (e.g. by ~setup.py~):
+
+- « rich text and beautiful formatting in the terminal »: [[https://www.textualize.io/][Textualize]] /rich/ API ([[https://github.com/Textualize/rich][GitHub]], [[https://pypi.org/project/rich/][PyPI]])
+- syntax highlighting support: [[https://pygments.org/][Pygments]] ([[https://pypi.org/project/Pygments/][PyPI]])
+- [[https://pyyaml.org/][PyYAML]] ([[https://pypi.org/project/PyYAML][PyPI]])
+- DT sources and bindings /parser/, devicetree model: ~edtlib~, maintained as part of the Zephyr project ([[https://github.com/zephyrproject-rtos/python-devicetree][GitHub]], [[https://pypi.org/project/devicetree/][PyPI]]);
+    see bellow
+
+**** edtlib
+
+Starting with version ~0.1.0a5~, the EDT library is no longer installed from PyPI, but bundled with ~dtsh~
+(see [[https://github.com/dottspina/dtsh/commit/5e803ebdd3482db75dc752baa3cca6866750eff5][5e803eb]]).
 
 ** Install
 
@@ -207,7 +234,7 @@ $ dtsh /path/to/foobar.dts
 On startup, ~dtsh~ will output a banner, followed by the first prompt:
 
 #+begin_example
-dtsh (0.1.0a4): Shell-like interface to a devicetree
+dtsh (0.1.0a5): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -238,8 +265,17 @@ See also issue [[https://github.com/dottspina/dtsh/issues/1#issuecomment-1278281
 
 ** Zephyr integration
 
-*WARNING*: It's no longer advised to install ~dtsh~ within the same Python virtual environment
-as ~west~.
+Starting with version ~0.1.0a5~, the EDT library is bundled with ~dtsh~.
+
+Installing ~dtsh~ into the same Python virtual environment as the ~west~ development environment
+is now strongly discouraged (and should never have been advised to).
+
+Recommended use:
+
+- install Zephyr and generate DTS files with ~west build~ as usual
+- install ~dtsh~ into its own Python virtual environment,
+    optionally set ~ZEPHYR_BASE~ to get most DT bindings for free,
+    and open DTS files from there
 
 * User's guide
 
@@ -401,6 +437,33 @@ For example, the command line bellow would list all enabled bus devices that gen
 #+end_example
 
 ~find~ is quite versatile and supports a handful of options. Refer to its extensive manual page (~man find~).
+
+*** Format strings
+
+When the ~-l~ flag is set (aka /use long listing format/), the ~ls~ and ~find~ commands accept
+an additional ~-f~ option, the /format string/, that permits to choose the visible node fields.
+
+A format string is a list of specifier characters, each selecting a node field.
+
+        | Specifier | Format                                    |
+        |-----------+-------------------------------------------|
+        | `N`       | The node name                             |
+        | `a`       | The unit-address                          |
+        | `n`       | The node name with the address striped    |
+        | `d`       | The description from the node binding     |
+        | `p`       | The node path name                        |
+        | `l`       | The node 'label' property                 |
+        | `L`       | All known labels for the node             |
+        | `s`       | The node 'status' property                |
+        | `c`       | The 'compatible' property for the node    |
+        | `C`       | The node binding (aka matched compatible) |
+        | `A`       | The node aliases                          |
+        | `b`       | The bus device information for the node   |
+        | `r`       | The node 'reg' property                   |
+        | `i`       | The interrupts generated by the node      |
+
+For example, the format string ~naib~ will refer to the node's name, address,
+IRQs and bus information columns.
 
 ** User interface
 
@@ -595,17 +658,17 @@ Command manual page: ~man ls~
 
 * Contribute
 
+** Open issues
+
 All kinds of feedback and contribution are encouraged: open an [[https://github.com/dottspina/dtsh/issues/new][issue]]  or a [[https://github.com/dottspina/dtsh/pulls][pull request]] with the appropriate [[https://github.com/dottspina/dtsh/issues/labels][label]]
 (if unsure, just ignore labels).
 
-| Label                |                                           |
-|----------------------+-------------------------------------------|
-| ~RFC~                  | Participate in Request For Comments       |
-| ~features~             | Ask for new features and improvements     |
-| ~bug~                  | The software does not behave as specified |
-| ~help & documentation~ | Ask for help, documentation updates       |
+| Label |                                                        |
+|-------+--------------------------------------------------------|
+| ~RFC~   | Participate in Request For Comments                    |
+| ~bug~   | The software does not behave as expected or documented |
 
-** Request For Comments
+*** Request For Comments
 
 This project is still exploring /what could be/:
 
@@ -615,15 +678,16 @@ This project is still exploring /what could be/:
 
 To provide feedback regarding theses topics, please open issues with the ~RFC~ label.
 
-If specifically asking for new functionalities or improvements, prefer the ~features~ label.
+*** Report bugs
 
-** Getting Help
+Bugs are expected, please open issues with the ~bug~ label.
 
-When the documentation is lacking, confusing or incorrect, please open issues with the ~help & documentation~ label.
+*** Getting Help
 
-** Report bugs
+Feel free to also open issues:
 
-This software is still in alpha state:bugs are expected, please open issues with the ~bug~ label.
+- when the documentation is lacking, confusing or incorrect
+- to request any kind of help or support
 
 ** Hacking dtsh
 
@@ -731,4 +795,3 @@ More or less introductory references about /devicetrees/.
 - [[https://elinux.org/Device_Tree_Usage][Device Tree Usage]]
 - [[https://elinux.org/Device_Tree_Reference][Device Tree Reference]]
 - [[https://elinux.org/Device_Tree_What_It_Is][Device Tree What It Is]]
-
