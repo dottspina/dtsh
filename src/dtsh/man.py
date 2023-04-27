@@ -211,12 +211,12 @@ class DtshManPageBinding(DtshManPage):
                                 DtshTui.mk_txt_desc(self._binding.description))
 
     def _add_content_bus(self) -> None:
-        if not (self._binding.bus or self._binding.on_bus):
+        if not (self._binding.buses or self._binding.on_bus):
             return
 
-        if self._binding.bus:
-            str_label = "Nodes with this compatible's binding describe bus"
-            str_bus = self._binding.bus
+        if self._binding.buses:
+            str_label = "Nodes with this compatible's binding support buses"
+            str_bus = " ".join(self._binding.buses)
         else:
             str_label = "Nodes with this compatible's binding appear on bus"
             str_bus = self._binding.on_bus
