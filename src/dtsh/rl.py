@@ -31,3 +31,4 @@ except ImportError:
         # This version of dtsh won't run without readline support.
         print("dtsh: GNU readline support not found.", file=sys.stderr)
         print("dtsh: Abort.", file=sys.stderr)
+        sys.exit(-1)
