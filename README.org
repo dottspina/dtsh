@@ -65,7 +65,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 
 * Status
 
-Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0a5][v0.1.0a5]] ([[https://pypi.org/project/dtsh/0.1.0a5/][PyPI]])
+Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0a6][v0.1.0a6]] ([[https://pypi.org/project/dtsh/0.1.0a6/][PyPI]])
 
 *New and noteworthy*:
 
@@ -93,7 +93,7 @@ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
 
 # Open an existing DTS file, using Zephyr bindings
 $ dtsh /path/to/build/zephyr/zephyr.dts
-dtsh (0.1.0a5): Shell-like interface to a devicetree
+dtsh (0.1.0a6): Shell-like interface to a devicetree
 Help: man dtsh
 How to exit: q, or quit, or exit, or press Ctrl-D
 
@@ -158,8 +158,7 @@ Most ~dtsh~ software requirements are common Python libraries that will be insta
 
 **** edtlib
 
-Starting with version ~0.1.0a5~, the EDT library is no longer installed from PyPI, but bundled with ~dtsh~
-(see [[https://github.com/dottspina/dtsh/commit/5e803ebdd3482db75dc752baa3cca6866750eff5][5e803eb]]).
+The EDT library is no longer installed from PyPI, but bundled with ~dtsh~ (see [[https://github.com/dottspina/dtsh/commit/5e803ebdd3482db75dc752baa3cca6866750eff5][5e803eb]]).
 
 ** Install
 
@@ -264,8 +263,6 @@ appropriate bindings search path.
 See also issue [[https://github.com/dottspina/dtsh/issues/1#issuecomment-1278281428][Incomplete Zephyr bindings #1]].
 
 ** Zephyr integration
-
-Starting with version ~0.1.0a5~, the EDT library is bundled with ~dtsh~.
 
 Installing ~dtsh~ into the same Python virtual environment as the ~west~ development environment
 is now strongly discouraged (and should never have been advised to).
