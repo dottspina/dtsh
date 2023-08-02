@@ -22,7 +22,7 @@
 # Avoid double sourcing.
 if [ -n "$ZEF" ]; then
     echo "zef: Won't source twice."
-    _zef_abort
+    zef_abort
 fi
 ZEF=sourced
 
@@ -64,7 +64,7 @@ zef_init() {
 
     if [ -d "$arg_workspc" ]; then
         echo "Workspace root exists: $arg_workspc"
-        _zef_continue_yn 'Will remove existing content!'
+        zef_continue_yn 'Will remove existing content!'
         echo 'Removing ...'
         rm -rf $arg_workspc
         echo
@@ -94,7 +94,7 @@ zef_init() {
     echo '│'
     echo '└── [ ... other projects ...]'
     echo
-    _zef_continue_yn
+    zef_continue_yn
     echo
 
     echo '**** Create Python venv ****'
@@ -103,20 +103,20 @@ zef_init() {
     echo
 
     echo '**** Install West ****'
-    pip install -U west || _zef_abort
+    pip install -U west || zef_abort
     echo
 
     echo '**** Initialize workspace ****'
-    west init $arg_workspc || _zef_abort
+    west init $arg_workspc || zef_abort
     echo
 
     echo '**** Update workspace ****'
-    cd $arg_workspc || _zef_abort
-    west update || _zef_abort
+    cd $arg_workspc || zef_abort
+    west update || zef_abort
     echo
 
     echo '**** Install Zephyr requirements ****'
-    pip install -r ${arg_workspc}/zephyr/scripts/requirements.txt || _zef_abort
+    pip install -r ${arg_workspc}/zephyr/scripts/requirements.txt || zef_abort
     echo
 
     echo '**** Workspace configuration ****'
@@ -128,7 +128,7 @@ zef_init() {
 
 	echo 'Leaving workspace ...'
 	deactivate
-    cd $back_pwd || _zef_abort
+    cd $back_pwd || zef_abort
     echo 'done.'
 }
 
@@ -178,14 +178,14 @@ zef_update() {
     local back_pwd="$(pwd)"
 
     echo "Updating workspace ..."
-    cd "$ZEPHYR_BASE" || _zef_abort
-	git pull || _zef_abort
-    west update || _zef_abort
+    cd "$ZEPHYR_BASE" || zef_abort
+	git pull || zef_abort
+    west update || zef_abort
 
 	# May the requirements change between versions ?
-	pip install -r scripts/requirements.txt || _zef_abort
+	pip install -r scripts/requirements.txt || zef_abort
 
-    cd $back_pwd || _zef_abort
+    cd $back_pwd || zef_abort
 }
 
 ################################################################################
@@ -247,7 +247,32 @@ zef_env() {
 	# but with splitted strings:
 	# https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
 
-    cd $back_pwd || _zef_abort
+    cd $back_pwd || zef_abort
+}
+
+
+# Continue/abort prompt.
+zef_continue_yn() {
+    local arg_msg="$1"
+    if [ -n "$arg_msg" ]; then
+        echo "$arg_msg"
+    fi
+    echo -n 'Continue [yN]: '
+    read yes_no
+    case "$yes_no" in
+        y|Y)
+            ;;
+        *)
+			echo "Goodbye."
+            # Exit the function stack without exiting shell.
+			zef_abort
+			;;
+    esac
+}
+
+# Exit the function stack without exiting shell.
+zef_abort() {
+    kill -INT $$
 }
 
 
@@ -277,13 +302,13 @@ _zef_workspc_set() {
     local arg_path="$1"
     if [ -z "$arg_path" ]; then
         echo 'Which wokspace ?'
-        _zef_abort
+        zef_abort
     fi
 
     arg_path="$(realpath -m $arg_path)"
     if [ ! -d "$arg_path" ]; then
         echo "Not a directory: $arg_path"
-        _zef_abort
+        zef_abort
     fi
 
     echo "Python venv: $arg_path/.venv"
@@ -313,12 +338,12 @@ _zef_toolchain_set() {
     local arg_path="$1"
     if [ -z "$arg_path" ]; then
         echo 'Which toolchain ?'
-        _zef_abort
+        zef_abort
     fi
     arg_path="$(realpath -m $arg_path)"
     if [ ! -d "$arg_path" ]; then
         echo "Not a directory: $arg_path"
-        _zef_abort
+        zef_abort
     fi
 
     local sdk_version_path="$arg_path/sdk_version"
@@ -466,11 +491,11 @@ _zef_venv_create() {
         arg_path="$(realpath -m $arg_path)"
     else
         echo 'Where ?'
-        _zef_abort
+        zef_abort
     fi
     if [ -d "$arg_path" ]; then
         echo "Directory exists: $arg_path"
-        _zef_continue_yn
+        zef_continue_yn
         rm -rf "$arg_path"
     fi
 
@@ -484,16 +509,11 @@ _zef_venv_create() {
 # Private helpers.
 ################################################################################
 
-# Exit the function stack without exiting shell.
-_zef_abort() {
-    kill -INT $$
-}
-
 # Abort if no workspace.
 _zef_assert_workspace() {
     if [ -z "$ZEF_BASE" ]; then
         echo 'No active Zephyr workspace.'
-		_zef_abort
+		zef_abort
     fi
 }
 
@@ -501,25 +521,7 @@ _zef_assert_workspace() {
 _zef_assert_no_workspace() {
     if [ -n "$ZEF_BASE" ]; then
         echo 'A Zephyr workspace is already active.'
-		_zef_abort
+		zef_abort
     fi
 }
 
-# Continue/abort prompt.
-_zef_continue_yn() {
-    local arg_msg="$1"
-    if [ -n "$arg_msg" ]; then
-        echo "$arg_msg"
-    fi
-    echo -n 'Continue [yN]: '
-    read yes_no
-    case "$yes_no" in
-        y|Y)
-            ;;
-        *)
-			echo "Goodbye."
-            # Exit the function stack without exiting shell.
-			_zef_abort
-			;;
-    esac
-}

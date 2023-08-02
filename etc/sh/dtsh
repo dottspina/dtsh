@@ -30,8 +30,10 @@ dtsh_clean() {
 
 dtsh_venv() {
     local arg_venv="$1"
-    zef_venv_create "$arg_venv"
+    python -m venv "$arg_venv"
+	. "$arg_venv/bin/activate"
     echo "Python venv: $arg_venv"
+	pip install -U pip setuptools
     pip install -q "$DTSH_HOME"
 }
 
@@ -90,9 +92,9 @@ dtsh_dist_test() {
     # PyPI does not allow for a filename to be reused,
     # even once a project has been deleted and recreated.
     local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
-    local whl_test="$DTSH_HOME/dist/dtsh-$RANDOM-py3-none-any.whl"
-    cp "$whl_dist" "$whl_test" || zef_abort
-    python -m twine upload --repository testpypi "$whl_test" || zef_abort
+    echo "Wheel dist:  $whl_dist"
+    echo "WARNING: will publish on TestPyPI!!"
+    python -m twine upload --repository testpypi "$whl_dist" || zef_abort
     echo 'done.'
     echo
     echo '**** Dispose dist environment'
