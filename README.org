@@ -27,6 +27,8 @@ It's still in its inception phase:
   unfortunately, this does NOT directly apply to the devicetree use by the Linux kernel
 
 All kinds of feedback and contribution are encouraged: please refer to the bottom CONTRIBUTE section.
+
+*See also the project's status*.
 #+end_quote
 
 - [[https://github.com/dottspina/dtsh#status][Status]]
@@ -65,19 +67,16 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 
 * Status
 
-Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0a6][v0.1.0a6]] ([[https://pypi.org/project/dtsh/0.1.0a6/][PyPI]])
+Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0b1][v0.1.0b1]] ([[https://pypi.org/project/dtsh/0.1.0b1/][PyPI]])
 
 *New and noteworthy*:
 
-- ([[https://github.com/dottspina/dtsh/commit/5e803ebdd3482db75dc752baa3cca6866750eff5][5e803eb]]) this release bundles the EDT library (~edtlib~) from Zephyr 3.3.0,
-    instead of installing the ~devicetree~ package from [[https://pypi.org/project/devicetree/][PyPI]]: this approach allows to update
-    the library implementation and API ~dtsh~ can depend on more frequently and reliably
-- ([[https://github.com/dottspina/dtsh/commit/14dc590db1dc1cba98d74143e7396bbe128ebd68][14dc590]]) on BSD-like systems (e.g. macOS), ~dtsh~ will try to install [[https://pypi.org/project/gnureadline/][gnureadline]] package,
-    and to load the ~readline~ package implementation from there instead of from the Python
-    standard library
-- ([[https://github.com/dottspina/dtsh/commit/aa0a96b7091c70a5941a0f65fda5fbc432e17756][aa0a96b]]) Python type hints has been fixed to avoid Python 3.9 and 3.10 syntax: ~dtsh~ should now
-    run fine on Python 3.8+ as expected
-- ([[https://github.com/dottspina/dtsh/commit/3c59fb0121e731d3de3b7658610124a7280a4f09][3c59fb0]]) platform dependent paths to configuration directory and files
+- ([[https://github.com/dottspina/dtsh/commit/55b2b9e0faf537997bd7104cadb17d29708e4e5f][55b2b9e]]) update python-devicetree to Zephyr 3.4.0
+
+*Note*:
+
+- this prototype is now in /Beta status/, which means it will only receive bug fixes
+- work has started to upstream ~dtsh~ as a West extension: [[https://github.com/dottspina/zephyr/tree/rfc-dtsh/scripts/dts/dtsh][repository]], [[https://github.com/zephyrproject-rtos/zephyr/pull/59863][Zephyr RFC]] (to test this branch, see [[https://github.com/dottspina/dtsh#try-the-west-command-rfc][Try the West command RFC]])
 
 * Get started
 
@@ -769,6 +768,48 @@ For example, to define a new built-in:
 - re-use or improve helpers and views in the [[https://github.com/dottspina/dtsh/blob/main/src/dtsh/tui.py][dtsh.tui]] module to assemble the command output
   (see also the /rich/ [[https://rich.readthedocs.io/en/stable/console.html][Console API]])
 - when ready, register it in the ~dtsh.shell.DevicetreeShell~ constructor
+
+** Try the West command RFC
+
+To test the current status of ~west dtsh~,  initialize a West workspace with the Zephyr fork that hosts the RFC/PR:
+
+#+begin_src shell
+
+# Initialize virtual environment as usual.
+mkdir tmp-west-dtsh
+cd tmp-west-dtsh
+python -m venv .venv
+. .venv/bin/activate
+pip install -U pip setuptools
+
+# Install West as usual.
+pip install -U west
+
+# Initialize a West workspace with the Zephyr fork that hosts the RFC/PR.
+west init -m https://github.com/dottspina/zephyr
+cd zephyr
+git fetch --all
+git checkout rfc-dtsh
+west update
+pip install -U -r scripts/requirements.txt
+
+# Configure workspace as usual, e.g.:
+west config --local build.pristine auto
+west config --local build.cmake-args -- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+west config --local build.generator "Unix Makefiles"
+west config --local build.board nrf52840dk_nrf52840
+
+# Setup build environment.
+. ./zephyr-env.sh
+export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+export ZEPHYR_SDK_INSTALL_DIR=/mnt/platform/devemb/zephyr-rtos/sdk/zephyr-sdk-0.16.1
+
+# Build some sample and open the generated DTS with the devicetree shell.
+cd samples/sensor/bme680
+west build
+west dtsh
+#+end_src
+
 * References
 
 More or less introductory references about /devicetrees/.

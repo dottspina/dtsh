@@ -849,7 +849,7 @@ class Dtsh(object):
     - a command string interface to POSIX-like shell commands (aka built-ins)
     """
 
-    API_VERSION = '0.1.0a6'
+    API_VERSION = '0.1.0b1'
     """API version for the dtsh module.
 
     Should match 'version' in setup.py.
