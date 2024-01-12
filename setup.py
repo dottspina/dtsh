@@ -25,7 +25,7 @@ setup(
     #
     # See also: https://peps.python.org/pep-0440/
     #
-    version="0.1.0b1",
+    version="0.1.0b2",
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:

@@ -40,7 +40,8 @@ its bindings:
    └──  analog-connector ADC channels exposed on Arduino Uno (R3) headers…
 
 
-This software was created as a Proof of Concept for a
-simple tool that could assist newcomers to Zephyr in understanding
-what a devicetree is, and how bindings describe and constrain its
-content.
+This software was created as a Proof of Concept for a:
+
+- simple tool that could assist newcomers to Zephyr in understanding
+what a devicetree is, and how bindings describe and constrain its content
+- an on hand DTS file viewer
