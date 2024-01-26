@@ -67,7 +67,7 @@ All kinds of feedback and contribution are encouraged: please refer to the botto
 
 * Status
 
-Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0b1][v0.1.0b2]] ([[https://pypi.org/project/dtsh/0.1.0b2/][PyPI]])
+Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0b2][v0.1.0b2]] ([[https://pypi.org/project/dtsh/0.1.0b2/][PyPI]])
 
 *Latest Changes*:
 
@@ -76,7 +76,7 @@ Latest stable release: [[https://github.com/dottspina/dtsh/releases/tag/v0.1.0b1
 
 *Note*:
 
-- this prototype is now /stale/: I may update it e.g. when Zephyr 3.6 is out, or to fix obvious bugs if asked to, but issues that would require more work (e.g. fixing this poorly wrapped output, or adding support for DTS labels in paths) won't be addressed
+- this prototype is now /stale/: I may update it e.g. when Zephyr 3.6 is out, or to fix obvious bugs if asked to, but issues that would require more work (e.g. fixing the poorly wrapped output, or adding support for DTS labels in paths) won't be addressed
 - for some time now, all real work has moved to an upstream [[https://github.com/zephyrproject-rtos/zephyr/pull/59863][RFC]] (PR's [[https://github.com/dottspina/zephyr/tree/rfc-dtsh][origin]]) that may eventually add ~dtsh~ as a West extension to Zephyr: report feedback about this version preferably (see [[https://github.com/dottspina/dtsh#try-the-west-command-rfc][Try the West command RFC]])
 
 * Get started

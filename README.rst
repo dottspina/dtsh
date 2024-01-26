@@ -24,7 +24,7 @@ its bindings:
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
-   ❯ tree -L 1 -l
+   > tree -L 1 -l
    /
    ├──  chosen
    ├──  aliases
@@ -43,5 +43,5 @@ its bindings:
 This software was created as a Proof of Concept for a:
 
 - simple tool that could assist newcomers to Zephyr in understanding
-what a devicetree is, and how bindings describe and constrain its content
+  what a devicetree is, and how bindings describe and constrain its content
 - an on hand DTS file viewer
