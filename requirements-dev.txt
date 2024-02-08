@@ -1,7 +1,6 @@
-# Python requirements for development/tests.
-#
+pycodestyle
+flake8
+pylint
 mypy
 types-PyYAML
-pyright
-pylint
 pytest
