@@ -1,0 +1,3 @@
+PyYAML
+rich
+gnureadline ; sys_platform == 'darwin'

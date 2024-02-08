@@ -1,402 +1,331 @@
-# Copyright (c) 2022 Chris Duf <chris@openmarl.org>
+# Copyright (c) 2023 Christophe Dufaza <chris@openmarl.org>
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Devicetree shell session."""
+"""Base interactive devicetree shell session.
 
+A session binds a devicetree shell and a VT to run an interactive loop.
+"""
 
-from typing import cast, List, Optional, Union
+from types import FrameType
+from typing import Any, Optional, Sequence, List
 
-import os
-import re
 import signal
 import sys
 
-from devicetree.edtlib import Node, Binding, Property
+from devicetree import edtlib
 
-from rich.console import Console
-from rich.text import Text
+from dtsh.model import DTModel
+from dtsh.rl import DTShReadline
+from dtsh.config import DTShConfig
+from dtsh.autocomp import DTShAutocomp
+from dtsh.io import DTShOutput, DTShOutputFile, DTShRedirect, DTShVT
+from dtsh.shell import (
+    DTSh,
+    DTShCommand,
+    DTShFlagHelp,
+    DTShError,
+    DTShUsageError,
+    DTShCommandError,
+    DTShCommandNotFoundError,
+)
+from dtsh.builtins.pwd import DTShBuiltinPwd
+from dtsh.builtins.cd import DTShBuiltinCd
+from dtsh.builtins.ls import DTShBuiltinLs
+from dtsh.builtins.tree import DTShBuiltinTree
+from dtsh.builtins.find import DTShBuiltinFind
+from dtsh.builtins.alias import DTShBuiltinAlias
+from dtsh.builtins.chosen import DTShBuiltinChosen
 
-from dtsh.rl import readline
-from dtsh.dtsh import Dtsh, DtshAutocomp, DtshCommand, DtshCommandOption, DtshSession, DtshVt
-from dtsh.dtsh import DtshError, DtshCommandNotFoundError, DtshCommandUsageError, DtshCommandFailedError
-from dtsh.shell import DevicetreeShell
-from dtsh.term import DevicetreeTerm
-from dtsh.autocomp import DevicetreeAutocomp
-from dtsh.tui import DtshTui
-from dtsh.config import DtshConfig
+
+_dtshconf: DTShConfig = DTShConfig.getinstance()
 
 
-class DevicetreeShellSession(DtshSession):
-    """Shell session with GNU readline history support.
+class DTShSession:
+    """Base for interactive devicetree shell sessions.
+
+    A session binds a devicetree shell and a VT to run
+    an interactive loop until the user quits or EOF (aka CTRL-D).
+
+    The session is also responsible for:
+
+    - initializing the auto-completion support (depends on GNU readline)
+    - handling command output redirection streams
+
+    The run loop will trigger events which handlers may be overridden
+    by derived (rich) sessions.
     """
 
-    _dtsh: Dtsh
-    _term: DevicetreeTerm
-    _last_err: Union[DtshError, None]
+    _dtsh: DTSh
+    _vt: DTShVT
 
-    def __init__(self, shell: Dtsh, term: DevicetreeTerm) -> None:
-        """Creates a session.
+    _rl: DTShReadline
+    _autocomp: DTShAutocomp
 
-        Arguments:
-        shell - the session's shell instance
-        term - the session's rich VT
-        """
-        self._dtsh = shell
-        self._term = term
-        self._last_err = None
+    _last_err: Optional[BaseException]
 
-        DtshConfig.readline_read_history()
+    @classmethod
+    def create(
+        cls, dts_path: str, binding_dirs: Optional[Sequence[str]] = None
+    ) -> "DTShSession":
+        """Create a new devicetree shell session.
 
-    @property
-    def term(self) -> DevicetreeTerm:
-        """Session's VT."""
-        return self._term
+        Args:
+            dts_path: Path to the Devicetree source to open the session with.
+            binding_dirs: List of directories to search for
+              the YAML binding files this Devicetree depends on.
 
-    @property
-    def last_err(self) -> Union[DtshError, None]:
-        return self._last_err
-
-    def run(self):
-        """Overrides DtshSession.run().
-        """
-        self._term.clear()
-        self.banner()
-
-        while True:
-            redir2vt = None
-            try:
-                self._term.write(DtshTui.mk_txt_node_path(self._dtsh.pwd))
-                prompt = DtshTui.mk_ansi_prompt(self._last_err is not None)
-                cmdline = self._term.readline(prompt)
-                self._last_err = None
-                if cmdline:
-                    if cmdline in ['q', 'quit', 'exit']:
-                        # Exit process.
-                        self.close()
-
-                    i = cmdline.rfind('>')
-                    if i != -1:
-                        redir2vt = FileStdoutVt(cmdline[i+1:].strip())
-                        self._dtsh.exec_command_string(cmdline[:i], redir2vt)
-                    else:
-                        self._dtsh.exec_command_string(cmdline, self._term)
-
-            except DtshCommandNotFoundError as e:
-                self._last_err = e
-                self._term.write(f'dtsh: Command not found: {e.name}')
-            except DtshCommandUsageError as e:
-                if e.command.with_help:
-                    self._term.write(e.command.usage)
-                else:
-                    self._last_err = e
-                    self._term.write(f'{e.command.name}: {e.msg}')
-            except DtshCommandFailedError as e:
-                self._last_err = e
-                self._term.write(f'{e.command.name}: {e.msg}')
-            except EOFError:
-                self._term.abort()
-                self.close()
-
-            if redir2vt:
-                # Actually writing to the file happens in the VT dtor.
-                del redir2vt
-                redir2vt = None
-            if DtshTui.PROMPT_SPARSE:
-                self._term.write()
-
-    def close(self) -> None:
-        """Overrides DtshSession.close().
-        """
-        self._term.write('bye.', style=DtshTui.style_italic())
-        DtshConfig.readline_write_history()
-        sys.exit(0)
-
-    def banner(self):
-        """
-        """
-        self._term.write(
-            Text().append_tokens(
-                [
-                    ('dtsh', DtshTui.style_bold()),
-                    (f" ({Dtsh.API_VERSION}): ", DtshTui.style_default()),
-                    ('Shell-like interface to a devicetree', DtshTui.style_italic())
-                ]
-            )
-        )
-        self._term.write(
-            Text().append_tokens(
-                [
-                    ('Help: ', DtshTui.style_default()),
-                    ('man dtsh', DtshTui.style_bold())
-                ]
-            )
-        )
-        self._term.write(
-            Text().append_tokens(
-                [
-                    ('How to exit: ', DtshTui.style_default()),
-                    ('q', DtshTui.style_bold()),
-                    (', or ', DtshTui.style_default()),
-                    ('quit', DtshTui.style_bold()),
-                    (', or ', DtshTui.style_default()),
-                    ('exit', DtshTui.style_bold()),
-                    (', or press ', DtshTui.style_default()),
-                    ('Ctrl-D', DtshTui.style_bold()),
-                ]
-            )
-        )
-        self._term.write()
-
-    @staticmethod
-    def open(dt_source_path: Optional[str] = None,
-             dt_bindings_path: Optional[List[str]] = None) -> DtshSession:
-        """
-        """
-        global _session
-        global _autocomp
-
-        if _session is not None:
-            raise DtshError('Session already opened')
-
-        shell = DevicetreeShell.create(dt_source_path, dt_bindings_path)
-        term = DevicetreeTerm(
-            readline_completions_hook,
-            readline_display_hook
-        )
-        _session = DevicetreeShellSession(shell, term)
-        _autocomp = DevicetreeAutocomp(shell)
-
-        # We disable SIGINT (CTRL-C event).
-        signal.signal(signal.SIGINT, dtsh_session_sig_handler)
-
-        return _session
-
-
-# Shell session singleton state.
-_session: Union[DevicetreeShellSession, None] = None
-_autocomp: Union[DevicetreeAutocomp, None] = None
-
-
-# GNU readline completer function callback for rl_completion_matches().
-# MUST answer completions that actually match te given prefix.
-def readline_completions_hook(text: str, state: int) -> Union[str, None]:
-    if _autocomp is None:
-        return None
-
-    cmdline = readline.get_line_buffer()
-    completions = _autocomp.autocomplete(cmdline, text, 0)
-
-    if state < len(completions):
-        hint = completions[state]
-        if len(completions) == 1:
-            # GNU readline will eventually replace 'text' with these
-            # state values (or their longest prefix).
-            # When there's only one possible completion,
-            # we can tell the user it's useless to press TAB again
-            # by appending a space to the corresponding 'state' value.
-            #
-            # We assume a hint that ends with '/':
-            # - is a node path
-            # - the node has children, pressing TAB again should show them
-            if not hint.endswith('/'):
-                hint += ' '
-        return hint
-
-    return None
-
-
-# GNU readline implementation for rl_completion_display_matches_hook().
-#
-def readline_display_hook(substitution, matches, longest_match_length) -> None:
-    if (_session is None) or (_autocomp is None):
-        return
-
-    cmdline = readline.get_line_buffer()
-
-    # Go bellow input line
-    _session.term.write()
-
-    if _autocomp.model:
-        if _autocomp.mode == DtshAutocomp.MODE_DTSH_CMD:
-            model = cast(List[DtshCommand], _autocomp.model)
-            view = DtshTui.mk_command_hints_display(model)
-        elif _autocomp.mode == DtshAutocomp.MODE_DTSH_OPT:
-            model = cast(List[DtshCommandOption], _autocomp.model)
-            view = DtshTui.mk_option_hints_display(model)
-        elif _autocomp.mode == DtshAutocomp.MODE_DT_BINDING:
-            model = cast(List[Binding], _autocomp.model)
-            view = DtshTui.mk_binding_hints_display(model)
-        elif _autocomp.mode == DtshAutocomp.MODE_DT_NODE:
-            model = cast(List[Node], _autocomp.model)
-            view = DtshTui.mk_node_hints_display(model)
-        elif _autocomp.mode == DtshAutocomp.MODE_DT_PROP:
-            model = cast(List[Property], _autocomp.model)
-            view = DtshTui.mk_property_hints_display(model)
-        else:
-            # Autcomp mode MODE_ANY.
-            view = DtshTui.mk_grid(1)
-            for m in _autocomp.model:
-                view.add_row(DtshTui.mk_txt(str(m)))
-        _session.term.write(view)
-
-    _session.term.write(DtshTui.mk_ansi_prompt(), end='')
-    _session.term.write(cmdline, end='')
-    sys.stdout.flush()
-
-
-def dtsh_session_sig_handler(signum, frame):
-    # FIXME: closing() the session when the pager is active
-    # breaks the TTY.
-    # As a work-around, we ignore SIGINT.
-    if signum == signal.SIGINT:
-        return
-
-
-
-class FileStdoutVt(DtshVt):
-    """VT implementation for command output redirection.
-    """
-
-    _console: Console
-
-
-    def __init__(self, path: str) -> None:
-        """ Creates a new VT.
-
-        Arguments:
-        path -- Path of the file the command output is redirected to;
-                the file format (HTML, SVG, text) is determined by the filename
-                extension (.html, .svg, default).
+        Raises:
+            DTShError: Typically DTS file not found or invalid,
+              or missing or invalid bindings.
         """
         try:
-            path = os.path.abspath(path)
-            self._file = open(path, 'w')
-        except IOError as e:
-            raise DtshError(f'could not open file: {path}', e)
-        self._console = Console(highlight=False,
-                                theme=DtshTui.theme(),
-                                record=True)
+            dt = DTModel.create(dts_path, binding_dirs)
+        except (OSError, edtlib.EDTError) as e:
+            raise DTShError(f"DTS error: {e}") from e
 
-    def pager_enter(self) -> None:
-        """Overrides DtshVt.pager_enter().
+        sh = DTSh(
+            dt,
+            [
+                DTShBuiltinPwd(),
+                DTShBuiltinCd(),
+                DTShBuiltinLs(),
+                DTShBuiltinTree(),
+                DTShBuiltinFind(),
+                DTShBuiltinAlias(),
+                DTShBuiltinChosen(),
+            ],
+        )
+        return cls(sh)
 
-        Ignored, no pager.
+    def __init__(
+        self,
+        sh: DTSh,
+        vt: Optional[DTShVT] = None,
+        autocomp: Optional[DTShAutocomp] = None,
+    ) -> None:
+        """Initialize a session.
+
+        Will initialize the VT and auto-completion support.
+
+        Won't start the interactive loop.
+
+        Args:
+            sh: The session's shell.
+            vt: The session's VT. Defaults to DTShVT.
+            autocomp: GNU readline callbacks for completion and matches display.
+              Defaults to DTShAutocomp().
         """
-        pass
+        self._dtsh = sh
+        self._last_err = None
 
-    def pager_exit(self) -> None:
-        """Overrides DtshVt.pager_exit().
+        self._vt = vt or DTShVT()
+        self._autocomp = autocomp or DTShAutocomp(self._dtsh)
 
-        Ignored, no pager.
+        self._rl = DTShReadline(
+            self._vt,
+            self._autocomp.complete,
+            self._autocomp.display,
+        )
+
+    def run(self) -> None:  # pylint: disable=too-many-branches
+        """Enter interactive loop.
+
+        This will:
+        - disable the SIGINT signal
+        - clear VT and print banner
+        - repeat until user quits or EOF (e.g. CTRL-D):
+            - run pre_input_hook()
+            - read a command line from VT
+            - parse the command line
+            - setup command output redirection if asked to
+            - execute the command string
+            - dispatch the event to its handler if an error occurs
+            - if the command output was redirected,
+              explicitly flush the redirection stream
         """
-        pass
+        # closing() the session when the pager is active breaks the TTY.
+        # As a work-around, we ignore SIGINT.
+        signal.signal(signal.SIGINT, self._sig_handler)
 
-    def write(self, *args, **kwargs) -> None:
-        """Overrides DtshVt.write().
+        self._vt.clear()
+        self.preamble_hook()
 
-        Quietly write to console, recording output.
+        # Session error state.
+        self._last_err = None
 
-        Arguments:
-        args -- Positional arguments for Console.print()
-        kwargs -- Keyword arguments for Console.print()
+        while True:
+            self.pre_input_hook()
+
+            cmdline: Optional[str] = None
+            try:
+                cmdline = self._vt.readline(
+                    _dtshconf.prompt_alt
+                    if self._last_err
+                    else _dtshconf.prompt_default
+                )
+            except EOFError:
+                self._vt.write()
+                # Exit DTSh on EOF.
+                self.close()
+
+            if cmdline:
+                if cmdline.strip() in ["q", "quit", "exit"]:
+                    # Exit DTSh process.
+                    self.close()
+
+                cmd: DTShCommand
+                argv: List[str]
+                redir2: Optional[str]
+                try:
+                    # Parse command line into the command to execute,
+                    # its arguments, and the redirection directive, if any.
+                    # Won't parse the command arguments yet,
+                    # but will fault if the command is undefined.
+                    cmd, argv, redir2 = self._dtsh.parse_cmdline(cmdline)
+
+                    out: DTShOutput = (
+                        self.open_redir2(redir2) if redir2 else self._vt
+                    )
+
+                except DTShRedirect.Error as e:
+                    # Failed to initialize redirection stream.
+                    self._last_err = e
+                    self.on_redir2_error(e)
+
+                except DTShCommandNotFoundError as e:
+                    self._last_err = e
+                    self.on_cmd_not_found_error(e)
+
+                else:
+                    try:
+                        cmd.execute(argv, self._dtsh, out)
+
+                        # Last command line succeeded, reset error state.
+                        self._last_err = None
+
+                    except DTShUsageError as e:
+                        if e.cmd.with_flag(DTShFlagHelp):
+                            # The user asked for help (-h or --h).
+                            self.on_cmd_help(e.cmd)
+                        else:
+                            # Invalid command arguments.
+                            self._last_err = e
+                            self.on_cmd_usage_error(e)
+
+                    except DTShCommandError as e:
+                        # Command execution failed.
+                        self._last_err = e
+                        self.on_cmd_failed_error(e)
+
+                    finally:
+                        if out is not self._vt:
+                            # Flush the file the command output
+                            # was redirected to, even on error.
+                            # Note that the shell (error) messages themselves
+                            # are always written to the session VT,
+                            # and never redirected.
+                            out.flush()
+
+            if _dtshconf.prompt_sparse:
+                self._vt.write()
+
+    def close(self, status: int = 0) -> None:
+        """Terminate interactive session.
+
+        This will:
+        - run pre_exit_hook()
+        - save readline history file, if supported
+        - close the session's VT
+        - exit the dtsh process
+
+        Args:
+            status: exit status, defaults to 0, aka "no error".
         """
-        with self._console.capture():
-            self._console.print(*args, **kwargs)
+        self.pre_exit_hook(status)
+        self._rl.save_history()
+        sys.exit(status)
 
-    def clear(self) -> None:
-        """Overrides DtshVt.clear().
+    def open_redir2(self, redir2: str) -> DTShOutput:
+        """Open DTSh redirection output stream.
 
-        Ignored, does not clear the console.
+        Args:
+            redir2: Command line redirection.
+
+        Returns:
+            The redirection output stream.
+
+        Raises:
+            DTShRedirect.Error: Failed to setup redirection output.
         """
-        pass
+        redirect = DTShRedirect(redir2)
+        return DTShOutputFile(redirect.path, redirect.append)
 
-    def readline(self, ansi_prompt: str) -> str:
-        """Overrides DtshVt.readline().
+    def preamble_hook(self) -> None:
+        """Session's preamble, aka banner."""
+        self._vt.write("dtsh: shell-like interface with Zephyr Devicetree")
+        self._vt.write()
 
-        Returns an empty string (no input stream).
+    def pre_input_hook(self) -> None:
+        """Hook called before the session prompts for the next command line."""
+        self._vt.write(self._dtsh.pwd)
+
+    def on_cmd_help(self, cmd: DTShCommand) -> None:
+        """Called when the user's asked for a command's help.
+
+        Args:
+            cmd: The command to help with.
         """
-        return ''
+        self._vt.write(f"usage: {cmd.synopsis}")
+        self._vt.write()
+        self._vt.write(f"{cmd.brief.capitalize()}.")
 
-    def abort(self) -> None:
-        """Overrides DtshVt.abort().
+    def on_cmd_not_found_error(self, e: DTShCommandNotFoundError) -> None:
+        """Called when the user's asked for an unknown command.
 
-        Ignored.
+        Args:
+            e: The error event.
         """
-        pass
+        self._vt.write(f"dtsh: command not found: {e.name}")
 
-    # Actually writing to file happens in he dtor.
-    #
-    def __del__(self):
-        if self._file.name.endswith('.html'):
-            html = self._console.export_html()
-            self._file.write(html)
-        elif self._file.name.endswith('.svg'):
-            self._write_svg()
+    def on_cmd_usage_error(self, e: DTShUsageError) -> None:
+        """Called when the user's misused a command.
+
+        Args:
+            e: The error event.
+        """
+        self._vt.write(f"{e.cmd.name}: {e.msg}")
+
+    def on_cmd_failed_error(self, e: DTShCommandError) -> None:
+        """Called when the last command execution has failed.
+
+        Args:
+            e: The error event.
+        """
+        self._vt.write(f"{e.cmd.name}: {e.msg}")
+
+    def on_redir2_error(self, e: DTShRedirect.Error) -> None:
+        """Called when failed to setup redirection stream.
+
+        Args:
+            e: The error event.
+        """
+        self._vt.write(f"dtsh: {e}")
+
+    def pre_exit_hook(self, status: int) -> None:
+        """Hook called when the user terminates the session.
+
+        Args:
+            status: The exit status.
+        """
+        if status:
+            self._vt.write(f"bye ({status}).")
         else:
-            txt = self._console.export_text()
-            self._file.write(txt)
-        self._file.close()
+            self._vt.write("bye.")
 
-    def _write_svg(self):
-        svg = self._console.export_svg(title='')
-        # Remove macOS-ish windows buttons.
-        s = re.search(_RE_SVG_BUTTONS, svg)
-        if s:
-            svg = svg[:s.start()] + svg[s.end() + 1:]
-        # Remove top padding
-        svg_vstr: List[str] = []
-        re_view = re.compile(_RE_SVG_VIEWPORT)
-        re_rect = re.compile(_RE_SVG_RECT)
-        re_trans = re.compile(_RE_SVG_TRANSFORM)
-        for line in svg.splitlines(keepends=True):
-            # Substract hard coded padding to viewport's height.
-            m = re_view.match(line)
-            if m and m.groups():
-                width = m.groups()[0]
-                height = m.groups()[1]
-                line = line.replace(
-                    f'viewBox="0 0 {width} {height}"',
-                    f'viewBox="0 0 {width} {float(height) - _SVG_HARD_PADDING}"'
-                )
-
-            # Substract hard coded padding to viewport's height.
-            m = re_rect.match(line)
-            if m and m.groups():
-                height = m.groups()[0]
-                line = line.replace(
-                    f'height="{height}"',
-                    f'height="{float(height) - _SVG_HARD_PADDING}"')
-
-            # Substract hard coded padding to transformation y.
-            m = re_trans.match(line)
-            if m and m.groups():
-                x = m.groups()[0]
-                y = m.groups()[1]
-                line = line.replace(
-                    f'translate({x}, {y})',
-                    f'translate({x}, {int(y) - _SVG_HARD_PADDING})'
-                )
-
-            svg_vstr.append(line)
-
-        self._file.writelines(svg_vstr)
-
-
-# Hard coded top padding in rich.console.export_svg().
-#
-_SVG_HARD_PADDING = 40
-
-# All values in this regex are hard coded in rich.console.export_svg(),
-# and do not seem to depen on e.g. a theme.
-# We'll remove the whole pattern.
-_RE_SVG_BUTTONS = r'''<g transform="translate\(26,22\)">\s*<circle cx="0" cy="0" r="7" fill="#ff5f57"/>\s*<circle cx="22" cy="0" r="7" fill="#febc2e"/>\s*<circle cx="44" cy="0" r="7" fill="#28c840"/>\s*</g>'''
-
-# We'll substract the hard coded padding to the viewport height (the second group).
-_RE_SVG_VIEWPORT = r'''\s*<svg class="rich-terminal" viewBox="0 0 (\S*) (\S*)" xmlns="http://www.w3.org/2000/svg">\s*'''
-
-# We'll substract the hard coded padding to the rect height.
-_RE_SVG_RECT = r'''\s*<rect fill="#\d*" stroke="rgba\(\d*,\d*,\d*,0\.\d*\)" stroke-width="1" x="1" y="1" width="\d*" height="(\d*\.\d*)" rx="\d*"/>\s*'''
-
-# We'll substract the hard coded padding to the transformation y (the second group).
-_RE_SVG_TRANSFORM = r'''\s*<g transform="translate\((\d*), (\d*)\)" clip-path="url\(#terminal-\d*-clip-terminal\)">\s*'''
+    def _sig_handler(self, signum: int, frame: Optional[FrameType]) -> Any:
+        # closing() the session when the pager is active breaks the TTY.
+        # As a work-around, we ignore SIGINT.
+        del frame  # Unused.
+        if signum == signal.SIGINT:
+            pass

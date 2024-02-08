@@ -1,47 +1,35 @@
 ====
-dtsh
+DTSh
 ====
 
-:Author: Chris Duf
+:Author: Christophe Dufaza
 
-**dtsh** is an interactive *shell-like* interface with a devicetree and
-its bindings:
+Shell-like command line interface with Devicetree:
 
--  browse the devicetree through a familiar hierarchical file-system
-   metaphor
--  retrieve nodes and bindings with accustomed command names and command
-   line syntax
--  generate simple documentation artifacts by redirecting commands
-   output to files (text, HTML, SVG)
--  common command line interface paradigms (auto-completion, history)
-   and keybindings
+- browse a devicetree through a hierarchical file system metaphor
+- search for devices, bindings, buses or interrupts with flexible criteria
+- filter, sort and format commands output
+- generate simple documentation artifacts (text, HTML, SVG) by redirecting the output
+  of commands to files
+- *rich* Textual User Interface, command line auto-completion, command history, user themes
 
 ::
 
-   $ dtsh build/gzephyr/zephyr.dts
-   dtsh (0.1.0a4): Shell-like interface to a devicetree
-   Help: man dtsh
+   $ dtsh build/zephyr/zephyr.dts
+   dtsh (0.2rc1): Shell-like interface with Devicetree
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
-   > tree -L 1 -l
-   /
-   ├──  chosen
-   ├──  aliases
-   ├──  soc
-   ├──  pin-controller   The nRF pin controller is a singleton node responsible for controlling…
-   ├──  entropy_bt_hci   Bluetooth module that uses Zephyr's Bluetooth Host Controller Interface as…
-   ├──  cpus
-   ├──  sw-pwm           nRFx S/W PWM
-   ├──  leds             This allows you to define a group of LEDs. Each LED in the group is…
-   ├──  pwmleds          PWM LEDs parent node
-   ├──  buttons          GPIO KEYS parent node
-   ├──  connector        GPIO pins exposed on Arduino Uno (R3) headers…
-   └──  analog-connector ADC channels exposed on Arduino Uno (R3) headers…
+   > cd /soc/flash-controller@4001e000
 
-
-This software was created as a Proof of Concept for a:
-
-- simple tool that could assist newcomers to Zephyr in understanding
-  what a devicetree is, and how bindings describe and constrain its content
-- an on hand DTS file viewer
+   /soc/flash-controller@4001e000
+   > tree -l
+                                 Description
+                                 ─────────────────────────────────────────────────────────────────
+   flash-controller@4001e000     Nordic NVMC (Non-Volatile Memory Controller)
+   └── flash@0                   Flash node
+       └── partitions            This binding is used to describe fixed partitions of a flash (or…
+            ├── partition@0      Each child node of the fixed-partitions node represents…
+            ├── partition@c000   Each child node of the fixed-partitions node represents…
+            ├── partition@82000  Each child node of the fixed-partitions node represents…
+            └── partition@f8000  Each child node of the fixed-partitions node represents…
