@@ -1,7 +1,6 @@
-This directory mirrors the edtlib implementation
-found in Zephyr 3.3.0.
+This directory contains a snapshot of Zephyr's python-devicetree library.
 
-See https://github.com/zephyrproject-rtos/zephyr/tree/v3.3.0/scripts/dts.
+See https://github.com/zephyrproject-rtos/zephyr/scripts/dts
 
 
 - edtlib:
