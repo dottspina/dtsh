@@ -340,14 +340,16 @@ class DTS:
         else:
             zephyr_base = os.environ.get("ZEPHYR_BASE")
         if not zephyr_base:
-            # dtsh/src/dtsh/__file__
-            dtsh_base = os.path.dirname(
+            # DTSh may be distributed with the Zephyr project:
+            # test ZEPHYR_BASE/scripts/dts/dtsh/src/dtsh/__file__
+            dtshdir = os.path.dirname(
                 os.path.dirname(os.path.dirname(__file__))
             )
-            # ZEPHYR_BASE/scripts/dts/dtsh
-            zephyr_base = os.path.dirname(
-                os.path.dirname(os.path.dirname(dtsh_base))
-            )
+            testdir = os.path.dirname(os.path.dirname(os.path.dirname(dtshdir)))
+            # ZEPHYR_BASE/Kconfig.zephyr should then exist.
+            if os.path.isfile(os.path.join(testdir, "Kconfig.zephyr")):
+                zephyr_base = testdir
+
         return zephyr_base
 
     def _init_vendors_file(self, vendors_file: Optional[str]) -> Optional[str]:
