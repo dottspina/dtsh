@@ -114,8 +114,8 @@ class DTS:
         self._dts_path = os.path.abspath(dts_path)
         self._cmake = self._init_cmake_cache()
         self._zephyr_base = self._init_zephyr_base()
-        self._vendors_file = self._init_vendors_file(vendors_file)
         self._binding_dirs = self._init_binding_dirs(binding_dirs)
+        self._vendors_file = self._init_vendors_file(vendors_file)
         self._yamlfs = YAMLFilesystem(self._binding_dirs)
 
     @property
@@ -353,10 +353,23 @@ class DTS:
         return zephyr_base
 
     def _init_vendors_file(self, vendors_file: Optional[str]) -> Optional[str]:
-        if (not vendors_file) and self._zephyr_base:
-            vendors_file = os.path.join(
-                self._zephyr_base, "dts", "bindings", "vendor-prefixes.txt"
-            )
+        if not vendors_file:
+            if self._zephyr_base:
+                # If we have a valid ZEPHYR_BASE, we assume the expected vendors
+                # are those defined by Zephyr.
+                vendors_file = os.path.join(
+                    self._zephyr_base, "dts", "bindings", "vendor-prefixes.txt"
+                )
+            else:
+                # Otherwise, it's very likely the user has explicitly set
+                # some binding directories, search them for a vendors file.
+                # NOTE: Linux uses a vendor-prefixes.yaml file, we should be
+                # able to also load that (requires changes in edtlib.EDT).
+                for binding_dir in self._binding_dirs:
+                    vndpath = os.path.join(binding_dir, "vendor-prefixes.txt")
+                    if os.path.isfile(vndpath):
+                        print(f"vendor file: {vndpath}")
+                        vendors_file = vndpath
         return vendors_file
 
     def _init_binding_dirs(
