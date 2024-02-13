@@ -653,6 +653,14 @@ class DTNodeWithBindingDepth(DTNodeIntCriterion):
         return [node.binding.cb_depth] if node.binding else []
 
 
+class DTNodeWithDepOrd(DTNodeIntCriterion):
+    """Match dependency ordinal (aka DTS order)."""
+
+    def get_haystack(self, node: DTNode) -> Sequence[int]:
+        """Overrides DTNodeIntCriterion.get_haystack()."""
+        return [node.dep_ordinal]
+
+
 class DTWalkableComb(DTWalkable):
     """Walk an arbitrary subset of a devicetree.
 
