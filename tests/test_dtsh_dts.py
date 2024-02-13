@@ -94,11 +94,16 @@ def test_dts_init() -> None:
             assert dts.fw_name is None
             assert dts.fw_version is None
 
-            # Default minimal bindings search path.
-            assert [
-                os.path.join(app_src_dir, "dts", "bindings"),
-                os.path.join(dts.zephyr_base or "?", "dts", "bindings"),
-            ] == dts.bindings_search_path
+            # Default minimal bindings search path:
+            # - derived from app src dir, always exists
+            expect_dirs = [os.path.join(app_src_dir, "dts", "bindings")]
+            # - though cleared in environment, ZEPHYR_BASE may be derived
+            # from __file__ when distributed with Zephyr
+            if dts.zephyr_base:
+                expect_dirs.append(
+                    os.path.join(dts.zephyr_base, "dts", "bindings")
+                )
+            assert expect_dirs == dts.bindings_search_path
 
 
 def test_dts_init_from_os_env() -> None:
