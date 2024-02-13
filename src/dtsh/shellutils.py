@@ -59,6 +59,7 @@ from dtsh.modelutils import (
     DTNodeWithRegAddr,
     DTNodeWithRegSize,
     DTNodeWithBindingDepth,
+    DTNodeWithDepOrd,
 )
 from dtsh.rl import DTShReadline
 from dtsh.autocomp import DTShAutocomp, RlStateEnum
@@ -322,7 +323,7 @@ class DTShArgIntCriterion(DTShArgCriterion):
 class DTShArgNodeWithUnitAddr(DTShArgIntCriterion):
     """Match unit address."""
 
-    BRIEF = "match unit addresse"
+    BRIEF = "match unit address"
     LONGNAME = "with-unit-addr"
 
     def __init__(self) -> None:
@@ -377,6 +378,16 @@ class DTShArgNodeWithBindingDepth(DTShArgIntCriterion):
 
     def __init__(self) -> None:
         super().__init__(DTNodeWithBindingDepth)
+
+
+class DTShArgNodeWithDepOrd(DTShArgIntCriterion):
+    """Match  dependency ordinal (aka DTS order)."""
+
+    BRIEF = "match dependency ordinal"
+    LONGNAME = "with-dts-ord"
+
+    def __init__(self) -> None:
+        super().__init__(DTNodeWithDepOrd)
 
 
 class DTShArgTextCriterion(DTShArgCriterion):
@@ -644,6 +655,7 @@ DTSH_ARG_NODE_CRITERIA: Sequence[DTShArgCriterion] = [
     DTShArgNodeWithRegAddr(),
     DTShArgNodeWithRegSize(),
     DTShArgNodeWithBindingDepth(),
+    DTShArgNodeWithDepOrd(),
 ]
 """Pre-defined criteria shell commands may use to match nodes."""
 

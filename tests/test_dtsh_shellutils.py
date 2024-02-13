@@ -71,6 +71,7 @@ from dtsh.shellutils import (
     DTShArgNodeWithRegAddr,
     DTShArgNodeWithRegSize,
     DTShArgNodeWithBindingDepth,
+    DTShArgNodeWithDepOrd,
     DTShArgOrderBy,
     DTShParamDTPath,
     DTShParamDTPaths,
@@ -163,6 +164,7 @@ def test_dtsharg_criterion_integer_expr() -> None:
         (DTShArgNodeWithRegAddr(), "registers"),
         (DTShArgNodeWithRegSize(), "registers"),
         (DTShArgNodeWithBindingDepth(), "binding"),
+        (DTShArgNodeWithDepOrd(), "dep_ordinal"),
     ]
 
     # Check that no one has been forgotten.
