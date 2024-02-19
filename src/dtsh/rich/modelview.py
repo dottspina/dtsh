@@ -334,9 +334,14 @@ class DTModelView:
         )
 
     @classmethod
-    def mk_requiredy_by(cls, req_by: str) -> Text:
+    def mk_requiredy_by(cls, req_by: str, dep_failed: bool) -> Text:
         """Text view factory for dependent nodes."""
-        return TextUtil.mk_text(req_by, DTShTheme.STYLE_DT_REQ_BY)
+        return TextUtil.mk_text(
+            req_by,
+            DTShTheme.STYLE_DT_DEP_FAILED
+            if dep_failed
+            else DTShTheme.STYLE_DT_REQ_BY,
+        )
 
 
 class SketchMV:
@@ -1372,9 +1377,11 @@ class ReqByNodeMV(NodeMV):
             return []
 
         tvs_req_by = (
-            DTModelView.mk_requiredy_by(node.name) for node in node.required_by
+            DTModelView.mk_requiredy_by(
+                req_by.name, dep_failed=req_by.enabled and not node.enabled
+            )
+            for req_by in node.required_by
         )
-        # NOTE: if nodes are ordered, also order required_by ?
 
         if sketch.layout == SketchMV.Layout.LIST_MULTI:
             return list(tvs_req_by)
