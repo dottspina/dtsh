@@ -728,7 +728,7 @@ class DTSh:
     - parse command lines and execute command strings
     """
 
-    VERSION_STRING = "0.2rc1"
+    VERSION_STRING = "0.2.0"
     """The devicetree shell version string.
 
     This version identifies:
