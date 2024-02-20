@@ -60,7 +60,7 @@ class DTShRichSession(DTShSession):
                 [
                     TextUtil.bold("dtsh"),
                     TextUtil.mk_text(f"({DTSh.VERSION_STRING}):"),
-                    TextUtil.italic("Shell-like interface with Devicetree"),
+                    TextUtil.italic("A Devicetree Shell"),
                 ],
             )
         )
