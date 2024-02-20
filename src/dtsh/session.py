@@ -263,7 +263,7 @@ class DTShSession:
 
     def preamble_hook(self) -> None:
         """Session's preamble, aka banner."""
-        self._vt.write("dtsh: shell-like interface with Zephyr Devicetree")
+        self._vt.write("dtsh: A Devicetree Shell")
         self._vt.write()
 
     def pre_input_hook(self) -> None:
