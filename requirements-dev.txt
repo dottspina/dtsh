@@ -4,3 +4,6 @@ pylint
 mypy
 types-PyYAML
 pytest
+
+# Pin black versions to avoid unwanted formatting changes.
+black==23.3.0
