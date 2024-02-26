@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DTSh’s Handbook &mdash; DTSh 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=938c9ccc"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+        <script src="_static/tabs.js?v=3030b3cb"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Getting Started Guide" href="getting-started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DTSh
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DTSh’s Handbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-shell">The Shell</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hierarchical-file-system-metaphor">Hierarchical File System Metaphor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-command-line">The Command Line</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#command-strings">Command Strings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output-redirection">Output Redirection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#format-commands-output">Format Commands Output</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#format-strings">Format Strings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#formatted-lists">Formatted Lists</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#formatted-trees">Formatted Trees</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sort-commands-output">Sort Commands Output</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sort-keys">Sort Keys</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sort-directions">Sort Directions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#search-the-devicetree">Search the Devicetree</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#text-patterns">Text Patterns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#integer-expressions">Integer Expressions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#criterion-chains">Criterion Chains</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#user-preferences">User Preferences</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-format">Configuration Format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#general-preferences">General Preferences</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-prompt">The Prompt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#file-system-access">File System Access</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-prefs-redir2fs">Output Redirection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-prefs-lists">Formatted Lists</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-prefs-trees">Formatted Trees</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alternative-symbols">Alternative Symbols</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#built-in-commands">Built-in Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cd">cd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pwd">pwd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ls">ls</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tree">tree</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-tree-options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-tree-examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#find">find</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-find-options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-find-examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alias">alias</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-alias-options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-alias-examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#chosen">chosen</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-chosen-options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-chosen-examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#textual-user-interface">Textual User Interface</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dtsh-prompt">The Prompt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#auto-completion">Auto-completion</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#auto-complete-commands">Auto-complete Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auto-complete-options">Auto-complete Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auto-complete-arguments">Auto-complete Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auto-complete-parameters">Auto-complete Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auto-complete-redirection-paths">Auto-complete Redirection Paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#command-history">Command History</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-pager">The Pager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actionable-text">Actionable Text</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-bindings">Key Bindings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#moving-and-editing">Moving and Editing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#command-line-history">Command Line History</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#appearance">Appearance</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-terminal">The Terminal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#user-themes">User Themes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DTSh</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DTSh’s Handbook</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/handbook.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dtsh-s-handbook">
+<span id="dtsh-handbook"></span><h1>DTSh’s Handbook<a class="headerlink" href="#dtsh-s-handbook" title="Link to this heading"></a></h1>
+<p>This handbook assumes you’ve already installed DTSh, and know how to open DTS files with <code class="docutils literal notranslate"><span class="pre">dtsh</span></code>.
+If not, please go to the <a class="reference internal" href="getting-started.html#dtsh-getting-started"><span class="std std-ref">Getting Started Guide</span></a>.</p>
+<figure class="align-center" id="id13">
+<a class="reference internal image-reference" href="_images/buses.png"><img alt="Buses" src="_images/buses.png" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id13" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<section id="the-shell">
+<span id="dtsh-shell"></span><h2>The Shell<a class="headerlink" href="#the-shell" title="Link to this heading"></a></h2>
+<p>DTSh is a command line interface for <em>navigating</em>, <em>visualizing</em> and <em>searching</em> a devicetree
+that actually resembles a usual POSIX shell:</p>
+<ul class="simple">
+<li><p>hierarchical file system metaphor</p></li>
+<li><p>Unix-like command names and command line syntax</p></li>
+<li><p>Unix-like command output redirection</p></li>
+<li><p>auto-completion, command history</p></li>
+<li><p><em>standard</em> keybindings (Zsh, Bash, Emacs, GDB, etc)</p></li>
+</ul>
+<section id="hierarchical-file-system-metaphor">
+<span id="dtsh-fs-metaphor"></span><h3>Hierarchical File System Metaphor<a class="headerlink" href="#hierarchical-file-system-metaphor" title="Link to this heading"></a></h3>
+<p>In POSIX systems, all directories are part of a global file system tree,
+the root of which is denoted <code class="docutils literal notranslate"><span class="pre">/</span></code>.</p>
+<p>DTSh shows a devicetree as such a <em>hierarchical file system</em>,
+where a Devicetree <em>path name</em> (<a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#path-names">DTSpec 2.2.3</a>) may represent:</p>
+<ul class="simple">
+<li><p>a node that appears as a <em>file</em> whose name would be the <em>node name</em> (<a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#node-names">DTSpec 2.2.1</a>),
+and whose content would be the node’s properties</p></li>
+<li><p>a branch that appears as a <em>directory</em> of nodes</p></li>
+</ul>
+<p>Devicetree path names are <em>absolute device paths</em>.</p>
+<p>A <em>current working branch</em> is defined, allowing support for <em>relative device paths</em>.
+The usual <a class="reference internal" href="#dtsh-builtin-cd"><span class="std std-ref">cd</span></a> command navigates through the devicetree.</p>
+<p>Paths may contain the <em>path references</em>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.</span></code> represents the current path, typically the current working branch</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">..</span></code> represents the path to the parent of the current path</p></li>
+</ul>
+<p>Paths may start with a DTS <em>label</em> (<a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html#labels">DTSpec 6.2</a>): <code class="docutils literal notranslate"><span class="pre">&amp;i2c0</span></code> represents the absolute path
+to the devicetree node with label “i2c0”.</p>
+<p>The devicetree root <em>directory</em> is its own parent.</p>
+<p>The expression bellow is then a valid (though convoluted and useless) path
+to the <code class="docutils literal notranslate"><span class="pre">flash-controller&#64;4001e000</span></code> device:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&amp;i2c0/bme680@76/../../../soc/./flash-controller@4001e000
+</pre></div>
+</div>
+</section>
+<section id="the-command-line">
+<span id="dtsh-cmdline"></span><h3>The Command Line<a class="headerlink" href="#the-command-line" title="Link to this heading"></a></h3>
+<p>A <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> <em>command line</em> is parsed into a <em>command string</em>, possibly followed by
+an <em>output redirection</em>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>COMMAND_LINE := COMMAND_STRING [REDIRECTION]
+</pre></div>
+</div>
+<p>Command lines are entered and edited at <a class="reference internal" href="#dtsh-prompt"><span class="std std-ref">the prompt</span></a>.</p>
+<section id="command-strings">
+<span id="dtsh-cmdstr"></span><h4>Command Strings<a class="headerlink" href="#command-strings" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">dtsh</span></code> command strings conform to <a class="reference external" href="https://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html">GNU getopt</a> syntax:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>COMMAND_STRING := COMMAND [OPTION...] [PARAM...]
+</pre></div>
+</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">COMMAND</span></code>: the command name, e.g. <code class="docutils literal notranslate"><span class="pre">ls</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OPTION</span></code>: the options the command is invoked with, e.g. <code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PARAM</span></code>: the parameters the command is invoked with, e.g. a devicetree path</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">OPTION</span></code> and <code class="docutils literal notranslate"><span class="pre">PARAM</span></code> are not positional: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-l</span> <span class="pre">/soc</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">/soc</span> <span class="pre">-l</span></code>.</p>
+<p>An option may accept:</p>
+<ul class="simple">
+<li><p>a short name, starting with a single <code class="docutils literal notranslate"><span class="pre">-</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">-h</span></code>)</p></li>
+<li><p>and/or a long name, starting with <code class="docutils literal notranslate"><span class="pre">--</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">--help</span></code>)</p></li>
+</ul>
+<p>Short option names can combine: <code class="docutils literal notranslate"><span class="pre">-lR</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">-l</span> <span class="pre">-R</span></code>.</p>
+<p>An option may require an argument value, e.g. <code class="docutils literal notranslate"><span class="pre">find</span>&#160; <span class="pre">--with-reg-size</span> <span class="pre">&gt;0x1000</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An argument value can contain spaces if quoted: <code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-reg-size</span> <span class="pre">&quot;&gt;</span> <span class="pre">0x1000&quot;</span></code>
+will as expected match nodes with a register whose size is greater than 4 kB,
+but <code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-reg-size</span> <span class="pre">&gt;</span> <span class="pre">0x1000</span></code> would complain that <code class="docutils literal notranslate"><span class="pre">&gt;</span></code> alone is an invalid expression.</p>
+</div>
+<p>Options semantic should be consistent across commands,
+e.g. <code class="docutils literal notranslate"><span class="pre">-l</span></code> always means <em>use a long listing format</em>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dtsh</span></code> also tries to re-use <em>well-known</em> option names,
+e.g. <code class="docutils literal notranslate"><span class="pre">-r</span></code> for <em>reverse</em> or <code class="docutils literal notranslate"><span class="pre">-R</span></code> for <em>recursive</em>.</p>
+</section>
+<section id="output-redirection">
+<span id="dtsh-redir2fs"></span><h4>Output Redirection<a class="headerlink" href="#output-redirection" title="Link to this heading"></a></h4>
+<p>Command output redirection <em>mimics</em> the Unix syntax:</p>
+<ul class="simple">
+<li><p>starts with either <code class="docutils literal notranslate"><span class="pre">&gt;</span></code> (create), or <code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span></code> (append to)</p></li>
+<li><p>followed by a file path, the (case insensitive) extension of which will determine the file format
+(HTML, SVG, default is text)</p></li>
+</ul>
+<p><em>Appending</em> to structured contents (HTML, SVG) is supported.</p>
+<p>For example, the command line bellow will save the tree of the flash partitions
+to the file <code class="docutils literal notranslate"><span class="pre">flash.svg</span></code> in the current working directory, in SVG format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree &amp;flash_controller &gt; flash.svg
+</pre></div>
+</div>
+<p>Then, the command line bellow will <em>append</em> details about individual partitions:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls --format naLrC &amp;flash0/partitions &gt;&gt; flash.svg
+</pre></div>
+</div>
+<figure class="align-center" id="id14">
+<a class="reference internal image-reference" href="_images/flash.svg"><img alt="flash.svg" src="_images/flash.svg" width="100%" /></a>
+<figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">flash.svg</span></code></span><a class="headerlink" href="#id14" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>By default, DTSh won’t override any existing file, to prevent unintentional operations, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls &gt; ~/.bashrc
+dtsh: file exists: &#39;.bashrc&#39;
+</pre></div>
+</div>
+<p>This is obviously orthogonal to the appending (<code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span></code>) commands output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree /soc &gt; soc.svg
+
+/
+&gt; ls /soc &gt;&gt; soc.svg
+dtsh: file exists: &#39;soc.svg&#39;
+</pre></div>
+</div>
+<p>To enable the append mode, override <code class="docutils literal notranslate"><span class="pre">pref.fs.no_overwrite</span></code> in your
+preferences file (see <a class="reference internal" href="#dtsh-prefs-fs"><span class="std std-ref">File System Access</span></a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pref</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">no_overwrite</span> <span class="o">=</span> <span class="n">no</span>
+</pre></div>
+</div>
+</div>
+<p><a class="reference internal" href="#dtsh-prefs-redir2fs"><span class="std std-ref">Output redirection preferences</span></a> allow basic configuration
+of <em>exported</em> content.</p>
+</section>
+</section>
+<section id="format-commands-output">
+<span id="dtsh-format-output"></span><h3>Format Commands Output<a class="headerlink" href="#format-commands-output" title="Link to this heading"></a></h3>
+<p>We here consider the DTSh commands that will eventually enumerate devicetree nodes,
+like <em>shell</em> commands may list files or directories.</p>
+<p>Nodes may be represented:</p>
+<ul class="simple">
+<li><p>by a path: this is the default, and the DTSh command’s output should then follow the layout
+of its Unix-like homonym (e.g. <code class="docutils literal notranslate"><span class="pre">ls</span></code>, <code class="docutils literal notranslate"><span class="pre">find</span></code> or <code class="docutils literal notranslate"><span class="pre">tree</span></code>)</p></li>
+<li><p>using a <em>long listing format</em>: the command’s output is then formatted in columns,
+like the Unix command <code class="docutils literal notranslate"><span class="pre">ls</span></code> that will also show owner, permissions and file size
+when the <code class="docutils literal notranslate"><span class="pre">-l</span></code> option is set</p></li>
+</ul>
+<p>DTSh generalizes and extends this approach to all commands that enumerate nodes:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">-l</span></code> option enables long listing formats</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code> option explicitly sets what information is shown (the columns)
+through the <code class="docutils literal notranslate"><span class="pre">FMT</span></code> <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code> implies <code class="docutils literal notranslate"><span class="pre">-l</span></code></p></li>
+<li><p>what the <code class="docutils literal notranslate"><span class="pre">-l</span></code> option alone will show depends on configurable defaults</p></li>
+</ul>
+<p>Formatted outputs include <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">list</span></a>
+and <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">tree</span></a> views.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>DTSh is a bit biased toward POSIX shells’ users, for who it should make sense to default
+to POSIX-like output:</p>
+<ul class="simple">
+<li><p>by default commands output will sound familiar, and nothing is printed that the user
+has not explicitly asked for</p></li>
+<li><p>then, adding DTSh format strings (<code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code>) will select the relevant columns to show
+on a per-command basis</p></li>
+</ul>
+<p>This behavior can however be overridden by setting the <code class="docutils literal notranslate"><span class="pre">pref.always_longfmt</span></code> preference: the
+<code class="docutils literal notranslate"><span class="pre">-l</span></code> flag will then be implied wherever supported, and outputs will be formatted
+according to configurable defaults.
+Although <code class="docutils literal notranslate"><span class="pre">--format</span></code> will still permit to select columns on a per-command basis,
+there’s no syntax to get the POSIX-like output when this preference is set.</p>
+</div>
+<section id="format-strings">
+<span id="dtsh-fmtstr"></span><h4>Format Strings<a class="headerlink" href="#format-strings" title="Link to this heading"></a></h4>
+<p>A <em>format string</em> is simply a list of <em>specifier</em> characters,
+each of which appending a <em>column</em> to the formatted output.</p>
+<p>For example, the format string “Nd” specifies the <em>Name</em> and <em>Description</em> columns:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc
+&gt; ls --format Nd
+ Name                           Description
+ ────────────────────────────────────────────────────────────────────────────────────────
+ interrupt-controller@e000e100  ARMv7-M NVIC (Nested Vectored Interrupt Controller)
+ timer@e000e010                 ARMv7-M System Tick
+ ficr@10000000                  Nordic FICR (Factory Information Configuration Registers)
+</pre></div>
+</div>
+<table class="docutils align-center" id="id15">
+<caption><span class="caption-text">Format string specifiers</span><a class="headerlink" href="#id15" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
+<td><p>unit address</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">A</span></code></p></td>
+<td><p>node aliases</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">b</span></code></p></td>
+<td><p>bus of appearance</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">B</span></code></p></td>
+<td><p>supported bus protocols</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">c</span></code></p></td>
+<td><p>compatible strings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">C</span></code></p></td>
+<td><p>binding’s compatible or headline</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">d</span></code></p></td>
+<td><p>binding’s description</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">D</span></code></p></td>
+<td><p>node dependencies</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">i</span></code></p></td>
+<td><p>generated interrupts</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">K</span></code></p></td>
+<td><p>all labels and aliases</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">l</span></code></p></td>
+<td><p>device label</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">L</span></code></p></td>
+<td><p>DTS labels</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">N</span></code></p></td>
+<td><p>node name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">n</span></code></p></td>
+<td><p>unit name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">o</span></code></p></td>
+<td><p>dependency ordinal (aka <code class="docutils literal notranslate"><span class="pre">dts_ord</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>path name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">r</span></code></p></td>
+<td><p>registers (base address and size)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">R</span></code></p></td>
+<td><p>registers (address range)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">s</span></code></p></td>
+<td><p>status string</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">T</span></code></p></td>
+<td><p>dependent nodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+<td><p>vendor name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X</span></code></p></td>
+<td><p>child-binding depth</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Y</span></code></p></td>
+<td><p>bus information</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="formatted-lists">
+<span id="dtsh-formatted-lists"></span><h4>Formatted Lists<a class="headerlink" href="#formatted-lists" title="Link to this heading"></a></h4>
+<p>A <em>formatted list</em> is basically a table:</p>
+<ul class="simple">
+<li><p>the format string describes the ordered columns</p></li>
+<li><p>each node in the list appends a table row</p></li>
+</ul>
+<p>This is the view most commands will produce by default when using long listing formats.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls leds -l
+ Name   Labels  Binding
+ ──────────────────────────────────
+ led_0  led0    GPIO LED child node
+ led_1  led1    GPIO LED child node
+ led_2  led2    GPIO LED child node
+ led_3  led3    GPIO LED child node
+</pre></div>
+</div>
+<p>When no format string is explicitly set with <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code>,
+the default format configured by the <code class="docutils literal notranslate"><span class="pre">pref.list.fmt</span></code> preference is used.</p>
+<p><a class="reference internal" href="#dtsh-prefs-lists"><span class="std std-ref">Preferences for formatted lists</span></a> also include e.g. whether to show
+the table header row or how to represent missing values (<em>placeholders</em>).</p>
+</section>
+<section id="formatted-trees">
+<span id="dtsh-formatted-trees"></span><h4>Formatted Trees<a class="headerlink" href="#formatted-trees" title="Link to this heading"></a></h4>
+<p>A <em>formatted tree</em> is actually a 2-sided view:</p>
+<ul class="simple">
+<li><p>left-side: the actual node tree</p></li>
+<li><p>right-side: a detailed list-view</p></li>
+<li><p>the first column specified by the format string tells how to represent the tree anchors (left-side),
+while the remaining specifiers describe the detailed view columns (right-side)</p></li>
+</ul>
+<p>Formatted trees are produced:</p>
+<ul class="simple">
+<li><p>by commands whose natural semantic is to output trees, e.g. <code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">-l</span></code></p></li>
+<li><p>when the user explicitly asks for a tree-like representation, e.g. <code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">-l</span> <span class="pre">-T</span></code></p></li>
+</ul>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --on-bus * --format NYC -T
+                          Bus      Binding
+                          ────────────────────────
+/                         …        …
+└── soc                   …        …
+    ├── i2c@40003000      i2c      nordic,nrf-twi
+    │   └── bme680@76     on i2c   bosch,bme680
+    ├── spi@40004000      spi      nordic,nrf-spi
+    │   └── bme680@0      on spi   bosch,bme680
+    └── qspi@40029000     qspi     nordic,nrf-qspi
+        └── mx25r6435f@0  on qspi  nordic,qspi-nor
+</pre></div>
+</div>
+<p>When no format string is explicitly set with <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code>,
+the default format configured by the <code class="docutils literal notranslate"><span class="pre">pref.tree.fmt</span></code> preference is used.</p>
+<p><a class="reference internal" href="#dtsh-prefs-trees"><span class="std std-ref">Preferences for formatted trees</span></a> also include e.g. whether to show
+the table header row or how to represent missing values (<em>placeholders</em>).</p>
+</section>
+</section>
+<section id="sort-commands-output">
+<span id="dtsh-sort-output"></span><h3>Sort Commands Output<a class="headerlink" href="#sort-commands-output" title="Link to this heading"></a></h3>
+<p>When a command eventually enumerate nodes, ordering its output means ordering the nodes.</p>
+<p>When the command outputs a list (e.g. <code class="docutils literal notranslate"><span class="pre">ls</span></code> or <code class="docutils literal notranslate"><span class="pre">find</span></code>),
+the nodes are eventually sorted at once as a whole.</p>
+<p>When the command outputs a tree (e.g. <code class="docutils literal notranslate"><span class="pre">tree</span></code> or <code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">-T</span></code>),
+nodes are sorted branch by branch while walking through the devicetree (<em>children ordering</em>).</p>
+<p>How nodes are sorted is specified with the <code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">KEY</span></code> command option,
+where <code class="docutils literal notranslate"><span class="pre">KEY</span></code> is simply a single-character identifier for the order relationship.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">-r</span></code> command option will reverse the command’s output.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When no order relationship is explicitly set,
+nodes are expected to appear in the order they appear
+when walking through the DTS file.</p>
+</div>
+<section id="sort-keys">
+<span id="dtsh-sort-keys"></span><h4>Sort Keys<a class="headerlink" href="#sort-keys" title="Link to this heading"></a></h4>
+<p>A sort <em>key</em> identifies an node order relationship.</p>
+<table class="docutils align-center" id="id16">
+<caption><span class="caption-text">Sort keys</span><a class="headerlink" href="#id16" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
+<td><p>sort by unit address</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">A</span></code></p></td>
+<td><p>sort by aliases</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">B</span></code></p></td>
+<td><p>sort by supported bus protocols</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">b</span></code></p></td>
+<td><p>sort by bus of appearance</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">c</span></code></p></td>
+<td><p>sort by compatible strings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">C</span></code></p></td>
+<td><p>sort by binding</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">i</span></code></p></td>
+<td><p>sort by IRQ numbers</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">I</span></code></p></td>
+<td><p>sort by IRQ priorities</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">l</span></code></p></td>
+<td><p>sort by device label</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">L</span></code></p></td>
+<td><p>sort by node labels</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">N</span></code></p></td>
+<td><p>sort by node name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">n</span></code></p></td>
+<td><p>sort by unit name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">o</span></code></p></td>
+<td><p>sort by dependency ordinal</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>sort by node path</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">r</span></code></p></td>
+<td><p>sort by register addresses</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">s</span></code></p></td>
+<td><p>sort by register sizes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+<td><p>sort by vendor name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X</span></code></p></td>
+<td><p>sort by child-binding depth</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul class="simple">
+<li><p>When applicable, sort keys and format specifiers will represent the same <em>aspect</em> of a node,
+e.g. <code class="docutils literal notranslate"><span class="pre">a</span></code> represents unit addresses both in format strings and as a sort key.</p></li>
+<li><p>Any ordering relationship can be applied to any set of nodes, e.g. sorting by IRQ numbers
+even though not all nodes generate interrupts</p></li>
+</ul>
+</div>
+</section>
+<section id="sort-directions">
+<span id="dtsh-sort-directions"></span><h4>Sort Directions<a class="headerlink" href="#sort-directions" title="Link to this heading"></a></h4>
+<p>In the default direction (<em>ascending</em>), nodes for which the sort key has no value will appear last
+(after all nodes for which the sort key has a value): e.g. devices that do not generate interrupts
+will appear last.</p>
+<p>In reversed order (<em>descending</em> direction), nodes for which the sort key has no value will appear
+first (before the nodes for which the sort key has a value): e.g. devices that do not generate
+interrupts will appear first.</p>
+<p>If the sort key admits multiple values (e.g. register sizes), for each node:</p>
+<ul class="simple">
+<li><p>the lowest value (e.g. the smallest register size) is used in the ascending direction</p></li>
+<li><p>the highest value (e.g. the largest register size) is used in the descending direction</p></li>
+</ul>
+<p>To improve legibility, key values may also be sorted <em>horizontally</em>.</p>
+<p>For example, when sorting nodes by register sizes in the ascending direction
+(<code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">s</span></code>):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>timer@e000e010                 0xe000e010 16 bytes
+gpio@50000000                  0x50000000 512 bytes, 0x50000500 768 bytes
+gpio@50000300                  0x50000300 512 bytes, 0x50000800 768 bytes
+...
+qspi@40029000                  0x40029000 4 kB, 0x12000000 128 MB
+pwm@4002d000                   0x4002d000 4 kB
+spi@4002f000                   0x4002f000 4 kB
+crypto@5002a000                0x5002a000 4 kB, 0x5002b000 4 kB
+memory@20000000                0x20000000 256 kB
+</pre></div>
+</div>
+<p>And, when sorting nodes by register sizes in the descending direction
+(<code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">s</span> <span class="pre">-r</span></code>):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>qspi@40029000                  0x12000000 128 MB, 0x40029000 4 kB
+memory@20000000                0x20000000 256 kB
+crypto@5002a000                0x5002a000 4 kB, 0x5002b000 4 kB
+spi@4002f000                   0x4002f000 4 kB
+pwm@4002d000                   0x4002d000 4 kB
+...
+gpio@50000300                  0x50000800 768 bytes, 0x50000300 512 bytes
+gpio@50000000                  0x50000500 768 bytes, 0x50000000 512 bytes
+timer@e000e010                 0xe000e010 16 bytes
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In the above example, notice how <code class="docutils literal notranslate"><span class="pre">qspi&#64;40029000</span></code> appears in the default ascending
+direction:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mh">0x40029000</span> <span class="mi">4</span> <span class="n">kB</span><span class="p">,</span> <span class="mh">0x12000000</span> <span class="mi">128</span> <span class="n">MB</span>
+</pre></div>
+</div>
+<p>Compared to the reverse descending direction:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mh">0x12000000</span> <span class="mi">128</span> <span class="n">MB</span><span class="p">,</span> <span class="mh">0x40029000</span> <span class="mi">4</span> <span class="n">kB</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="search-the-devicetree">
+<span id="dtsh-search-devicetree"></span><h3>Search the Devicetree<a class="headerlink" href="#search-the-devicetree" title="Link to this heading"></a></h3>
+<p>Searching the devicetree for devices, bindings, buses or interrupts is simply matching
+nodes with criteria, each of which represents a predicate applied to an aspect of the node.</p>
+<p>A predicate is specified either as a <em>text pattern</em> or an <em>integer expression</em>,
+depending on the node aspect it applies to: e.g. matching compatible strings involves strings,
+while matching addresses or sizes involves integers.</p>
+<p>Criteria may be chained.</p>
+<p>See also the <a class="reference internal" href="#dtsh-builtin-find"><span class="std std-ref">find</span></a> command for detailed examples.</p>
+<section id="text-patterns">
+<span id="dtsh-txt-search"></span><h4>Text Patterns<a class="headerlink" href="#text-patterns" title="Link to this heading"></a></h4>
+<p>A criterion that applies to a node aspect that has a natural textual representation
+is specified by a text <em>pattern</em>, and may behave as a Regular Expression match
+or a plain text search.</p>
+<p>When the criterion is a RE match (<code class="docutils literal notranslate"><span class="pre">-E</span></code> command flag), any character in the pattern
+may be interpreted as special character:</p>
+<ul class="simple">
+<li><p>in particular, <code class="docutils literal notranslate"><span class="pre">*</span></code> will represent a repetition qualifier,
+not a wild-card for any character: e.g. the pattern “*” would be invalid because
+<em>there’s nothing to repeat</em></p></li>
+<li><p>parenthesis will group sub-expressions, as in <code class="docutils literal notranslate"><span class="pre">(image|storage).*</span></code></p></li>
+<li><p>brackets will mark the beginning and end of a character set, as in <code class="docutils literal notranslate"><span class="pre">i[\d]c</span></code></p></li>
+</ul>
+<p>When the criterion is not a RE match (default), but the pattern contains at least one <code class="docutils literal notranslate"><span class="pre">*</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">*</span></code> is actually interpreted as a wild-card and not a repetition qualifier:
+here “*” is a valid expression that actually means <em>anything</em>, and will match
+any node for which the aspect has a value, e.g. <code class="docutils literal notranslate"><span class="pre">--on-bus</span> <span class="pre">*</span></code> will match
+all nodes that appear on a bus</p></li>
+<li><p>the criterion behaves as a string-match: <code class="docutils literal notranslate"><span class="pre">*pattern</span></code> means ends with “pattern”,
+and <code class="docutils literal notranslate"><span class="pre">pattern*</span></code> means starts with “pattern” (<code class="docutils literal notranslate"><span class="pre">*pattern*</span></code> would be a convoluted syntax
+for a plain text search)</p></li>
+</ul>
+<p>Eventually, when the criterion is not a RE match, and the pattern does not contain any <code class="docutils literal notranslate"><span class="pre">*</span></code>,
+a <em>plain text search</em> happens.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When the command option <code class="docutils literal notranslate"><span class="pre">-i</span></code> is set, text patterns are assumed case-insensitive.</p>
+</div>
+<table class="docutils align-center" id="id17">
+<caption><span class="caption-text">Text-based criteria</span><a class="headerlink" href="#id17" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--also-known-as</span></code></p></td>
+<td><p>match labels or aliases</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--chosen-for</span></code></p></td>
+<td><p>match chosen nodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--on-bus</span></code></p></td>
+<td><p>match buse of appearance</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-alias</span></code></p></td>
+<td><p>match aliases</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-binding</span></code></p></td>
+<td><p>match binding’s compatible or headline</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-bus</span></code></p></td>
+<td><p>match supported bus protocols</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-compatible</span></code></p></td>
+<td><p>match compatible strings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-description</span></code></p></td>
+<td><p>grep binding’s description</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-device-label</span></code></p></td>
+<td><p>match device label</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-label</span></code></p></td>
+<td><p>match node labels</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-name</span></code></p></td>
+<td><p>match node name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-status</span></code></p></td>
+<td><p>match status string</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-unit-name</span></code></p></td>
+<td><p>match unit name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-vendor</span></code></p></td>
+<td><p>match vendor prefix or name</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="integer-expressions">
+<span id="dtsh-int-search"></span><h4>Integer Expressions<a class="headerlink" href="#integer-expressions" title="Link to this heading"></a></h4>
+<p>A criterion that applies to a node aspect that has a natural integer representation
+is specified by an <em>integer expression</em>:</p>
+<ul class="simple">
+<li><p>a wild-card character alone “*” will match any node for which the aspect has a value,
+e.g. <code class="docutils literal notranslate"><span class="pre">--with-irq-number</span> <span class="pre">*</span></code> would match any node that generates interrupts</p></li>
+<li><p>an integer value alone (decimal or hexadecimal) will match nodes for which the aspect has
+this exact value, e.g. <code class="docutils literal notranslate"><span class="pre">--with-irq-number</span> <span class="pre">1</span></code> would match nodes that generate IRQ 1</p></li>
+<li><p>a comparison operator followed by an integer value will match nodes for which the expression
+evaluates to true, e.g. <code class="docutils literal notranslate"><span class="pre">--with-reg-size</span> <span class="pre">&gt;0x1000</span></code> would match nodes that have a register
+whose size is greater than 4 kB</p></li>
+</ul>
+<p>Simple comparison operators are supported: <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">!=</span></code>, <code class="docutils literal notranslate"><span class="pre">=</span></code>
+(where the later is equivalent to no operator).</p>
+<p>Eventually, an integer expression may end with a SI unit (<code class="docutils literal notranslate"><span class="pre">kB</span></code>, <code class="docutils literal notranslate"><span class="pre">MB</span></code> and <code class="docutils literal notranslate"><span class="pre">GB</span></code>), e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>--with-reg-size &quot;256 kB&quot;
+--with-reg-size &gt;=4kB
+--with-reg-size &quot;&gt; 1 MB&quot;
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>SI units are case-insensitive and can be truncated to the first letter, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>--with-reg-size 256k
+--with-reg-size &gt;4K
+--with-reg-size &quot;&gt;= 1M&quot;
+</pre></div>
+</div>
+</div>
+<table class="docutils align-center" id="id18">
+<caption><span class="caption-text">Integer-based criteria</span><a class="headerlink" href="#id18" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-dts-ord</span></code></p></td>
+<td><p>match dependency ordinal</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-irq-number</span></code></p></td>
+<td><p>match IRQ numbers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-irq-priority</span></code></p></td>
+<td><p>match IRQ priorities</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-reg-addr</span></code></p></td>
+<td><p>match register addresses</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-reg-size</span></code></p></td>
+<td><p>match register sizes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-unit-addr</span></code></p></td>
+<td><p>match unit addresse</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-binding-depth</span></code></p></td>
+<td><p>match child-binding depth</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="criterion-chains">
+<span id="dtsh-criterion-chains"></span><h4>Criterion Chains<a class="headerlink" href="#criterion-chains" title="Link to this heading"></a></h4>
+<p>By default, chained criteria evaluate as a logical conjunction:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>--also-known-as partition --with-reg-size &gt;64kB
+</pre></div>
+</div>
+<p>would match nodes that have a register larger than 64 kB,
+and a label or an alias that contains the string “partition”.</p>
+<p>When the <code class="docutils literal notranslate"><span class="pre">--OR</span></code> option is set, the criterion chain will instead evaluate
+as a logical disjunction of all criteria.
+For example, the chain bellow would match nodes that are either a bus device
+or a device connected to a bus:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>--with-bus * --OR --on-bus *
+</pre></div>
+</div>
+<p>A logical negation may eventually be applied to the criterion chain with the option <code class="docutils literal notranslate"><span class="pre">--NOT</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --NOT --with-description *
+.
+./chosen
+./aliases
+./soc
+./cpus
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">NOT</span></code> and <code class="docutils literal notranslate"><span class="pre">OR</span></code> can combine: they then both apply to the whole criterion chain.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since, like any option, <code class="docutils literal notranslate"><span class="pre">NOT</span></code> and <code class="docutils literal notranslate"><span class="pre">OR</span></code> are not positional,
+they always apply to the whole chain, such that the expressions bellow all
+are valid syntax for the same semantic, not different predicates:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>--NOT --with-compatible * --OR --with-binding *
+
+--with-compatible * --OR --NOT --with-binding *
+
+--with-compatible * --with-binding * --NOT --OR
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="user-preferences">
+<span id="dtsh-preferences"></span><h3>User Preferences<a class="headerlink" href="#user-preferences" title="Link to this heading"></a></h3>
+<p>User <em>preferences</em> permit to override DTSh defaults for:</p>
+<ul class="simple">
+<li><p>the prompt</p></li>
+<li><p>command output redirection</p></li>
+<li><p>the contents of formatted lists and trees</p></li>
+<li><p>common symbols and other miscellaneous configuration options</p></li>
+</ul>
+<p>Preferences are loaded in that order:</p>
+<ol class="arabic simple">
+<li><p>DTSh loads default values for all defined configuration options</p></li>
+<li><p>if a user preferences file exists, e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/dtsh.ini</span></code> on GNU Linux,
+it’s loaded, overriding the default values with the options it contains</p></li>
+<li><p>if an additional preferences file is specified with the West command option <code class="docutils literal notranslate"><span class="pre">--preferences</span></code>,
+it’s eventually loaded, overriding previous values with the options it contains</p></li>
+</ol>
+<p>See also <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a> in the Getting Started Guide.</p>
+<section id="configuration-format">
+<span id="dtsh-ini-format"></span><h4>Configuration Format<a class="headerlink" href="#configuration-format" title="Link to this heading"></a></h4>
+<p>DTSh is configured with simple INI files that contain key-value pairs.</p>
+<p>Values support <em>interpolation</em> with the <code class="docutils literal notranslate"><span class="pre">${key}</span></code> syntax:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># Define a key.
+wchar.ellipsis = \u2026
+
+# Reference it with interpolation.
+et_caetera = Et caetera${wchar.ellipsis}
+
+# Use $$ to escape the dollar sign.
+dollar = This is the dollar sign: $$
+</pre></div>
+</div>
+<p>Values are typed:</p>
+<dl>
+<dt>String</dt><dd><p>Strings may contain Unicode characters as literals
+or 4-digit hexadecimal code points.</p>
+<p>It’s necessary to double-quote strings only when:</p>
+<ul class="simple">
+<li><p>the string value actually ends with spaces</p></li>
+<li><p>the string value contains the double quote character</p></li>
+</ul>
+<p>Leading and trailing double quotes are always striped.</p>
+</dd>
+<dt>Boolean</dt><dd><p>Valid values (case-insensitive):</p>
+<ul class="simple">
+<li><p>True: <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>, <code class="docutils literal notranslate"><span class="pre">true</span></code>, and <code class="docutils literal notranslate"><span class="pre">on</span></code></p></li>
+<li><p>False: <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">no</span></code>, <code class="docutils literal notranslate"><span class="pre">false</span></code>, and <code class="docutils literal notranslate"><span class="pre">off</span></code></p></li>
+</ul>
+</dd>
+<dt>Integer</dt><dd><p>Integers in base-10, base-2 (prefix <code class="docutils literal notranslate"><span class="pre">0b</span></code>), base-8 (prefix <code class="docutils literal notranslate"><span class="pre">0o</span></code>),
+and base-16 (prefix <code class="docutils literal notranslate"><span class="pre">Ox</span></code>) are supported.</p>
+<p>Prefixes are case insensitive.</p>
+</dd>
+<dt>Float</dt><dd><p>Decimal (e.g. <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) and scientific (e.g. <code class="docutils literal notranslate"><span class="pre">1e-1</span></code>) notations are supported.</p>
+</dd>
+</dl>
+</section>
+<section id="general-preferences">
+<span id="dtsh-prefs-misc"></span><h4>General Preferences<a class="headerlink" href="#general-preferences" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.always_longfmt</span></code></dt><dd><p>Whether to assume the flag <em>use a long listing format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>) is always set
+(see <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">Format Commands Output</span></a>).</p>
+<p>Default: No</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.sizes_si</span></code></dt><dd><p>Whether to print sizes in SI units (bytes, kB, MB, GB).</p>
+<p>Sizes are otherwise printed in hexadecimal format.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.hex_upper</span></code></dt><dd><p>Whether to print hexadecimal digits upper case (e.g. <code class="docutils literal notranslate"><span class="pre">OXFF</span></code> rather than <code class="docutils literal notranslate"><span class="pre">0xff</span></code>).</p>
+<p>May improve legibility or accessibility for some users.</p>
+<p>Default: No</p>
+</dd>
+</dl>
+</section>
+<section id="the-prompt">
+<span id="dtsh-prefs-prompt"></span><h4>The Prompt<a class="headerlink" href="#the-prompt" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">prompt.wchar</span></code></dt><dd><p>Default prompt.</p>
+<p>This is the character (or string) from which are derived the ANSI prompts bellow.</p>
+<p>Default: Medium Right-Pointing Angle Bracket Ornament (<code class="docutils literal notranslate"><span class="pre">\u276D</span></code>)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">prompt.default</span></code></dt><dd><p>ANSI prompt.</p>
+<p>Default: Medium Right-Pointing Angle Bracket Ornament, slate blue</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">prompt.alt</span></code></dt><dd><p>ANSI prompt for the error state.</p>
+<p>This prompt is used after a command has failed, and until a command succeeds.</p>
+<p>Default: Medium Right-Pointing Angle Bracket Ornament, dark red</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">prompt.sparse</span></code></dt><dd><p>Whether to insert a newline between a command output and the next prompt.</p>
+<p>Default: Yes</p>
+</dd>
+</dl>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>To simply change the prompt character (Unicode <code class="docutils literal notranslate"><span class="pre">U+276D</span></code>), no need to actually mess with
+the ANSI strings, just set <code class="docutils literal notranslate"><span class="pre">prompt.wchar</span></code> to your liking.</p>
+</div>
+</section>
+<section id="file-system-access">
+<span id="dtsh-prefs-fs"></span><h4>File System Access<a class="headerlink" href="#file-system-access" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.fs.hide_dotted</span></code></dt><dd><p>Whether to hide files and directories whose name starts with “.”.</p>
+<p>These are commonly hidden file system entries on POSIX-like systems.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.fs.no_spaces</span></code></dt><dd><p>Whether to forbid spaces in paths when redirecting commands output to files.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.fs.no_overwrite</span></code></dt><dd><p>Whether to forbid command output redirection to overwrite existing files.</p>
+<p>Default: Yes</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-prefs-redir2fs">
+<span id="id1"></span><h4>Output Redirection<a class="headerlink" href="#dtsh-prefs-redir2fs" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.redir2.maxwidth</span></code></dt><dd><p>Maximum width in number of characters for command output redirection.</p>
+<p>VT-like terminals do not scroll horizontally, and will crop or wrap what’s printed
+to match the current terminal width.</p>
+<p>When redirecting commands output to files, this may unnecessarily limit the width
+of the produced documents (SVG, HTML and plain text): these will be used in viewers
+(e.g. a text editor or Web brower) that can handle outputs significantly wider
+than the current width of the console (e.g. with horizontal scrolling).</p>
+<p>This preference configures the maximum width of the virtual console
+DTSh will actually redirect the command’s output to.</p>
+<p>Default: 255</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting commands output
+to HTML files.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG documents (dark background, light text)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: default theme for HTML documents (light background, dark text)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dark</span></code>: darker</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">light</span></code>: lighter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">night</span></code>: darkest, highest contrasts</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">html</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.font_family</span></code></dt><dd><p>Preferred font to use when redirecting commands output
+to HTML files.</p>
+<p>This the family name, e.g. “Courier New”.</p>
+<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier New”.</p>
+<p>The generic “monospace” family is automatically appended as fallback.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">Courier</span> <span class="pre">New</span></code> ()</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting commands output
+to SVG files.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG documents (dark background, light text)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: default theme for HTML documents (light background, dark text)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dark</span></code>: darker</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">light</span></code>: lighter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">night</span></code>: darkest, highest contrasts</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">svg</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_family</span></code></dt><dd><p>Preferred font to use when redirecting commands output
+to SVG files.</p>
+<p>This the family name, e.g. “Courier New”.</p>
+<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier New”.</p>
+<p>The generic “monospace” family is automatically appended as fallback.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">Courier</span> <span class="pre">New</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_ratio</span></code></dt><dd><p>Font aspect ratio to use when redirecting commands output
+to SVG files.</p>
+<p>This is the width to height ratio, which varies with fonts.</p>
+<p>Most monospace fonts will render fine with a 3:5 ratio.</p>
+<p>Default: 0.6</p>
+</dd>
+</dl>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The default “Courier New” may not render as well as other monospace fonts you’re used,
+e.g. within your Terminal application,
+but should be available <em>everywhere</em> (<a class="reference external" href="https://www.w3schools.com/csSref/css_websafe_fonts.php">Web Safe Fonts</a>): it’s chosen for correctness.</p>
+<p>You can safely override this preference.</p>
+</div>
+</section>
+<section id="dtsh-prefs-lists">
+<span id="id2"></span><h4>Formatted Lists<a class="headerlink" href="#dtsh-prefs-lists" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.headers</span></code></dt><dd><p>Whether to show the header row.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.place_holder</span></code></dt><dd><p>Place holder text for missing values.</p>
+<p>Default: None (<em>blank</em>)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.fmt</span></code></dt><dd><p>Default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> (<em>columns</em>) to use in formatted lists.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">NLC</span></code> (node name, labels and binding)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>) in formatted lists.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link</span></code>: let the terminal alone handle the rendering,
+typically with a dashed line bellow the text to link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alt</span></code>: append an alternative actionable view next to the text</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">link</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.multi</span></code></dt><dd><p>Whether to allow multiple-line cells in formatted lists.</p>
+<p>May improve legibility when focusing on properties that have multiple values
+like registers or dependencies (<em>required-by</em> and <em>depends-on</em>).</p>
+<p>Default: No</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-prefs-trees">
+<span id="id3"></span><h4>Formatted Trees<a class="headerlink" href="#dtsh-prefs-trees" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.headers</span></code></dt><dd><p>Whether to show the header row in 2-sided views.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.place_holder</span></code></dt><dd><p>Place holder text for missing values.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">${wchar.ellipsis}</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.fmt</span></code></dt><dd><p>Default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> (<em>columns</em>) to use in formatted trees.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">Nd</span></code> (node name and description)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>) in formatted trees.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link</span></code>: let the terminal alone handle the rendering,
+typically with a dashed line bellow the text to link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alt</span></code>: append an alternative actionable view next to the text</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">none</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.cb_anchor</span></code></dt><dd><p>Symbol used to anchor child-bindings to their parents in formatted trees.</p>
+<p>Unset (left blank) to disable, or set e.g. to “+” to avoid Unicode.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">${wchar.arrow_right_hook}</span></code></p>
+</dd>
+</dl>
+</section>
+<section id="alternative-symbols">
+<span id="dtsh-prefs-symbols"></span><h4>Alternative Symbols<a class="headerlink" href="#alternative-symbols" title="Link to this heading"></a></h4>
+<p>Preferences whose keys start with <code class="docutils literal notranslate"><span class="pre">wchar.</span></code> permit to override the characters
+DTSh will use for some common symbols:</p>
+<ul class="simple">
+<li><p>to work-around missing Unicode glyphs: e.g. substitute <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> for the right-arrow <code class="docutils literal notranslate"><span class="pre">U+2192</span></code></p></li>
+<li><p>to suit personal taste</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="built-in-commands">
+<span id="dtsh-builtins"></span><h2>Built-in Commands<a class="headerlink" href="#built-in-commands" title="Link to this heading"></a></h2>
+<p>This is the reference manual for DTSh built-in commands.</p>
+<section id="cd">
+<span id="dtsh-builtin-cd"></span><h3>cd<a class="headerlink" href="#cd" title="Link to this heading"></a></h3>
+<p><strong>cd</strong> Change the current working branch.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cd [PATH]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH</span></code></dt><dd><p>Devicetree path to the destination branch (see <a class="reference internal" href="#dtsh-fs-metaphor"><span class="std std-ref">Hierarchical File System Metaphor</span></a>).</p>
+<p>If unset, defaults to the devicetree root.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; cd &amp;i2c0
+
+/soc/i2c@40003000
+/
+&gt; cd
+
+/
+&gt;
+</pre></div>
+</div>
+</dd>
+</dl>
+</section>
+<section id="pwd">
+<span id="dtsh-builtin-pwd"></span><h3>pwd<a class="headerlink" href="#pwd" title="Link to this heading"></a></h3>
+<p><strong>pwd</strong> Print path of the current working branch.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-ld</span></code> instead to quickly get detailed information about the current working branch:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc/flash-controller@4001e000/flash@0/partitions/partition@0
+&gt; pwd
+/soc/flash-controller@4001e000/flash@0/partitions/partition@0
+
+/soc/flash-controller@4001e000/flash@0/partitions/partition@0
+&gt; ls -ld
+ Name         Labels          Binding
+ ─────────────────────────────────────────────────────────────────────────────────────
+ partition@0  boot_partition  Each child node of the fixed-partitions node represents…
+</pre></div>
+</div>
+</div>
+</section>
+<section id="ls">
+<span id="dtsh-builtin-ls"></span><h3>ls<a class="headerlink" href="#ls" title="Link to this heading"></a></h3>
+<p><strong>ls</strong> List branch contents.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ls [OPTIONS] [PATH ...]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH</span></code></dt><dd><p><a class="reference internal" href="#dtsh-fs-metaphor"><span class="std std-ref">Paths</span></a> of the devicetree branches to list the contents of.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls leds pwmleds
+leds:
+led_0
+led_1
+led_2
+led_3
+
+pwmleds:
+pwm_led_0
+</pre></div>
+</div>
+<p>Supports wild-cards (<em>globbing</em>) in the node name:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls soc/timer* -d
+soc/timer@e000e010
+soc/timer@40008000
+soc/timer@40009000
+soc/timer@4000a000
+soc/timer@4001a000
+soc/timer@4001b000
+</pre></div>
+</div>
+</dd>
+</dl>
+<section id="options">
+<span id="dtsh-ls-options"></span><h4>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-d</span></code></dt><dd><p>List nodes, not branch contents.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/pin-controller
+&gt; ls --format NC
+ Name           Binding
+ ────────────────────────────────────────────────────────────────
+ uart0_default  nRF pin controller pin configuration state nodes.
+ uart0_sleep    nRF pin controller pin configuration state nodes.
+ uart1_default  nRF pin controller pin configuration state nodes.
+
+/ pin-controller
+&gt; ls --format NC -d
+ Name            Binding
+ ──────────────────────────────────
+ pin-controller  nordic,nrf-pinctrl
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
+<p>The default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> is configured
+by the <code class="docutils literal notranslate"><span class="pre">pref.list.fmt</span></code> preference.</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-r</span></code></dt><dd><p>Reverse command output, usually combined with <code class="docutils literal notranslate"><span class="pre">--order-by</span></code>.</p>
+<p>See <a class="reference internal" href="#dtsh-sort-directions"><span class="std std-ref">Sort Directions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-R</span></code></dt><dd><p>List recursively.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls /soc/flash-controller@4001e000/flash@0/partitions -R
+/soc/flash-controller@4001e000/flash@0/partitions:
+partition@0
+partition@c000
+partition@82000
+partition@f8000
+
+/soc/flash-controller@4001e000/flash@0/partitions/partition@0:
+
+/soc/flash-controller@4001e000/flash@0/partitions/partition@c000:
+
+/soc/flash-controller@4001e000/flash@0/partitions/partition@82000:
+
+/soc/flash-controller@4001e000/flash@0/partitions/partition@f8000:
+</pre></div>
+</div>
+<p>In the output above, nodes <code class="docutils literal notranslate"><span class="pre">partition&#64;0</span></code> to <code class="docutils literal notranslate"><span class="pre">partition&#64;f8000</span></code> appear as <em>empty directories</em>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></dt><dd><p>Filter out disabled nodes or branches.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--fixed-depth</span> <span class="pre">DEPTH</span></code></dt><dd><p>Limit devicetree depth when listing recursively.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code></dt><dd><p>Node output format (<a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">Format Strings</span></a>).</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">KEY</span></code></dt><dd><p>Sort nodes or branches.</p>
+<p>This sets the <a class="reference internal" href="#dtsh-sort-keys"><span class="std std-ref">order relationship</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
+<p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
+</dd>
+</dl>
+</section>
+<section id="examples">
+<span id="dtsh-ls-examples"></span><h4>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h4>
+<p>Open a quick view of the whole devicetree in the pager (press <kbd class="kbd docutils literal notranslate">q</kbd> to quit the pager):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls -Rl --pager
+</pre></div>
+</div>
+<p>Basic SoC memory layout, highest to lowest addresses:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls soc --format nr --order-by r -r
+ Name                  Registers
+ ──────────────────────────────────────────────────────────────────
+ interrupt-controller  0xe000e100 (3 kB)
+ timer                 0xe000e010 (16 bytes)
+ crypto                0x5002b000 (4 kB), 0x5002a000 (4 kB)
+ gpio                  0x50000800 (768 bytes), 0x50000300 (512 bytes)
+ gpio                  0x50000500 (768 bytes), 0x50000000 (512 bytes)
+ spi                   0x4002f000 (4 kB)
+ pwm                   0x4002d000 (4 kB)
+ qspi                  0x40029000 (4 kB), 0x12000000 (128 MB)
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If distinguishing the leading lowercase “e” in <code class="docutils literal notranslate"><span class="pre">0xe000e100</span></code> proves difficult,
+try setting the <code class="docutils literal notranslate"><span class="pre">pref_hex_upper</span></code> preference to get <code class="docutils literal notranslate"><span class="pre">0XE000E100</span></code> instead
+(see <a class="reference internal" href="#dtsh-prefs-misc"><span class="std std-ref">General Preferences</span></a>).</p>
+</div>
+</section>
+</section>
+<section id="tree">
+<span id="dtsh-builtin-tree"></span><h3>tree<a class="headerlink" href="#tree" title="Link to this heading"></a></h3>
+<p><strong>tree</strong> List branch contents in tree-like format.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tree [OPTIONS] [PATH ...]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH</span></code></dt><dd><p><a class="reference internal" href="#dtsh-fs-metaphor"><span class="std std-ref">Paths</span></a> of the devicetree branches to walk through.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree &amp;i2c0 &amp;i2c1
+&amp;i2c0
+└── bme680@76
+
+&amp;i2c1
+</pre></div>
+</div>
+<p>Supports wild-cards (<em>globbing</em>) in the node name:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree soc/i2c*
+soc/i2c@40003000
+└── bme680@76
+
+soc/i2c@40004000
+</pre></div>
+</div>
+</dd>
+</dl>
+<section id="dtsh-tree-options">
+<span id="id4"></span><h4>Options<a class="headerlink" href="#dtsh-tree-options" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
+<p>The default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> is configured
+by the <code class="docutils literal notranslate"><span class="pre">pref.tree.fmt</span></code> preference.</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">Formatted Trees</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-r</span></code></dt><dd><p>Reverse command output, usually combined with <code class="docutils literal notranslate"><span class="pre">--order-by</span></code>.</p>
+<p>See <a class="reference internal" href="#dtsh-sort-directions"><span class="std std-ref">Sort Directions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></dt><dd><p>Filter out disabled nodes and branches.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--fixed-depth</span> <span class="pre">DEPTH</span></code></dt><dd><p>Limit the devicetree depth.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree soc --fixed-depth 2
+soc
+├── interrupt-controller@e000e100
+├── timer@e000e010
+├── ficr@10000000
+├── uicr@10001000
+├── memory@20000000
+├── clock@40000000
+├── power@40000000
+│   ├── gpregret1@4000051c
+│   └── gpregret2@40000520
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code></dt><dd><p>Node output format (<a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">Format Strings</span></a>).</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">Formatted Trees</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">KEY</span></code></dt><dd><p>Sort nodes or branches.</p>
+<p>This sets the <a class="reference internal" href="#dtsh-sort-keys"><span class="std std-ref">order relationship</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
+<p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-tree-examples">
+<span id="id5"></span><h4>Examples<a class="headerlink" href="#dtsh-tree-examples" title="Link to this heading"></a></h4>
+<p>Open a tree view of the whole devicetree in the pager (press <kbd class="kbd docutils literal notranslate">q</kbd> to quit the pager):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree --format NKYC --pager
+</pre></div>
+</div>
+<p>Tree-view of Flash memory:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree &amp;flash_controller --format Nrc
+                             Registers          Compatible
+                             ────────────────────────────────────────────────
+flash-controller@4001e000    0x4001e000 (4 kB)  nordic,nrf52-flash-controller
+└── flash@0                  0x0 (1 MB)         soc-nv-flash
+    └── partitions                              fixed-partitions
+        ├── partition@0      0x0 (48 kB)
+        ├── partition@c000   0xc000 (472 kB)
+        ├── partition@82000  0x82000 (472 kB)
+        └── partition@f8000  0xf8000 (32 kB)
+</pre></div>
+</div>
+<p>Highlight child-bindings:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree &amp;flash0/partitions --format NRC
+</pre></div>
+</div>
+<figure class="align-center" id="id19">
+<a class="reference internal image-reference" href="_images/partitions.svg"><img alt="partitions.svg" src="_images/partitions.svg" width="100%" /></a>
+<figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">&amp;flash0/partitions</span> <span class="pre">--format</span> <span class="pre">NRC</span></code></span><a class="headerlink" href="#id19" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="find">
+<span id="dtsh-builtin-find"></span><h3>find<a class="headerlink" href="#find" title="Link to this heading"></a></h3>
+<p><strong>find</strong> Search branches for nodes.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find [OPTIONS] [PATH ...]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH</span></code></dt><dd><p><a class="reference internal" href="#dtsh-fs-metaphor"><span class="std std-ref">Paths</span></a> of the devicetree branches to search.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find &amp;i2c0 &amp;i2c1 -l
+ Name          Labels             Binding
+ ───────────────────────────────────────────────
+ i2c@40003000  i2c0, arduino_i2c  nordic,nrf-twi
+ bme680@76     bme680_i2c         bosch,bme680
+ i2c@40004000  i2c1               nordic,nrf-twi
+</pre></div>
+</div>
+<p>Support wild-cards (<em>globbing</em>) in the node name:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find soc/i2c*
+soc/i2c@40003000
+soc/i2c@40003000/bme680@76
+soc/i2c@40004000
+</pre></div>
+</div>
+</dd>
+</dl>
+<section id="dtsh-find-options">
+<span id="id6"></span><h4>Options<a class="headerlink" href="#dtsh-find-options" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-E</span></code></dt><dd><p><a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text patterns</span></a> are interpreted as regular expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-i</span></code></dt><dd><p>Ignore case in <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text patterns</span></a>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find -E -i --also-known-as &quot;green.*led&quot; --format pK
+ Path         Also Known As
+ ───────────────────────────────────────────────────────────────────
+ /leds/led_0  Green LED 0, led0, led0, bootloader-led0, mcuboot-led0
+ /leds/led_1  Green LED 1, led1, led1
+ /leds/led_2  Green LED 2, led2, led2
+ /leds/led_3  Green LED 3, led3, led3
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
+<p>The default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> is configured
+by the <code class="docutils literal notranslate"><span class="pre">pref.list.fmt</span></code> preference, or <code class="docutils literal notranslate"><span class="pre">pref.tree.fmt</span></code> when <code class="docutils literal notranslate"><span class="pre">-T</span></code> is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-r</span></code></dt><dd><p>Reverse command output, usually combined with <code class="docutils literal notranslate"><span class="pre">--order-by</span></code>.</p>
+<p>See <a class="reference internal" href="#dtsh-sort-directions"><span class="std std-ref">Sort Directions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-T</span></code></dt><dd><p>List results in tree-like format.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc
+&gt; find -T --also-known-as partition --format NK
+                               Also Known As
+                               ──────────────────────────
+soc
+└── flash-controller@4001e000  flash_controller
+  └── flash@0                  flash0
+    └── partitions
+        ├── partition@0        mcuboot, boot_partition
+        ├── partition@c000     image-0, slot0_partition
+        ├── partition@82000    image-1, slot1_partition
+        └── partition@f8000    storage, storage_partition
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--count</span></code></dt><dd><p>Print matches count.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/ soc
+&gt; find --also-known-as partition --count
+./flash-controller@4001e000/flash@0/partitions/partition@0
+./flash-controller@4001e000/flash@0/partitions/partition@c000
+./flash-controller@4001e000/flash@0/partitions/partition@82000
+./flash-controller@4001e000/flash@0/partitions/partition@f8000
+
+Found: 4
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></dt><dd><p>Filter out disabled nodes and branches.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code></dt><dd><p>Node output format (<a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">Format Strings</span></a>).</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>, or <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">Formatted Trees</span></a> if <code class="docutils literal notranslate"><span class="pre">-T</span></code> is set).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--order-by</span> <span class="pre">KEY</span></code></dt><dd><p>Sort nodes or branches.</p>
+<p>This sets the <a class="reference internal" href="#dtsh-sort-keys"><span class="std std-ref">order relationship</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
+<p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--on-bus</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the bus a nodes appears on (is connected to).</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--also-known-as</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with device labels, DTS labels and node aliases.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--chosen-for</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with chosen nodes.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+<p>See also the <a class="reference internal" href="#dtsh-builtin-chosen"><span class="std std-ref">chosen</span></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-alias</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with node aliases.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+<p>See also the <a class="reference internal" href="#dtsh-builtin-alias"><span class="std std-ref">alias</span></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-binding</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s binding.</p>
+<p>Both the binding’s compatible string and description headline are possible matches:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-binding DMA --format Kd
+Also Known As          Description
+──────────────────────────────────────────────────────────────────────
+uart0                  Nordic nRF family UARTE (UART with EasyDMA)
+uart1, arduino_serial  Nordic nRF family UARTE (UART with EasyDMA)
+spi3, arduino_spi      Nordic nRF family SPIM (SPI master with EasyDMA)
+</pre></div>
+</div>
+</div></blockquote>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-binding-depth</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the child-binding depths.</p>
+<p>The child-binding depth associated to a node represents <em>how far</em> we should
+walk the devicetree backward until the specifying binding is not a child-binding:</p>
+<ul class="simple">
+<li><p>0: top level binding</p></li>
+<li><p>1: child-binding</p></li>
+<li><p>greater than 1: nested child-binding</p></li>
+</ul>
+<p>Nodes whose binding is a child-binding:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-binding-depth &gt;0 --format NXd
+Name             Binding Depth  Description
+────────────────────────────────────────────────────────────────────────────────────────
+partition@0            1        Each child node of the fixed-partitions node represents…
+partition@c000         1        Each child node of the fixed-partitions node represents…
+partition@82000        1        Each child node of the fixed-partitions node represents…
+partition@f8000        1        Each child node of the fixed-partitions node represents…
+uart0_default          1        nRF pin controller pin configuration state nodes.
+group1                 2        nRF pin controller pin configuration group.
+group2                 2        nRF pin controller pin configuration group.
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-bus</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the bus protocols a node supports (provides).</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-compatible</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s compatible strings.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-description</span> <span class="pre">PATTERN</span></code></dt><dd><p>Grep the binding’s description (not only the headline) for <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-description gpio -i --format Nd
+Name             Description
+─────────────────────────────────────────────────────────────────────────────────────
+radio@40001000   Nordic nRF family RADIO peripheral…
+gpiote@40006000  NRF5 GPIOTE node
+gpio@50000000    NRF5 GPIO node
+gpio@50000300    NRF5 GPIO node
+leds             This allows you to define a group of LEDs. Each LED in the group is…
+led_0            GPIO LED child node
+led_1            GPIO LED child node
+buttons          Zephyr Input GPIO KEYS parent node…
+button_0         GPIO KEYS child node
+button_1         GPIO KEYS child node
+connector        GPIO pins exposed on Arduino Uno (R3) headers
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-device-label</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with device labels.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt;
+find --with-device-label &quot;Push butt&quot; --format Nld
+Name      Label                 Description
+────────────────────────────────────────────────────
+button_0  Push button switch 0  GPIO KEYS child node
+button_1  Push button switch 1  GPIO KEYS child node
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-dts-ord</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> the node’s dependency ordinal, also known as DTS order.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-irq-number</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the generated interrupts’ numbers.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-irq-priority</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the generated interrupts’ priorities.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-label</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s DTS labels.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-name</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s name.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-reg-addr</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the register addresses.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-reg-size</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the register sizes.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-status</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s status string.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --NOT --with-status okay --format Ns
+Name                 Status
+─────────────────────────────
+timer@e000e010       disabled
+spi@40003000         disabled
+i2c@40004000         disabled
+timer@40008000       disabled
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-unit-addr</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s unit address.</p>
+<p>See <a class="reference internal" href="#dtsh-int-search"><span class="std std-ref">Integer Expressions</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-unit-name</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the node’s unit name.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--with-vendor</span> <span class="pre">PATTERN</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code> with the device vendors.</p>
+<p>Both vendor’s name and prefix are possible matches.</p>
+<p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--OR</span></code></dt><dd><p>Evaluate the criterion chain a logical disjunction.</p>
+<p>If unset, a logical conjunction is assumed.</p>
+<p>See see <a class="reference internal" href="#dtsh-criterion-chains"><span class="std std-ref">Criterion Chains</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--NOT</span></code></dt><dd><p>Negate the criterion chain.</p>
+<p>See <a class="reference internal" href="#dtsh-criterion-chains"><span class="std std-ref">Criterion Chains</span></a>.</p>
+</dd>
+</dl>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Criteria start with <code class="docutils literal notranslate"><span class="pre">--with-</span></code> unless another term really seems more natural,
+e.g. <code class="docutils literal notranslate"><span class="pre">--also-known-as</span></code> or <code class="docutils literal notranslate"><span class="pre">--on-bus</span></code>.</p>
+</div>
+</section>
+<section id="dtsh-find-examples">
+<span id="id7"></span><h4>Examples<a class="headerlink" href="#dtsh-find-examples" title="Link to this heading"></a></h4>
+<p>Search the devicetree for supported bus protocols and connected devices:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc
+&gt; find --with-bus * --OR --on-bus * --enabled-only --format NYC -T
+                      Bus      Binding
+                      ─────────────────────────
+soc
+├── uart@40002000     uart     nordic,nrf-uarte
+├── i2c@40003000      i2c      nordic,nrf-twi
+│   └── bme680@76     on i2c   bosch,bme680
+├── spi@40004000      spi      nordic,nrf-spi
+│   └── bme680@0      on spi   bosch,bme680
+├── usbd@40027000     usb      nordic,nrf-usbd
+├── qspi@40029000     qspi     nordic,nrf-qspi
+│   └── mx25r6435f@0  on qspi  nordic,qspi-nor
+└── spi@4002f000      spi      nordic,nrf-spim
+</pre></div>
+</div>
+<p>Find devices compatible with BME sensors:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-compatible bme --format NCY
+Name       Binding       Buses
+───────────────────────────────
+bme680@76  bosch,bme680  on i2c
+bme680@0   bosch,bme680  on spi
+</pre></div>
+</div>
+<p>Find devices that may generate the interrupt with IRQ number 0:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-irq-number 0 --format Nid
+Name            IRQs  Description
+───────────────────────────────────────────────────
+clock@40000000  0:1   Nordic nRF clock control node
+power@40000000  0:1   Nordic nRF power control node
+</pre></div>
+</div>
+<p>Search for <em>large</em> memory resources:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-reg-size &gt;512k --format NrC --order-by s -r
+Name           Registers                               Binding
+──────────────────────────────────────────────────────────────────────
+qspi@40029000  0x12000000 (128 MB), 0x40029000 (4 kB)  nordic,nrf-qspi
+flash@0        0x0 (1 MB)                              soc-nv-flash
+</pre></div>
+</div>
+</section>
+</section>
+<section id="alias">
+<span id="dtsh-builtin-alias"></span><h3>alias<a class="headerlink" href="#alias" title="Link to this heading"></a></h3>
+<p><strong>alias</strong> List aliased nodes.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>alias [OPTIONS] [NAME]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>The alias name to search for.</p>
+<p>Partial matches are also answered: a <code class="docutils literal notranslate"><span class="pre">led</span></code> parameter value would match
+aliases “led0”, “led1”, etc.</p>
+<p>If not set, <strong>alias</strong> will enumerate all aliased nodes.</p>
+</dd>
+</dl>
+<p>See also <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter3-devicenodes.html#aliases-node">DTSpec 3.3 /aliases node</a>.</p>
+<section id="dtsh-alias-options">
+<span id="id8"></span><h4>Options<a class="headerlink" href="#dtsh-alias-options" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
+<p>Default to <code class="docutils literal notranslate"><span class="pre">pC</span></code> when <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code> is not set.</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></dt><dd><p>Filter out disabled nodes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code></dt><dd><p>Node output format (<a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">Format Strings</span></a>).</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-alias-examples">
+<span id="id9"></span><h4>Examples<a class="headerlink" href="#dtsh-alias-examples" title="Link to this heading"></a></h4>
+<p>Led devices are usually aliased:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt;
+alias -l led
+                    Path                Binding
+                    ───────────────────────────────────────
+led0            -&gt;  /leds/led_0         GPIO LED child node
+led1            -&gt;  /leds/led_1         GPIO LED child node
+led2            -&gt;  /leds/led_2         GPIO LED child node
+led3            -&gt;  /leds/led_3         GPIO LED child node
+pwm-led0        -&gt;  /pwmleds/pwm_led_0  PWM LED child node
+bootloader-led0 -&gt;  /leds/led_0         GPIO LED child node
+mcuboot-led0    -&gt;  /leds/led_0         GPIO LED child node
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In the command output above, “-&gt;” has been substituted for
+the default Unicode <em>Rightwards arrow</em> (<code class="docutils literal notranslate"><span class="pre">U+2192</span></code>)
+by setting the user preference <code class="docutils literal notranslate"><span class="pre">wchar.arrow_right</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="chosen">
+<span id="dtsh-builtin-chosen"></span><h3>chosen<a class="headerlink" href="#chosen" title="Link to this heading"></a></h3>
+<p><strong>chosen</strong> List chosen nodes.</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>chosen [OPTIONS] [NAME]
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>The chosen name to search for.</p>
+<p>Partial matches are also answered: a <code class="docutils literal notranslate"><span class="pre">sram</span></code> parameter value would match
+the chosen name “zephyr,sram”.</p>
+<p>If not set, <strong>chosen</strong> will enumerate all chosen nodes.</p>
+</dd>
+</dl>
+<p>See also <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter3-devicenodes.html#chosen-node">DTSpec 3.6 /chosen node</a>.</p>
+<section id="dtsh-chosen-options">
+<span id="id10"></span><h4>Options<a class="headerlink" href="#dtsh-chosen-options" title="Link to this heading"></a></h4>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
+<p>Default to <code class="docutils literal notranslate"><span class="pre">NC</span></code> when <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code> is not set.</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--enabled-only</span></code></dt><dd><p>Filter out disabled nodes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code></dt><dd><p>Node output format (<a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">Format Strings</span></a>).</p>
+<p>See <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">Formatted Lists</span></a>.</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-chosen-examples">
+<span id="id11"></span><h4>Examples<a class="headerlink" href="#dtsh-chosen-examples" title="Link to this heading"></a></h4>
+<p>Get the source of entropy:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --chosen-for entropy -l
+Name             Labels  Binding
+───────────────────────────────────────
+random@4000d000  rng     nordic,nrf-rng
+</pre></div>
+</div>
+<p>Find RAM size:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; chosen ram --format nrd
+               Name    Registers            Description
+               ─────────────────────────────────────────────────────────────
+zephyr,sram -&gt; memory  0x20000000 (256 kB)  Generic on-chip SRAM description
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="textual-user-interface">
+<span id="dtsh-tui"></span><h2>Textual User Interface<a class="headerlink" href="#textual-user-interface" title="Link to this heading"></a></h2>
+<p>DTSh’s command line interface is quite simple:</p>
+<ul class="simple">
+<li><p>a prompt with some state information</p></li>
+<li><p>command line auto-completion and history</p></li>
+<li><p><em>standard</em> keybindings</p></li>
+<li><p>integration with the system pager</p></li>
+</ul>
+<p>The appearance is configurable with user themes.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Command line history and auto-completion helps:</p>
+<ul class="simple">
+<li><p>typing only few keystrokes</p></li>
+<li><p>discovering and memorizing the commands and their options</p></li>
+</ul>
+</div>
+<section id="dtsh-prompt">
+<span id="id12"></span><h3>The Prompt<a class="headerlink" href="#dtsh-prompt" title="Link to this heading"></a></h3>
+<p>Once its configuration is loaded, and the devicetree model is initialized,
+DTSh will clear the Terminal and start an interactive session with the root node
+as current working branch:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dtsh (0.2.0): A Devicetree Shell
+How to exit: q, or quit, or exit, or press Ctrl-D
+
+/
+&gt; cd &amp;i2c0
+
+/soc/i2c@40003000
+&gt;
+</pre></div>
+</div>
+<p>The prompt contains some basic state information:</p>
+<ul class="simple">
+<li><p>the current working branch is reminded above the actual prompt line</p></li>
+<li><p>the prompt changes appearance (e.g. turns red) when a command fails,
+and returns to its default appearance when a command succeeds</p></li>
+</ul>
+<p>Convenient key bindings are available when entering commands at the prompt:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#dtsh-keys-cmdline"><span class="std std-ref">Moving and Editing</span></a></p></li>
+<li><p><a class="reference internal" href="#dtsh-keys-history"><span class="std std-ref">Command Line History</span></a></p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<blockquote>
+<div><p>The default prompt character is actually <em>Medium Right-Pointing Angle Bracket Ornament</em>
+(<code class="docutils literal notranslate"><span class="pre">U+276D</span></code>): the rationale for choosing an <em>exotic</em> character is to better
+distinguish the Devicetree shell prompt from the OS shell.</p>
+<p>If that does not work for you, just change it in your preferences, e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Prompt used for the examples in this documentation.
+prompt.wchar = &gt;
+
+# Note: the dollar sign is used for interpolation, and must be escaped.
+prompt.wchar = $$
+</pre></div>
+</div>
+</div></blockquote>
+<p>Refer to the <a class="reference internal" href="#dtsh-prefs-prompt"><span class="std std-ref">prompt preferences</span></a> for details.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On POSIX-like systems, <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">D</kbd></kbd> (at the beginning of an empty line) closes the DTSh session
+by <em>signaling</em> the end of the input <em>file</em> (<code class="docutils literal notranslate"><span class="pre">EOF</span></code>).</p>
+<p><strong>On Windows systems</strong>, it seems that you instead have to <em>send</em> <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">Z</kbd></kbd> to the
+Terminal input to achieve the same signaling.</p>
+</div>
+</section>
+<section id="auto-completion">
+<span id="dtsh-autocomp"></span><h3>Auto-completion<a class="headerlink" href="#auto-completion" title="Link to this heading"></a></h3>
+<p>Auto-completion is triggered by first pressing the <kbd class="kbd docutils literal notranslate">TAB</kbd> key twice (<code class="docutils literal notranslate"><span class="pre">[TAB][TAB]</span></code>)
+at the end of a word or after a space: this builds and shows the list of
+completion candidates (also termed <em>completion states</em>).</p>
+<p>Auto-completion is contextual, and may propose:</p>
+<ul class="simple">
+<li><p>commands</p></li>
+<li><p>command options</p></li>
+<li><p>valid values for command arguments (e.g. compatible strings or order relationships)</p></li>
+<li><p>valid values for command parameters (e.g. devicetree paths or alias names)</p></li>
+<li><p>files or directories (when redirecting commands output)</p></li>
+</ul>
+<p>If there’s is no candidate, or if the command line is otherwise invalid (e.g. undefined command),
+<code class="docutils literal notranslate"><span class="pre">[TAB][TAB]</span></code> does nothing. If there’s a single match, it may be substituted for the word
+to complete (e.g. DTS labels).</p>
+<p>Each subsequent <code class="docutils literal notranslate"><span class="pre">[TAB]</span></code> will navigate the completion states,
+until the command line changes, which terminates the auto-completion context.</p>
+<section id="auto-complete-commands">
+<span id="dtsh-autocomp-cmd"></span><h4>Auto-complete Commands<a class="headerlink" href="#auto-complete-commands" title="Link to this heading"></a></h4>
+<p>Triggering auto-completion anywhere from an empty command line will list all DTSh
+built-in commands:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; [TAB][TAB]
+alias     list aliased nodes
+cd        change the current working branch
+chosen    list chosen nodes
+find      search branches for nodes
+ls        list branch contents
+pwd       print path of current working branch
+tree      list branch contents in tree-like format
+</pre></div>
+</div>
+<p>If auto-completion is triggered at the end of the first word in the command line,
+only matching commands are proposed:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; c[TAB][TAB]
+cd        change the current working branch
+chosen    list chosen nodes
+</pre></div>
+</div>
+</section>
+<section id="auto-complete-options">
+<span id="dtsh-autocomp-opts"></span><h4>Auto-complete Options<a class="headerlink" href="#auto-complete-options" title="Link to this heading"></a></h4>
+<p>Auto-completion for command options is available when the command line starts with a valid
+command name.</p>
+<p>Then, triggering auto-completion for a word that starts with <code class="docutils literal notranslate"><span class="pre">-</span></code> will list:</p>
+<ul class="simple">
+<li><p>all the command options if the word to complete is <code class="docutils literal notranslate"><span class="pre">-</span></code>,
+all options with a long name if the word to complete is <code class="docutils literal notranslate"><span class="pre">--</span></code></p></li>
+<li><p>matching options otherwise</p></li>
+</ul>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; alias -[TAB][TAB]
+-h --help         print command help
+-l                use a long listing format
+--enabled-only    filter out disabled nodes or branches
+--format FMT      node output format
+
+/
+&gt; find --with-reg-[TAB][TAB]
+--with-reg-addr EXPR    match register addresses
+--with-reg-size EXPR    match register sizes
+</pre></div>
+</div>
+</section>
+<section id="auto-complete-arguments">
+<span id="dtsh-autocomp-args"></span><h4>Auto-complete Arguments<a class="headerlink" href="#auto-complete-arguments" title="Link to this heading"></a></h4>
+<p>Command arguments are options that expect a value.</p>
+<p>Auto-completion for argument values is available when:</p>
+<ul class="simple">
+<li><p>the command line starts with a valid command name</p></li>
+<li><p>the word to complete follows an argument name</p></li>
+</ul>
+<p>What auto-completion will propose then depends on the argument’s semantic, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-compatible gpio-[TAB][TAB]
+gpio-keys    Zephyr Input GPIO KEYS parent node…
+gpio-leds    This allows you to define a group of LEDs. Each LED in the group is…
+
+/
+❭ find --with-bus i2[TAB][TAB]
+i2c
+i2s
+
+/
+&gt; find --order-by [TAB][TAB]
+a    sort by unit address
+A    sort by aliases
+B    sort by supported bus protocols
+...
+s    sort by register sizes
+v    sort by vendor name
+X    sort by child-binding depth
+
+/
+&gt; ls --format [TAB][TAB]
+a    unit address
+A    node aliases
+b    bus of appearance
+...
+v    vendor name
+X    child-binding depth
+Y    bus information
+</pre></div>
+</div>
+</section>
+<section id="auto-complete-parameters">
+<span id="dtsh-autocomp-params"></span><h4>Auto-complete Parameters<a class="headerlink" href="#auto-complete-parameters" title="Link to this heading"></a></h4>
+<p>Auto-completion for parameter values is available when:</p>
+<ul class="simple">
+<li><p>the command line starts with a valid command name</p></li>
+<li><p>the cursor is at a position where a parameter value is expected
+(e.g. not where an argument’s value is expected)</p></li>
+</ul>
+<p>What auto-completion will propose then depends on the parameter’s semantic, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; alias led[TAB][TAB]
+led0
+led1
+led2
+led3
+
+/soc/flash-controller@4001e000/flash@0
+&gt; ls partitions/partition@[TAB][TAB]
+partition@0
+partition@82000
+partition@c000
+partition@f8000
+</pre></div>
+</div>
+<p>Auto-completion for devicetree paths also supports DTS labels:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls &amp;i2c[TAB][TAB]
+i2c0            Nordic nRF family TWI (TWI master)…
+i2c0_default    nRF pin controller pin configuration state nodes.
+i2c0_sleep      nRF pin controller pin configuration state nodes.
+i2c1            Nordic nRF family TWI (TWI master)…
+i2c1_default    nRF pin controller pin configuration state nodes.
+i2c1_sleep      nRF pin controller pin configuration state nodes.
+</pre></div>
+</div>
+</section>
+<section id="auto-complete-redirection-paths">
+<span id="dtsh-autocomp-fs"></span><h4>Auto-complete Redirection Paths<a class="headerlink" href="#auto-complete-redirection-paths" title="Link to this heading"></a></h4>
+<p>Auto-completion for file system paths is available when:</p>
+<ul class="simple">
+<li><p>the command line starts with a valid command name</p></li>
+<li><p>the cursor is at a position where DTSh expects the path of the file the command’s output
+should be redirected to (see <a class="reference internal" href="#dtsh-redir2fs"><span class="std std-ref">Output Redirection</span></a>)</p></li>
+</ul>
+<p>Assuming the current working directory is the root of a Zephyr application project:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls soc -lR &gt; [TAB][TAB]
+boards/
+build/
+src/
+CMakeLists.txt
+README.rst
+prj.conf
+sample.yaml
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li><p>A leading “~” is interpreted as the user directory: <code class="docutils literal notranslate"><span class="pre">~/Doc</span></code>
+would auto-complete to e.g. <code class="docutils literal notranslate"><span class="pre">/home/myself/Documents</span></code></p></li>
+<li><p>By default, files and directories whose name starts with “.” are commonly hidden
+on POSIX-like systems, and DTSh follows this convention.</p>
+<p>To include these files and directories in the auto-completion candidates,
+unset <code class="docutils literal notranslate"><span class="pre">pref.fs.hide_dotted</span></code> (see <a class="reference internal" href="#dtsh-prefs-fs"><span class="std std-ref">File System Access</span></a>).</p>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="command-history">
+<span id="dtsh-history"></span><h3>Command History<a class="headerlink" href="#command-history" title="Link to this heading"></a></h3>
+<p>The command line history is accessible with intuitive keybindings:</p>
+<ul class="simple">
+<li><p><kbd class="kbd docutils literal notranslate">Up</kbd> to navigate the history backward</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Down</kbd> to navigate the history forward</p></li>
+<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">R</kbd></kbd> to <em>reverse</em> search the history</p></li>
+</ul>
+<p>Refer to the <a class="reference internal" href="#dtsh-keys-history"><span class="std std-ref">keybindings for command line history</span></a>
+for more keyboard shortcuts.</p>
+<p>The history persists across DTSh sessions.</p>
+<p>The command history honors the <code class="docutils literal notranslate"><span class="pre">HISTCONTROL</span></code> and <code class="docutils literal notranslate"><span class="pre">HISTIGNORE</span></code> environment
+(see <a class="reference external" href="https://www.gnu.org/software/bash/manual/html_node/Bash-History-Facilities.html">Bash History Facilities</a> for details).</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">history</span></code> file is located in the DTSh application data directory for the current user
+(see <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a>).</p>
+<p>It’s a simple text file you may edit or remove.</p>
+</div>
+</section>
+<section id="the-pager">
+<span id="dtsh-pager"></span><h3>The Pager<a class="headerlink" href="#the-pager" title="Link to this heading"></a></h3>
+<p>Paging basically means viewing the command’s output <em>page by page</em>,
+as if it were the content of a file.</p>
+<p>This is almost necessary when a command would output far more lines than what the Terminal
+could show at once: for example, the output of <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-R</span> <span class="pre">--pager</span></code>,
+that recursively (<code class="docutils literal notranslate"><span class="pre">-R</span></code>) list all devicetree nodes,
+would be painful to <em>understand</em> without the <code class="docutils literal notranslate"><span class="pre">--pager</span></code> option.</p>
+<p>System pagers have their own textual user interface, and offer other (basic) features
+besides paging.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">POSIX</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Windows</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><p>On POSIX-like systems (GNU Linux, macOS) the pager is typically <code class="docutils literal notranslate"><span class="pre">less</span></code>,
+which has simple key bindings, and will preserve formatting, colors and styles.</p>
+<p>Useful key bindings include:</p>
+<table class="docutils align-center" id="id20">
+<caption><span class="caption-text">Pager key bindings (<code class="docutils literal notranslate"><span class="pre">less</span></code>)</span><a class="headerlink" href="#id20" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Down, Page Down</p></td>
+<td><p>Forward one line, one window</p></td>
+</tr>
+<tr class="row-even"><td><p>Up, Page Up</p></td>
+<td><p>Backward one line, one window</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">g</kbd></p></td>
+<td><p>Go to first line</p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd docutils literal notranslate">G</kbd></p></td>
+<td><p>Go to last line</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">/</kbd> <code class="docutils literal notranslate"><span class="pre">pattern</span></code></p></td>
+<td><p>Search forward for <code class="docutils literal notranslate"><span class="pre">pattern</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd docutils literal notranslate">h</kbd></p></td>
+<td><p>Display the pager help</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">q</kbd></p></td>
+<td><p>Exit the pager and returns to DTSh prompt</p></td>
+</tr>
+</tbody>
+</table>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><p>On Windows, the system pager is typically <code class="docutils literal notranslate"><span class="pre">more</span></code>, which is usually less convenient
+than <code class="docutils literal notranslate"><span class="pre">less</span></code> (sic):</p>
+<ul class="simple">
+<li><p>doesn’t support backward movements, and will exit once the end of the command output is reached</p></li>
+<li><p>styles and colors may mess with formatting</p></li>
+</ul>
+<p><kbd class="kbd docutils literal notranslate">h</kbd> should display the pager help, and <kbd class="kbd docutils literal notranslate">q</kbd> return to the DTSh prompt.</p>
+<p>If unhappy with the default pager,
+try installing <a class="reference external" href="https://github.com/jftuga/less-Windows">GNU less compiled for Windows</a>.</p>
+</div></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Pagers work vertically: the command output is paged only vertically, and movements are vertical.</p>
+<p>To get <em>something</em> that you can also scroll horizontally, consider redirecting
+the command output to an HTML file, e.g.:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>-R<span class="w"> </span>--format<span class="w"> </span>NcrYd<span class="w"> </span>&gt;<span class="w"> </span>board.html
+</pre></div>
+</div>
+</div>
+</section>
+<section id="actionable-text">
+<span id="dtsh-hyperlinks"></span><h3>Actionable Text<a class="headerlink" href="#actionable-text" title="Link to this heading"></a></h3>
+<p>An <em>actionable text</em> is a TUI component that associates an action to open a resource (a link)
+with the default system <em>viewer</em> for the resource’s type, e.g.:</p>
+<ul class="simple">
+<li><p>a text editor for DTS or YAML files</p></li>
+<li><p>a Web browser for external links</p></li>
+</ul>
+<p>Although all modern Terminal applications should support these hyperlinks,
+their appearance and how to <em>action</em> them will vary. Typically:</p>
+<ul class="simple">
+<li><p>linked text (ANSI <em>tags</em>) will appear with a (possibly dashed) underline bellow,
+somewhat imitating usual <em>hyperlinks</em> in Web browsers;
+hoovering the linked text will reveal the destination, e.g. with a tooltip</p></li>
+<li><p>clicking the text while holding the <kbd class="kbd docutils literal notranslate">Ctrl</kbd> key will open the link destination</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul class="simple">
+<li><p>Compatible strings and binding descriptions are actionable: this permits to easily locate
+and open related binding files.</p></li>
+<li><p>If the default rendering eventually feels too invasive, try configuring alternative
+views for hyperlinks when they appear in <a class="reference internal" href="#dtsh-prefs-lists"><span class="std std-ref">lists</span></a>
+or <a class="reference internal" href="#dtsh-prefs-trees"><span class="std std-ref">trees</span></a>.</p></li>
+<li><p>Links may open in inappropriate applications, or not open at all (e.g. files that end with
+<code class="docutils literal notranslate"><span class="pre">.dts</span></code> may be associated with DTS-encoded audio content): in this case, configure MIME types
+and associated applications at the operating system level.</p></li>
+<li><p>Links are preserved when commands output are redirected to HTML files.</p></li>
+</ul>
+</div>
+</section>
+<section id="key-bindings">
+<span id="dtsh-keys"></span><h3>Key Bindings<a class="headerlink" href="#key-bindings" title="Link to this heading"></a></h3>
+<p>DTSh relies on the standard keybindings provided by the GNU Readline library,
+described in the <a class="reference external" href="https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html">Bindable Readline Commands</a> documentation.</p>
+<p>For consistency with this reference documentation (and other material like the
+<a class="reference external" href="https://www.gnu.org/software/emacs/refcards/pdf/refcard.pdf">GNU Emacs Reference Card</a>), we’ll use the GNU convention:</p>
+<ul class="simple">
+<li><p><em>modifiers</em> are represented by single uppercase letters, e.g. <code class="docutils literal notranslate"><span class="pre">C</span></code> for <em>Control</em>
+or <code class="docutils literal notranslate"><span class="pre">M</span></code> for <em>Meta</em></p></li>
+<li><p>keys are represented by lowercase letters</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">C-a</span></code> is then the GNU writing for <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">A</kbd></kbd>.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-1-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-1-1-0" name="1-0" role="tab" tabindex="0">PC</button><button aria-controls="panel-1-1-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-1-1-1" name="1-1" role="tab" tabindex="-1">macOS</button></div><div aria-labelledby="tab-1-1-0" class="sphinx-tabs-panel" id="panel-1-1-0" name="1-0" role="tabpanel" tabindex="0"><ul class="simple">
+<li><p>the <em>Control</em> modifier is usually bound to <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd> <kbd class="kbd docutils literal notranslate">Left</kbd></kbd>,
+i.e. the <kbd class="kbd docutils literal notranslate">Ctrl</kbd> key located at left of the keyboard</p></li>
+<li><p>the <em>Meta</em> modifier is usually bound to <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Alt</kbd> <kbd class="kbd docutils literal notranslate">Left</kbd></kbd>,
+i.e. the <kbd class="kbd docutils literal notranslate">Alt</kbd> key located at left of the keyboard</p></li>
+</ul>
+</div><div aria-labelledby="tab-1-1-1" class="sphinx-tabs-panel" hidden="true" id="panel-1-1-1" name="1-1" role="tabpanel" tabindex="0"><p>The default configuration for modifier keys may not work well
+with the GNU Readline keybindings: e.g. the <em>Meta</em> modifier
+is likely bound to <kbd class="kbd docutils literal notranslate">ESC</kbd>.</p>
+<p>Terminal.app and iTerm2 users can easily remap the modifiers
+with a more convenient configuration:
+it seems common to e.g. remap <em>Meta</em> to <kbd class="kbd docutils literal notranslate">Option</kbd>
+with some settings like <em>Use Option as Meta key</em>.</p>
+</div></div>
+<section id="moving-and-editing">
+<span id="dtsh-keys-cmdline"></span><h4>Moving and Editing<a class="headerlink" href="#moving-and-editing" title="Link to this heading"></a></h4>
+<p>By default, moving and editing the command line happens in Emacs mode,
+and the keybindings mentioned here are those of GNU Emacs (and Bash, GDB, etc).</p>
+<p>The tables below show the most commonly used ones.</p>
+<table class="docutils align-center" id="id21">
+<caption><span class="caption-text">Moving</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Home</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-a</span></code></p></td>
+<td><p>Move cursor to beginning of command line.</p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd docutils literal notranslate">End</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-e</span></code></p></td>
+<td><p>Move cursor to end of command line.</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Right</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-f</span></code></p></td>
+<td><p>Move forward a character.</p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd docutils literal notranslate">Left</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-b</span></code></p></td>
+<td><p>Move back a character.</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">Right</kbd></kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M-f</span></code></p></td>
+<td><p>Move forward to the end of the next word (letters and digits).</p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Ctrl</kbd>-<kbd class="kbd docutils literal notranslate">Left</kbd></kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M-b</span></code></p></td>
+<td><p>Move back to the start of the current or previous word.</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-l</span></code></p></td>
+<td><p>Clear the screen, then redraw the current line.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-center" id="id22">
+<caption><span class="caption-text">Changing text</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">C-t</span></code></p></td>
+<td><p>Drag the character before the cursor forward over the character at the cursor,
+moving the cursor forward as well (<em>transpose chars</em>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">M-t</span></code></p></td>
+<td><p>Drag the word before point past the word after point, moving point past that word as well
+(<em>transpose words</em>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">C-d</span></code></p></td>
+<td><p>Delete the following character.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">M-d</span></code></p></td>
+<td><p>Kill (<em>cut</em>) from point to the end of the current word.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">C-k</span></code></p></td>
+<td><p>Kill the text from point to the end of the line.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">C-u</span></code></p></td>
+<td><p>Kill backward from the cursor to the beginning of the current line.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">C-w</span></code></p></td>
+<td><p>Kill the word behind point.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">C-y</span></code></p></td>
+<td><p>Yank (<em>paste</em>) the top of the kill ring into the buffer at point.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">M-y</span></code></p></td>
+<td><p>Rotate the kill-ring, and yank the new top (must follow <code class="docutils literal notranslate"><span class="pre">C-y</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">C-_</span></code></p></td>
+<td><p>Undo some previous changes.
+Repeat this command to undo more changes.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the Readline library comes with a set of Emacs-like keybindings installed by default,
+it is possible to use different keybindings: see the <a class="reference external" href="https://www.gnu.org/software/bash/manual/html_node/Readline-Init-File.html">Readline Init File</a> documentation.</p>
+</div>
+</section>
+<section id="command-line-history">
+<span id="dtsh-keys-history"></span><h4>Command Line History<a class="headerlink" href="#command-line-history" title="Link to this heading"></a></h4>
+<p>Bellow are the most common keybindings for <em>invoking</em> the command history
+(see <a class="reference external" href="https://www.gnu.org/software/bash/manual/html_node/Commands-For-History.html">Commands For Manipulating The History</a> for a complete list).</p>
+<table class="docutils align-center" id="id23">
+<caption><span class="caption-text">Command History</span><a class="headerlink" href="#id23" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Return</kbd></p></td>
+<td></td>
+<td><p>Accept the line regardless of where the cursor is.</p></td>
+</tr>
+<tr class="row-even"><td><p><kbd class="kbd docutils literal notranslate">Up</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-p</span></code></p></td>
+<td><p>Move back through the history list, fetching the previous command.</p></td>
+</tr>
+<tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Down</kbd></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-n</span></code></p></td>
+<td><p>Move forward through the history list, fetching the next command.</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M-&lt;</span></code></p></td>
+<td><p>Move to the first line in the history.</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M-&gt;</span></code></p></td>
+<td><p>Move to the end of the input history, i.e., the line currently being entered.</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C-r</span></code></p></td>
+<td><p>Search backward starting at the current line and moving up through the history as necessary.
+This is an <em>incremental search</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>An <em>incremental search</em> updates its results while typing:</p>
+<ul class="simple">
+<li><p>initiate incremental search, e.g. backward with <code class="docutils literal notranslate"><span class="pre">C-r</span></code>: a sub-prompt
+like <code class="docutils literal notranslate"><span class="pre">(reverse-i-search):</span></code> should replace the DTSh prompt</p></li>
+<li><p>the string the prompt expects is the pattern to search the command history for:
+while typing the piece of command line to search for,
+the sub-prompt will update to show the most recent matches</p></li>
+<li><p>repeat <code class="docutils literal notranslate"><span class="pre">C-r</span></code> to navigate the history backward as needed</p></li>
+<li><p>eventually, press the <kbd class="kbd docutils literal notranslate">Left</kbd> or <kbd class="kbd docutils literal notranslate">Right</kbd> key to select the command line at the sub-prompt,
+and return to the DTSh prompt for further edits</p></li>
+<li><p>or press <kbd class="kbd docutils literal notranslate">Return</kbd> to re-execute the command line selected at the sub-prompt,
+or <code class="docutils literal notranslate"><span class="pre">C-g</span></code> to abort the search and return to the DTSh prompt</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="appearance">
+<span id="dtsh-appearance"></span><h3>Appearance<a class="headerlink" href="#appearance" title="Link to this heading"></a></h3>
+<p>DTSh associates <em>styles</em> (think basic CSS) to the different types (e.g. compatible strings,
+register addresses) of information it outputs: these are configurable with user themes.</p>
+<p>But the actual rendering will eventually depend on the Terminal application’s configuration
+and capabilities.</p>
+<section id="the-terminal">
+<span id="dtsh-terminal"></span><h4>The Terminal<a class="headerlink" href="#the-terminal" title="Link to this heading"></a></h4>
+<p>The terminal is expected to support the standard <a class="reference external" href="https://en.wikipedia.org/wiki/ANSI_escape_code">ANSI escape sequences</a> (plus the <a class="reference external" href="https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda">OSC 8</a>
+extension for <em>hyperlinks</em>): most Terminal applications used <em>today</em> on GNU Linux,
+macOS (e.g. Terminal.app and iTerm2) and Windows (since <a class="reference external" href="https://github.com/microsoft/terminal/pull/7251">OSC 8 support for conhost and terminal</a>)
+should be fine.</p>
+<p>DTSh commands output may involve a few Unicode glyphs for common symbols like ellipsis, arrows
+and box-drawing: if any appear to be missing, either configure
+<a class="reference internal" href="#dtsh-prefs-symbols"><span class="std std-ref">alternative symbols</span></a> in a preferences file,
+or install a <em>no tofu</em> monospace font (e.g. Source Code Pro) to use in the terminal.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>To address accessibility issues, or improve an unpleasant user experience:</p>
+<ul class="simple">
+<li><p>first, try configuring the terminal itself: font, text and background colors,
+colors palette, options like <em>Show bold text in bright colors</em>
+(these are often grouped as <em>profiles</em>)</p></li>
+<li><p>once it’s mostly legible and pleasant, adjust DTSh styles and colors with a
+<a class="reference internal" href="#dtsh-themes"><span class="std std-ref">user theme</span></a></p></li>
+<li><p>it’s recommended to run DTSh full screen or in a wide/maximized window</p></li>
+</ul>
+<p>If trees in the Terminal look like the examples in this documentation,
+you’re missing the Unicode range <code class="docutils literal notranslate"><span class="pre">2500—257F</span></code>.</p>
+</div>
+</section>
+<section id="user-themes">
+<span id="dtsh-themes"></span><h4>User Themes<a class="headerlink" href="#user-themes" title="Link to this heading"></a></h4>
+<p>A <em>theme</em> is a collection of <em>styles</em>, each of which is consistently used to represent a type
+of information: e.g. by default compatible strings are always green,
+and things that behave like <em>symbolic links</em> (e.g. aliases) are all italics.</p>
+<p>A style has the form <code class="docutils literal notranslate"><span class="pre">[STYLE]</span> <span class="pre">[FG]</span> <span class="pre">[on</span> <span class="pre">BG]</span></code> where:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">STYLE</span></code> is an optional style applied to the text, e.g. “bold” or “italic”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FG</span></code> is the text foreground color, e.g. “dark_green” or “#005f00”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BG</span></code> is the text background color</p></li>
+</ul>
+<p>Colors and such are subjective, and a theme that pleases one person may cause accessibility
+issues (or headaches) to another. To address this legit concern, DTSh supports user themes
+that will override the default styles.</p>
+<p>Styles are loaded in that order:</p>
+<ol class="arabic simple">
+<li><p>DTSh loads default values for all defined styles</p></li>
+<li><p>if a user theme file exists, e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/theme.ini</span></code> on GNU Linux,
+it’s loaded, overriding the default styles</p></li>
+<li><p>if an additional theme file is specified with the West command option <code class="docutils literal notranslate"><span class="pre">--theme</span></code>,
+it’s eventually loaded, overriding previous styles</p></li>
+</ol>
+<p>Initialize a theme template with <code class="docutils literal notranslate"><span class="pre">dtsh</span> <span class="pre">-u</span></code> if not already done
+(see <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a> in the Getting Started Guide).</p>
+<p>Comments in the template file should be sufficient to understand how to write styles,
+and identify which style applies to which type of information.
+The INI syntax itself is reminded in <a class="reference internal" href="#dtsh-ini-format"><span class="std std-ref">Configuration Format</span></a>.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting Started Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Chris Duf.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

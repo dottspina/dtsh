@@ -1,6 +1,6 @@
-.venv*/
-__pycache__
+.venv
+build
+dist
 
-/build/
-/dist/
-/src/dtsh.egg-info/
+__pycache__
+dtsh.egg-info

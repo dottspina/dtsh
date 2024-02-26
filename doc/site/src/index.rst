@@ -23,9 +23,29 @@ You can use it with:
   A Devicetree Shell
 
 
+Status
+******
+
+Welcome to the DTSh Project’s documentation for the ``dtsh-next`` branch.
+This branch mirrors and packages the code base that serves as a proposal to upstream DTSh
+as a new `Zephyr extension to West <Zephyr-West_>`_ (would be ``west dtsh``):
+`RFC - DTSh, shell-like interface with Devicetree <DTSh-RFC_>`_
+
+Source code and documentation for the Proof of Concept and prototype (DTSh 0.1.x) are still
+available at the ``main`` `branch <DTSh-main_>`_ of this repository.
+
+**Latest release**: `0.2.0 <https://github.com/dottspina/dtsh/releases/tag/v0.2.0>`_
+(`PyPI <PyPI-dtsh_>`_)
+
+
 .. toctree::
-   :hidden:
    :maxdepth: 2
    :caption: Contents:
 
+   getting-started
+   handbook
+
 .. include:: bib.rst
+
+.. meta::
+   :keywords: zephyr, devicetree, dts, viewer, user interface, embedded development, IoT

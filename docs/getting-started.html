@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started Guide &mdash; DTSh 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=938c9ccc"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="DTSh’s Handbook" href="handbook.html" />
+    <link rel="prev" title="DTSh Project Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DTSh
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-dtsh">Install DTSh</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#python-devicetree">python-devicetree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#external-dependencies">External Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#install-alongside-west">Install Alongside West</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#standalone-installation">Standalone Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#typical-use">Typical Use</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-uses">Other Uses</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#first-steps">First Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="handbook.html">DTSh’s Handbook</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DTSh</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting-started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started-guide">
+<span id="dtsh-getting-started"></span><h1>Getting Started Guide<a class="headerlink" href="#getting-started-guide" title="Link to this heading"></a></h1>
+<p>This simple guide covers DTSh’s installation, configuration and basic usage.</p>
+<section id="install-dtsh">
+<span id="dtsh-install"></span><h2>Install DTSh<a class="headerlink" href="#install-dtsh" title="Link to this heading"></a></h2>
+<p>DTSh runs on Linux, macOS and Windows with Python 3.8 to 3.11.</p>
+<p>It can be installed in <em>some</em> Zephyr development environment,
+or standalone in any Python environment.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>On <strong>Windows</strong>, the <a class="reference external" href="https://docs.python.org/fr/3.8/library/readline.html">readline API</a>, on which DTSh relies for auto-completion
+and command history, is no longer distributed with the Python Standard Library: as a consequence,
+the user experience will be significantly degraded on this platform.
+This is <a class="reference external" href="https://github.com/dottspina/dtsh/issues/3">known issue</a> without workaround.</p>
+<p>Prefer <a class="reference external" href="https://learn.microsoft.com/en-us/windows/wsl/">WSL</a> if possible.</p>
+</div>
+<section id="requirements">
+<span id="dtsh-requirements"></span><h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h3>
+<p>Only prerequisite is the Python devicetree library, part of the Zephyr project.
+Other run-time requirements are simple external dependencies available from PyPI.</p>
+<section id="python-devicetree">
+<span id="dtsh-python-devicetree"></span><h4>python-devicetree<a class="headerlink" href="#python-devicetree" title="Link to this heading"></a></h4>
+<p>To parse DTS and binding files into Devicetree models, DTSh relies on the
+<a class="reference external" href="https://github.com/zephyrproject-rtos/zephyr/tree/main/scripts/dts/python-devicetree">python-devicetree</a> library (<code class="docutils literal notranslate"><span class="pre">edtlib</span></code>),
+part of <a class="reference external" href="https://github.com/zephyrproject-rtos/zephyr/tree/main/scripts/dts">Zephyr’s DTS tooling</a>.</p>
+<p>Although this API may eventually become a <em>standalone source code library</em>,
+it is currently not a priority of the Zephyr project,
+and the <a class="reference external" href="https://pypi.org/project/devicetree/">PyPI package</a> is no longer updated (the latest version is April 2022).</p>
+<p>DTSh therefore re-distributes <a class="reference external" href="https://github.com/dottspina/dtsh/tree/dtsh-next/src/devicetree">snapshots</a>
+of this library along with its own implementation.
+This works but <a class="reference external" href="https://github.com/dottspina/dtsh/issues/2">is not an ideal situation</a>.</p>
+</section>
+<section id="external-dependencies">
+<span id="dtsh-dependencies"></span><h4>External Dependencies<a class="headerlink" href="#external-dependencies" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id1">
+<caption><span class="caption-text">External Dependencies</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Textualize’s <em>rich</em> library for <em>beautiful formatting</em></p></td>
+<td><p><a class="reference external" href="https://pypi.org/project/rich/">rich</a></p></td>
+</tr>
+<tr class="row-even"><td><p>PyYAML, YAML parser for Python</p></td>
+<td><p><a class="reference external" href="https://pypi.org/project/PyYAML/">PyYAML</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Stand-alone GNU readline module (macOS only)</p></td>
+<td><p><a class="reference external" href="https://pypi.org/project/gnureadline/">gnureadline</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="installation">
+<span id="dtsh-installation"></span><h3>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h3>
+<p>There are basically two types of installation:</p>
+<ul class="simple">
+<li><p><em>alongside</em> West, in a Python virtual environment you use for Zephyr development</p></li>
+<li><p><em>standalone</em> in any Python virtual environment</p></li>
+</ul>
+<section id="install-alongside-west">
+<span id="dtsh-install-alongside"></span><h4>Install Alongside West<a class="headerlink" href="#install-alongside-west" title="Link to this heading"></a></h4>
+<p>This method installs DTSh in a Python virtual environment that belongs to a West workspace,
+(where the <cite>west</cite> command itself is installed, with other dependencies).</p>
+<p>Assuming you’ve followed Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/develop/getting_started/index.html">Getting Started Guide</a>,
+the workspace should look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>zephyrproject/
+├── .venv
+├── .west
+├── bootloader
+├── modules
+├── tools
+└── zephyr
+</pre></div>
+</div>
+<p>To install DTSh <em>alongside West</em>, activate this <code class="docutils literal notranslate"><span class="pre">zephyrproject/.venv</span></code> environment
+before running <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Active the Python virtual environment if not already done.</span>
+.<span class="w"> </span>zephyrproject/.venv/bin/activate
+
+<span class="c1"># Install latest version of DTSh from PyPI.</span>
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>dtsh
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Or just run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">dtsh</span></code> from the same prompt where you usually enter <code class="docutils literal notranslate"><span class="pre">west</span></code> commands.</p>
+</div>
+</section>
+<section id="standalone-installation">
+<span id="dtsh-install-standalone"></span><h4>Standalone Installation<a class="headerlink" href="#standalone-installation" title="Link to this heading"></a></h4>
+<p>This method installs DTSh in a dedicated Python virtual environment: it’s a little less
+convenient but avoids installing anything in a development environment you actually depend on.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize Python virtual environment.</span>
+mkdir<span class="w"> </span>dtsh
+<span class="nb">cd</span><span class="w"> </span>dtsh
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+
+<span class="c1"># Activate and update system tools.</span>
+.<span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pip<span class="w"> </span>setuptools
+
+<span class="c1"># Install DTSh from PyPI.</span>
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>dtsh
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="usage">
+<span id="dtsh-usage"></span><h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Once installed, the Devicetree Shell is available as the <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -h
+usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [DTS]
+
+shell-like interface with Devicetree
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+open a DTS file:
+  -b DIR, --bindings DIR
+                        directory to search for binding files
+  DTS                   path to the DTS file
+
+user files:
+  -u, --user-files      initialize per-user configuration files and exit
+  --preferences FILE    load additional preferences file
+  --theme FILE          load additional styles file
+</pre></div>
+</div>
+<p>We’ll first confirm that the installation went well with a simple but typical usage,
+before tackling a few other scenarios.</p>
+<section id="typical-use">
+<span id="dtsh-usage-default"></span><h3>Typical Use<a class="headerlink" href="#typical-use" title="Link to this heading"></a></h3>
+<p>Early at build-time, during the <a class="reference external" href="https://docs.zephyrproject.org/latest/build/cmake/index.html#configuration-phase">configuration phase</a>,
+Zephyr <em>assembles</em> the final <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html">devicetree</a> that will represent
+the system hardware during the actual build phase.</p>
+<p>This devicetree is saved in <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html">Devicetree Source Format</a> (DTS)
+in <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code> for <em>debugging</em> purpose.</p>
+<p>The typical DTSh’s use case is to open this DTS file generated at build-time, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ cd zephyr/samples/sensor/bme680
+$ cmake -B build -DBOARD=nrf52840dk_nrf52840
+$ dtsh build/zephyr/zephyr.dts
+dtsh (0.2.0): A Devicetree Shell
+How to exit: q, or quit, or exit, or press Ctrl-D
+
+/
+&gt; ls -l
+ Name              Labels          Binding
+ ───────────────────────────────────────────────────────
+ chosen
+ aliases
+ soc
+ pin-controller    pinctrl         nordic,nrf-pinctrl
+ entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+ sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+ cpus
+ leds                              gpio-leds
+ pwmleds                           pwm-leds
+ buttons                           gpio-keys
+ connector         arduino_header  arduino-header-r3
+ analog-connector  arduino_adc     arduino,uno-adc
+</pre></div>
+</div>
+<p>The above example should <em>always</em> work:</p>
+<ul class="simple">
+<li><p>regardless of the installation method, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> being sufficient for the configuration phase</p></li>
+<li><p>regardless of whether <code class="docutils literal notranslate"><span class="pre">ZEPHYR_BASE</span></code> is set</p></li>
+<li><p>regardless of whether you target a <a class="reference external" href="https://docs.zephyrproject.org/latest/boards/index.html">supported board</a>
+or a <a class="reference external" href="https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#board-porting-guide">custom board</a></p></li>
+</ul>
+<p>Here, DTSh retrieves <em>all it needs</em>, and especially where to search for the bindings files,
+from the CMake cache content in <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build
+├── CMakeCache.txt
+└── zephyr
+    └── zephyr.dts
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul class="simple">
+<li><p>In this context, no need to pass the DTS file path to DTSh: by default it will try
+to open the devicetree at <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code></p></li>
+<li><p>To open <em>your</em> devicetree: <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">&lt;project&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">cmake</span> <span class="pre">-B</span> <span class="pre">build</span> <span class="pre">-DBOARD=&lt;board&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">dtsh</span></code>,
+or if using West <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">&lt;project&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">west</span> <span class="pre">build</span> <span class="pre">&amp;&amp;</span> <span class="pre">dtsh</span></code></p></li>
+</ul>
+</div>
+</section>
+<section id="other-uses">
+<span id="dtsh-usage-others"></span><h3>Other Uses<a class="headerlink" href="#other-uses" title="Link to this heading"></a></h3>
+<p>As we’ve seen, DTSh first tries to retrieve the bindings Zephyr has used at build-time,
+when the DTS file was generated, from the CMake cache.
+This is the most straight forward way to get a complete and legit bindings search path.</p>
+<p>When this fails, DTSh will then try to work out the search path
+Zephyr would use if it were to generate the DTS <em>now</em>
+(<a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-intro.html#where-bindings-are-located">Where Bindings Are Located</a>): bindings found in
+<code class="docutils literal notranslate"><span class="pre">$ZEPHYR_BASE/dts/bindings</span></code> and other <em>default</em> directories should still cover
+the most simple use cases (e.g. Zephyr samples).</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
+$ dtsh /path/to/zephyr.dts
+</pre></div>
+</div>
+<p>This default behavior does not address all situations, though:</p>
+<ul class="simple">
+<li><p>you may need additional bindings files from a custom location,
+or explicitly set the <code class="docutils literal notranslate"><span class="pre">DTS_ROOT</span></code> CMake variable</p></li>
+<li><p>you’re not working with Zephyr</p></li>
+</ul>
+<p>For these use cases, the <code class="docutils literal notranslate"><span class="pre">-b</span> <span class="pre">--bindings</span></code> option permits to explicitly enumerate all the directories
+to search in:</p>
+<blockquote>
+<div><p>$ dtsh –bindings dir1 –bindings dir2 foobar.dts</p>
+</div></blockquote>
+<p>Where:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dir1</span></code> and <code class="docutils literal notranslate"><span class="pre">dir1</span></code>, and their sub-directories, shall contain all necessary YAML binding files
+in Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-syntax.html">Devicetree Binding Syntax</a>,
+even if not working with Zephyr</p></li>
+<li><p>one of these directories shall contain a valid vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<span id="dtsh-configuration"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>Users can tweak DTSh appearance and behavior by overriding its defaults in configuration files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dtsh.ini</span></code>: to override global preferences (see <a class="reference internal" href="handbook.html#dtsh-preferences"><span class="std std-ref">User Preferences</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">theme.ini</span></code>: to override styles and colors (see <a class="reference internal" href="handbook.html#dtsh-themes"><span class="std std-ref">User Themes</span></a>)</p></li>
+</ul>
+<p>These (optional) files must be located in a platform-dependent directory,
+e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/dtsh</span></code> on GNU/Linux systems.</p>
+<p>Running <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> with the <code class="docutils literal notranslate"><span class="pre">-u</span> <span class="pre">--user-files</span></code> option will initialize configuration templates
+in the expected location:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -u
+User preferences: ~/.config/dtsh/dtsh.ini
+User theme: ~/.config/dtsh/theme.ini
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>DTSh won’t override a user file that already exists: manually remove the file(s),
+and run the command again.</p>
+</div>
+<p>Eventually:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">--preferences</span> <span class="pre">FILE</span></code> option permits to specify an additional preferences file to load</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">--theme</span> <span class="pre">FILE</span></code> option permits to specify an additional theme file to load</p></li>
+</ul>
+</section>
+<section id="first-steps">
+<span id="dtsh-first-steps"></span><h2>First Steps<a class="headerlink" href="#first-steps" title="Link to this heading"></a></h2>
+<p>The few examples bellow introduce the basics of DTSh.
+Please refer to the <a class="reference internal" href="handbook.html#dtsh-handbook"><span class="std std-ref">handbook</span></a> for complete documentation.</p>
+<p>Navigate the devicetree like a file-system with <cite>cd</cite>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; cd &amp;i2c0
+
+/soc/i2c@40003000
+&gt; cd ../flash-controller@4001e000
+
+/soc/flash-controller@4001e000
+&gt; cd
+
+/
+❭
+</pre></div>
+</div>
+<p>Print information about nodes with <cite>ls</cite>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls
+chosen
+aliases
+soc
+pin-controller
+entropy_bt_hci
+sw-pwm
+cpus
+leds
+pwmleds
+buttons
+connector
+analog-connector
+
+/
+&gt; ls &amp;flash0 -l
+ Name        Labels  Binding
+ ────────────────────────────────────
+ partitions          fixed-partitions
+
+/
+&gt; ls &amp;flash0 -ld
+ Name     Labels  Binding
+ ─────────────────────────────
+ flash@0  flash0  soc-nv-flash
+
+/
+&gt; ls soc/flash-controller@4001e000/flash@0/partitions --format NKr
+ Name             Also Known As               Registers
+ ─────────────────────────────────────────────────────────────
+ partition@0      mcuboot, boot_partition     0x0 (48 kB)
+ partition@c000   image-0, slot0_partition    0xc000 (472 kB)
+ partition@82000  image-1, slot1_partition    0x82000 (472 kB)
+ partition@f8000  storage, storage_partition  0xf8000 (32 kB)
+</pre></div>
+</div>
+<p>Visualize the devicetree with, well, <cite>tree</cite>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc
+&gt; tree --format Nc
+                                   Compatible
+                                   ────────────────────────────────────────────────────────────
+soc                                nordic,nrf52840-qiaa nordic,nrf52840 nordic,nrf52 simple-bus
+├── interrupt-controller@e000e100  arm,v7m-nvic
+├── timer@e000e010                 arm,armv7m-systick
+├── ficr@10000000                  nordic,nrf-ficr
+├── uicr@10001000                  nordic,nrf-uicr
+├── memory@20000000                mmio-sram
+├── clock@40000000                 nordic,nrf-clock
+├── power@40000000                 nordic,nrf-power
+│   ├── gpregret1@4000051c         nordic,nrf-gpregret
+│   └── gpregret2@40000520         nordic,nrf-gpregret
+├── radio@40001000                 nordic,nrf-radio
+│   └── ieee802154                 nordic,nrf-ieee802154
+├── uart@40002000                  nordic,nrf-uarte
+├── i2c@40003000                   nordic,nrf-twi
+│   └── bme680@76                  bosch,bme680
+</pre></div>
+</div>
+<p>Search the devicetree with <cite>find</cite>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; find --with-description &quot;2.4 GHz&quot; -T --format NKCd
+                        Also Known As  Binding           Description
+                        ────────────────────────────────────────────────────────────────────
+/                       …              …                 …
+└── soc                 …              …                 …
+    └── radio@40001000  radio          nordic,nrf-radio  Nordic nRF family RADIO peripheral…
+</pre></div>
+</div>
+<p><em>Export</em> the devicetree to HTML by redirecting (<code class="docutils literal notranslate"><span class="pre">&gt;</span></code>) commands output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; ls -lR &gt; board.html
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="DTSh Project Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="handbook.html" class="btn btn-neutral float-right" title="DTSh’s Handbook" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Chris Duf.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
