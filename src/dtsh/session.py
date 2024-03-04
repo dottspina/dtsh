@@ -155,19 +155,10 @@ class DTShSession:
         self._last_err = None
 
         while True:
-            self.pre_input_hook()
-
             cmdline: Optional[str] = None
             try:
-                cmdline = self._vt.readline(
-                    [
-                        _dtshconf.prompt_alt
-                        if self._last_err
-                        else _dtshconf.prompt_default
-                    ]
-                )
+                cmdline = self._vt.readline(self.mk_prompt())
             except EOFError:
-                self._vt.write()
                 # Exit DTSh on EOF.
                 self.close()
 
@@ -268,10 +259,6 @@ class DTShSession:
         self._vt.write("dtsh: A Devicetree Shell")
         self._vt.write()
 
-    def pre_input_hook(self) -> None:
-        """Hook called before the session prompts for the next command line."""
-        self._vt.write(self._dtsh.pwd)
-
     def on_cmd_help(self, cmd: DTShCommand) -> None:
         """Called when the user's asked for a command's help.
 
@@ -324,6 +311,20 @@ class DTShSession:
             self._vt.write(f"bye ({status}).")
         else:
             self._vt.write("bye.")
+
+    def mk_prompt(self) -> Sequence[Any]:
+        """Make multiple-line prompt to use for the next command.
+
+        Returns:
+            A valid multiple-line prompt: optional state lines of any type,
+            followed by the actual ANSI prompt.
+        """
+        return [
+            self._dtsh.pwd,
+            _dtshconf.prompt_alt
+            if self._last_err
+            else _dtshconf.prompt_default,
+        ]
 
     def _sig_handler(self, signum: int, frame: Optional[FrameType]) -> Any:
         # closing() the session when the pager is active breaks the TTY.
