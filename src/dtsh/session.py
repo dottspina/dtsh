@@ -160,9 +160,11 @@ class DTShSession:
             cmdline: Optional[str] = None
             try:
                 cmdline = self._vt.readline(
-                    _dtshconf.prompt_alt
-                    if self._last_err
-                    else _dtshconf.prompt_default
+                    [
+                        _dtshconf.prompt_alt
+                        if self._last_err
+                        else _dtshconf.prompt_default
+                    ]
                 )
             except EOFError:
                 self._vt.write()
