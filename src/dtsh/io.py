@@ -103,7 +103,12 @@ class DTShVT(DTShInput, DTShOutput):
             self.write(line)
 
         # Read user input or EOF.
-        return input(prompt)
+        try:
+            return input(prompt)
+        except EOFError as e:
+            # Dismiss dead interactive prompt line.
+            self.write()
+            raise e
 
     def write(self, *args: Any, **kwargs: Any) -> None:
         """Write to stdout.
