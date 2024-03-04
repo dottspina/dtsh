@@ -12,7 +12,7 @@
 Unit tests and examples: tests/test_dtsh_io.py
 """
 
-from typing import Any, IO, Tuple
+from typing import Any, IO, Tuple, Optional, Sequence
 
 import os
 import sys
@@ -54,15 +54,20 @@ class DTShOutput:
 class DTShInput:
     """Base for shell input streams.
 
-    This base implementation behaves like "/dev/null".
+    This base implementation immediately signals EOF.
     """
 
-    def readline(self, prompt: str = "") -> str:
-        """Print the prompt and read a command line.
+    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+        """Print the prompt and read a command line from input stream.
 
         Args:
-            prompt: The command line prompt to use.
-              Defaults to an empty string.
+            multi_prompt: The multiple-line prompt to use.
+
+        Returns:
+            The next command line.
+
+        Raises:
+            EOFError: End of input stream.
         """
         raise EOFError()
 
@@ -74,7 +79,7 @@ class DTShVT(DTShInput, DTShOutput):
     and ignores paging.
     """
 
-    def readline(self, prompt: str = "> ") -> str:
+    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
         r"""Print the prompt and read a command line.
 
         To use ANSI escape codes in the prompt without breaking
@@ -88,10 +93,16 @@ class DTShVT(DTShInput, DTShOutput):
             <END_IGNORE> := \002
 
         Overrides DTShInput.readline().
-
-        Args:
-            prompt: The command line prompt to use.
         """
+        multi_prompt = multi_prompt or ["> "]
+        preamble: Sequence[Any] = multi_prompt[:-1]
+        prompt: str = multi_prompt[-1]
+
+        # Print multiple-line prompt's preamble.
+        for line in preamble:
+            self.write(line)
+
+        # Read user input or EOF.
         return input(prompt)
 
     def write(self, *args: Any, **kwargs: Any) -> None:
