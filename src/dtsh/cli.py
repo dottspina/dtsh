@@ -7,7 +7,7 @@
 Run the devicetree shell without West.
 """
 
-from typing import cast, Optional, List
+from typing import cast, Optional, Union, List
 
 import argparse
 import os
@@ -65,7 +65,28 @@ class DTShCliArgv:
             metavar="FILE",
         )
 
+        grp_session_ctrl = self._parser.add_argument_group("session control")
+        grp_session_ctrl.add_argument(
+            "-c",
+            help="execute CMD at startup (may be repeated)",
+            action="append",
+            metavar="CMD",
+        )
+        grp_session_ctrl.add_argument(
+            "-f",
+            help="execute batch commands from FILE at startup",
+            metavar="FILE",
+        )
+        grp_session_ctrl.add_argument(
+            "-i",
+            "--interactive",
+            help="enter interactive loop after batch commands",
+            action="store_true",
+        )
+
         self._argv = self._parser.parse_args()
+        if self._argv.f and self._argv.c:
+            self._parser.error("-c and -f are mutually exclusive")
 
     @property
     def binding_dirs(self) -> Optional[List[str]]:
@@ -98,6 +119,23 @@ class DTShCliArgv:
         """Additional styles file."""
         return str(self._argv.theme[0]) if self._argv.theme else None
 
+    @property
+    def batch_source(self) -> Optional[Union[str, List[str]]]:
+        """Batch command source, if defined."""
+        if self._argv.c:
+            return cast(List[str], self._argv.c)
+        if self._argv.f:
+            return cast(str, self._argv.f)
+        return None
+
+    @property
+    def interactive(self) -> bool:
+        """Is the interactive loop requested?"""
+        if not (self._argv.c or self._argv.f):
+            # no batch input, must be interactive
+            return True
+        return cast(bool, self._argv.interactive)
+
 
 def _load_preference_file(path: str) -> None:
     try:
@@ -118,7 +156,9 @@ def _load_theme_file(path: str) -> None:
 
 
 def run() -> None:
-    """Open a devicetree shell session and run its interactive loop."""
+    """Open a devicetree shell session and run batch commands
+    and/or its interactive loop.
+    """
     argv = DTShCliArgv()
 
     if argv.user_files:
@@ -136,14 +176,19 @@ def run() -> None:
 
     session = None
     try:
-        session = DTShRichSession.create(argv.dts, argv.binding_dirs)
+        if argv.batch_source:
+            session = DTShRichSession.create_batch(
+                argv.dts, argv.binding_dirs, argv.batch_source, argv.interactive
+            )
+        else:
+            session = DTShRichSession.create(argv.dts, argv.binding_dirs)
     except DTShError as e:
         print(e.msg, file=sys.stderr)
         print("Failed to initialize devicetree", file=sys.stderr)
         sys.exit(-22)
 
     if session:
-        session.run()
+        session.run(argv.interactive)
 
 
 if __name__ == "__main__":
