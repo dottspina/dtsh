@@ -150,11 +150,11 @@ Once installed, the Devicetree Shell is available as the ``dtsh`` command:
 .. code-block:: none
 
    $ dtsh -h
-   usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [DTS]
+   usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [-c CMD] [-f FILE] [-i] [DTS]
 
    shell-like interface with Devicetree
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
 
    open a DTS file:
@@ -166,6 +166,11 @@ Once installed, the Devicetree Shell is available as the ``dtsh`` command:
      -u, --user-files      initialize per-user configuration files and exit
      --preferences FILE    load additional preferences file
      --theme FILE          load additional styles file
+
+   session control:
+     -c CMD                execute CMD at startup (may be repeated)
+     -f FILE               execute batch commands from FILE at startup
+     -i, --interactive     enter interactive loop after batch commands
 
 We'll first confirm that the installation went well with a simple but typical usage,
 before tackling a few other scenarios.
@@ -270,6 +275,47 @@ Where:
   in Zephyr's `Devicetree Binding Syntax <Zephyr-Binding Syntax_>`_,
   even if not working with Zephyr
 - one of these directories shall contain a valid vendors file, e.g. ``dir1/vendor-prefixes.txt``
+
+
+.. _dtsh-usage-batch:
+
+Batch Mode
+==========
+
+For scripting and automation, DTSh can also be used non-interactively by passing:
+
+ - a series of commands to execute at startup: ``-c CMD1 -c CMD2``
+ - or a file containing such commands: ``-f FILE``
+
+The ``-i --interactive`` option then permits to enter the interactive loop after the batch commands have been executed.
+
+For example, to list the contents of the root of the devicetree and then change
+to another directory, before entering the interactive loop, you can use the
+following command:
+
+.. code-block:: none
+
+   $ dtsh -c "ls -l" -c "cd &i2c0" -i
+   dtsh (0.2.1): A Devicetree Shell
+   How to exit: q, or quit, or exit, or press Ctrl-D
+
+   > Name              Labels          Binding
+   ───────────────────────────────────────────────────────
+   chosen
+   aliases
+   soc
+   pin-controller    pinctrl         nordic,nrf-pinctrl
+   entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+   sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+   cpus
+   leds                              gpio-leds
+   pwmleds                           pwm-leds
+   buttons                           gpio-keys
+   connector         arduino_header  arduino-header-r3
+   analog-connector  arduino_adc     arduino,uno-adc
+
+   /soc/i2c@40003000
+   ❭
 
 
 .. _dtsh-configuration:
