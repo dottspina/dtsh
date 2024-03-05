@@ -2,14 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Rich interactive devicetree shell session.
+"""Rich devicetree shell sessions.
 
-Extend the base session with a few rich TUI elements
-and support for SVG and HTML command output redirection formats.
+Extend the base session with:
+- rich TUI and auto-completion display hook
+- SVG and HTML command output redirection formats
+- batch commands to execute on start-up, before or instead of user input
 """
+
+from typing import Any, Sequence, Optional
 
 import os
 
+from dtsh.config import DTShConfig
 from dtsh.shell import (
     DTSh,
     DTShCommandNotFoundError,
@@ -17,7 +22,7 @@ from dtsh.shell import (
     DTShCommandError,
 )
 from dtsh.session import DTShSession
-from dtsh.io import DTShOutput, DTShRedirect
+from dtsh.io import DTShOutput, DTShRedirect, DTShVT
 
 from dtsh.rich.io import (
     DTShRichVT,
@@ -28,55 +33,32 @@ from dtsh.rich.io import (
 from dtsh.rich.autocomp import DTShRichAutocomp
 from dtsh.rich.theme import DTShTheme
 from dtsh.rich.text import TextUtil
+from dtsh.rich.modelview import DTModelView
 
 
-_theme: DTShTheme = DTShTheme.getinstance()
+_dtshconf: DTShConfig = DTShConfig.getinstance()
 
 
 class DTShRichSession(DTShSession):
-    """Rich interactive devicetree shell session."""
+    """Rich devicetree shell session."""
 
-    def __init__(self, sh: DTSh) -> None:
+    def __init__(
+        self,
+        sh: DTSh,
+        vt: Optional[DTShVT] = None,
+    ) -> None:
         """Initialize rich session.
 
-        Extend the base session with a few rich TUI elements
-        and support for SVG and HTML command output redirection formats.
-
-        Initialized with:
-
-        - a rich VT based on Textualize's rich.Console (DTShRichVT)
-        - a rich auto-completion display hook (DTShRichAutocomp)
+        Extend the base session with:
+        - rich TUI and auto-completion display hook
+        - SVG and HTML command output redirection formats
+        - batch commands to execute on start-up, before or instead of user input
 
         Args:
             sh: The session's shell.
+            vt: The session's VT, default to DTShRichVT.
         """
-        super().__init__(sh, DTShRichVT(), DTShRichAutocomp(sh))
-
-    def preamble_hook(self) -> None:
-        """Overrides DTShSession.preamble_hook()."""
-        self._vt.write(
-            TextUtil.join(
-                " ",
-                [
-                    TextUtil.bold("dtsh"),
-                    TextUtil.mk_text(f"({DTSh.VERSION_STRING}):"),
-                    TextUtil.italic("A Devicetree Shell"),
-                ],
-            )
-        )
-        self._vt.write(
-            TextUtil.assemble(
-                TextUtil.mk_text("How to exit: "),
-                TextUtil.bold("q"),
-                TextUtil.mk_text(", or "),
-                TextUtil.bold("quit"),
-                TextUtil.mk_text(", or "),
-                TextUtil.bold("exit"),
-                TextUtil.mk_text(", or press "),
-                TextUtil.bold("Ctrl-D"),
-            )
-        )
-        self._vt.write()
+        super().__init__(sh, vt or DTShRichVT(), DTShRichAutocomp(sh))
 
     def open_redir2(self, redir2: str) -> DTShOutput:
         """Overrides DTShSession.open_redir2().
@@ -135,8 +117,37 @@ class DTShRichSession(DTShSession):
             )
         )
 
-    def pre_exit_hook(self, status: int) -> None:
-        """Overrides DTShSession.pre_exit_hook()."""
-        style = DTShTheme.STYLE_ERROR if status else DTShTheme.STYLE_DEFAULT
-        txt = TextUtil.mk_text("bye.", style)
-        self._vt.write(TextUtil.italic(txt))
+    def mk_prompt(self) -> Sequence[Any]:
+        """Overrides DTShVT.mk_prompt()."""
+        return [
+            DTModelView.mk_path_name(self._dtsh.pwd),
+            _dtshconf.prompt_alt
+            if self._last_err
+            else _dtshconf.prompt_default,
+        ]
+
+    def mk_prologue(self) -> Sequence[Any]:
+        """Overrides DTShSession.mk_prologue()."""
+        txt_banner = TextUtil.join(
+            " ",
+            [
+                TextUtil.bold("dtsh"),
+                TextUtil.mk_text(f"({DTSh.VERSION_STRING}):"),
+                TextUtil.italic("A Devicetree Shell"),
+            ],
+        )
+        txt_howto = TextUtil.assemble(
+            TextUtil.mk_text("How to exit: "),
+            TextUtil.bold("q"),
+            TextUtil.mk_text(", or "),
+            TextUtil.bold("quit"),
+            TextUtil.mk_text(", or "),
+            TextUtil.bold("exit"),
+            TextUtil.mk_text(", or press "),
+            TextUtil.bold("Ctrl-D"),
+        )
+        return [txt_banner, txt_howto]
+
+    def mk_epilogue(self) -> Sequence[Any]:
+        """Overrides DTShSession.mk_epilogue()."""
+        return [TextUtil.italic("bye.")]
