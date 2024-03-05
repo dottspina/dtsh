@@ -273,3 +273,39 @@ class DTShRedirect(DTShOutput):
     def path(self) -> str:
         """Redirection real path."""
         return self._path
+
+
+class DTShInputFile(DTShInput):
+    """Shell input file.
+
+    Text file containing shell command lines, one per line.
+    """
+
+    class Error(BaseException):
+        """Failed to open input file for reading."""
+
+    _in: IO[str]
+
+    def __init__(self, path: str) -> None:
+        """Initialize input stream.
+
+        Args:
+            path: Path to input file.
+
+        Raises:
+            DTShInputFile.Error: Failed to open input file.
+        """
+        try:
+            self._in = open(  # pylint: disable=consider-using-with
+                path, "r", encoding="utf-8"
+            )
+        except OSError as e:
+            raise DTShInputFile.Error(str(e)) from e
+
+    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+        """Overrides DTShInput.readline()."""
+        line: str = self._in.readline()
+        if line:
+            return line.rstrip()
+        self._in.close()
+        raise EOFError()
