@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Base interactive devicetree shell session.
+"""Base devicetree shell session.
 
-A session binds a devicetree shell and a VT to run an interactive loop.
+A session binds a shell and I/O streams, then enters a loop:
+- read command lines from input stream
+- execute shell commands with the appropriate output stream
+- exit on EOF or "quit"
 """
 
 from types import FrameType
@@ -43,19 +46,7 @@ _dtshconf: DTShConfig = DTShConfig.getinstance()
 
 
 class DTShSession:
-    """Base for interactive devicetree shell sessions.
-
-    A session binds a devicetree shell and a VT to run
-    an interactive loop until the user quits or EOF (aka CTRL-D).
-
-    The session is also responsible for:
-
-    - initializing the auto-completion support (depends on GNU readline)
-    - handling command output redirection streams
-
-    The run loop will trigger events which handlers may be overridden
-    by derived (rich) sessions.
-    """
+    """Base for devicetree shell sessions."""
 
     _dtsh: DTSh
     _vt: DTShVT
@@ -109,7 +100,7 @@ class DTShSession:
 
         Will initialize the VT and auto-completion support.
 
-        Won't start the interactive loop.
+        Won't start the loop until run().
 
         Args:
             sh: The session's shell.
@@ -129,23 +120,25 @@ class DTShSession:
             self._autocomp.display,
         )
 
-    def run(self) -> None:  # pylint: disable=too-many-branches
-        """Enter interactive loop.
+    def run(
+        self, interactive: bool = True
+    ) -> None:  # pylint: disable=too-many-branches
+        """Enter session loop.
 
-        This will:
-        - disable the SIGINT signal
+        If interactive, first run the preamble hook:
+        - handle SIGINT to work-around TTY issues
         - clear VT and print banner
-        - repeat until user quits or EOF (e.g. CTRL-D):
-            - run pre_input_hook()
-            - read a command line from VT
-            - parse the command line
-            - setup command output redirection if asked to
-            - execute the command string
-            - dispatch the event to its handler if an error occurs
-            - if the command output was redirected,
-              explicitly flush the redirection stream
+
+        Enter actual loop, until EOF or "quit" command:
+        - read next command line from input stream
+        - parse and execute command line, with the session's VT
+          or a redirection file as output stream
+
+        Eventually run the pre-exit hook if interactive,
+        and exit the devicetree shell.
         """
-        self._preamble_hook()
+        if interactive:
+            self._preamble_hook()
 
         # Session error state.
         self._last_err = None
@@ -156,12 +149,12 @@ class DTShSession:
                 cmdline = self._vt.readline(self.mk_prompt())
             except EOFError:
                 # Exit DTSh on EOF.
-                self.close()
+                self.close(interactive)
 
             if cmdline:
                 if cmdline.strip() in ["q", "quit", "exit"]:
                     # Exit DTSh process.
-                    self.close()
+                    self.close(interactive)
 
                 cmd: DTShCommand
                 argv: List[str]
@@ -216,22 +209,21 @@ class DTShSession:
                             # and never redirected.
                             out.flush()
 
+            # NOTE: Be sure to set prompt_sparse in preferences
+            # when running batch sessions.
             if _dtshconf.prompt_sparse:
                 self._vt.write()
 
-    def close(self) -> None:
-        """Terminate interactive session.
+    def close(self, interactive: bool) -> None:
+        """Terminate session.
 
-        This will:
-        - run pre_exit_hook()
-        - save readline history file, if supported
-        - close the session's VT
-        - exit the dtsh process
+        Will first run the pre-exit hook if interactive,
+        saving commands history, and exit the session's process.
 
-        The shell exits with status code -EINVAL if the last
-        command line failed.
+        Exits with status code -EINVAL if the last command line failed.
         """
-        self._pre_exit_hook()
+        if interactive:
+            self._pre_exit_hook()
         sys.exit(-errno.EINVAL if self._last_err else 0)
 
     def open_redir2(self, redir2: str) -> DTShOutput:
