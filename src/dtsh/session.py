@@ -10,6 +10,7 @@ A session binds a devicetree shell and a VT to run an interactive loop.
 from types import FrameType
 from typing import Any, Optional, Sequence, List
 
+import errno
 import signal
 import sys
 
@@ -223,7 +224,7 @@ class DTShSession:
             if _dtshconf.prompt_sparse:
                 self._vt.write()
 
-    def close(self, status: int = 0) -> None:
+    def close(self) -> None:
         """Terminate interactive session.
 
         This will:
@@ -232,12 +233,12 @@ class DTShSession:
         - close the session's VT
         - exit the dtsh process
 
-        Args:
-            status: exit status, defaults to 0, aka "no error".
+        The shell exits with status code -EINVAL if the last
+        command line failed.
         """
-        self.pre_exit_hook(status)
+        self.pre_exit_hook()
         self._rl.save_history()
-        sys.exit(status)
+        sys.exit(-errno.EINVAL if self._last_err else 0)
 
     def open_redir2(self, redir2: str) -> DTShOutput:
         """Open DTSh redirection output stream.
@@ -301,16 +302,9 @@ class DTShSession:
         """
         self._vt.write(f"dtsh: {e}")
 
-    def pre_exit_hook(self, status: int) -> None:
-        """Hook called when the user terminates the session.
-
-        Args:
-            status: The exit status.
-        """
-        if status:
-            self._vt.write(f"bye ({status}).")
-        else:
-            self._vt.write("bye.")
+    def pre_exit_hook(self) -> None:
+        """Hook called when the user terminates the session."""
+        self._vt.write("bye.")
 
     def mk_prompt(self) -> Sequence[Any]:
         """Make multiple-line prompt to use for the next command.
