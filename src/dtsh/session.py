@@ -145,11 +145,6 @@ class DTShSession:
             - if the command output was redirected,
               explicitly flush the redirection stream
         """
-        # closing() the session when the pager is active breaks the TTY.
-        # As a work-around, we ignore SIGINT.
-        signal.signal(signal.SIGINT, self._sig_handler)
-
-        self._vt.clear()
         self.preamble_hook()
 
         # Session error state.
@@ -237,7 +232,6 @@ class DTShSession:
         command line failed.
         """
         self.pre_exit_hook()
-        self._rl.save_history()
         sys.exit(-errno.EINVAL if self._last_err else 0)
 
     def open_redir2(self, redir2: str) -> DTShOutput:
@@ -257,7 +251,13 @@ class DTShSession:
 
     def preamble_hook(self) -> None:
         """Session's preamble, aka banner."""
-        self._vt.write("dtsh: A Devicetree Shell")
+        # closing() the session when the pager is active breaks the TTY.
+        # As a work-around, we ignore SIGINT.
+        signal.signal(signal.SIGINT, self._sig_handler)
+
+        self._vt.clear()
+        for line in self.mk_prologue():
+            self._vt.write(line)
         self._vt.write()
 
     def on_cmd_help(self, cmd: DTShCommand) -> None:
@@ -304,7 +304,9 @@ class DTShSession:
 
     def pre_exit_hook(self) -> None:
         """Hook called when the user terminates the session."""
-        self._vt.write("bye.")
+        self._rl.save_history()
+        for line in self.mk_epilogue():
+            self._vt.write(line)
 
     def mk_prompt(self) -> Sequence[Any]:
         """Make multiple-line prompt to use for the next command.
@@ -319,6 +321,22 @@ class DTShSession:
             if self._last_err
             else _dtshconf.prompt_default,
         ]
+
+    def mk_prologue(self) -> Sequence[Any]:
+        """Shell prologue.
+
+        Returns:
+            The shell multiple-line banner.
+        """
+        return ["dtsh: A Devicetree Shell"]
+
+    def mk_epilogue(self) -> Sequence[Any]:
+        """Shell epilogue.
+
+        Returns:
+            A goodbye message.
+        """
+        return ["bye."]
 
     def _sig_handler(self, signum: int, frame: Optional[FrameType]) -> Any:
         # closing() the session when the pager is active breaks the TTY.
