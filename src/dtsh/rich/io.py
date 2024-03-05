@@ -11,7 +11,7 @@ Rich I/O streams implementations are based on the rich.console module.
 """
 
 
-from typing import Any, IO, List, Mapping, Optional
+from typing import Any, IO, List, Mapping, Optional, Sequence
 
 import os
 
@@ -28,7 +28,7 @@ from rich.terminal_theme import (
 )
 
 from dtsh.config import DTShConfig
-from dtsh.io import DTShVT, DTShOutput, DTShRedirect
+from dtsh.io import DTShVT, DTShInput, DTShOutput, DTShRedirect
 
 from dtsh.rich.theme import DTShTheme
 from dtsh.rich.svg import SVGContentsFmt, SVGContents
@@ -86,6 +86,47 @@ class DTShRichVT(DTShVT):
         if self._pager:
             self._pager.__exit__(None, None, None)
             self._pager = None
+
+
+class DTShBatchRichVT(DTShRichVT):
+    """Rich terminal for devicetree shells with batch mode support.
+
+    Batch mode support, will:
+    - first read command lines from the batch input stream until EOF
+    - then, if interactive, read command lines from VT input stream until EOF
+    """
+
+    # Batch input stream, reset to None on EOF.
+    _batch_is: Optional[DTShInput]
+
+    # Whether to read from VT after batch.
+    _interactive: bool
+
+    def __init__(self, batch_is: DTShInput, interactive: bool) -> None:
+        """Initialize VT.
+
+        Args:
+            batch: Batch input stream.
+            interactive: Whether to read from VT after batch
+              (interactive sessions).
+        """
+        super().__init__()
+        self._batch_is = batch_is
+        self._interactive = interactive
+
+    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+        """Overrides DTShVT.readline()."""
+        if self._batch_is:
+            try:
+                return self._batch_is.readline(multi_prompt)
+            except EOFError:
+                # Exhausted batch input stream.
+                self._batch_is = None
+
+        if not self._interactive:
+            # Signal EOF if we don't continue in interactive mode.
+            raise EOFError()
+        return super().readline(multi_prompt)
 
 
 class DTShOutputFileText(DTShOutput):
