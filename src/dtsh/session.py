@@ -67,27 +67,15 @@ class DTShSession:
             binding_dirs: List of directories to search for
               the YAML binding files this Devicetree depends on.
 
+        Returns:
+            An initialized session.
+
         Raises:
             DTShError: Typically DTS file not found or invalid,
               or missing or invalid bindings.
         """
-        try:
-            dt = DTModel.create(dts_path, binding_dirs)
-        except (OSError, edtlib.EDTError) as e:
-            raise DTShError(f"DTS error: {e}") from e
-
-        sh = DTSh(
-            dt,
-            [
-                DTShBuiltinPwd(),
-                DTShBuiltinCd(),
-                DTShBuiltinLs(),
-                DTShBuiltinTree(),
-                DTShBuiltinFind(),
-                DTShBuiltinAlias(),
-                DTShBuiltinChosen(),
-            ],
-        )
+        dt = cls._create_dtmodel(dts_path, binding_dirs)
+        sh = cls._create_dtsh(dt)
         return cls(sh)
 
     def __init__(
@@ -330,6 +318,30 @@ class DTShSession:
         self._rl.save_history()
         for line in self.mk_epilogue():
             self._vt.write(line)
+
+    @classmethod
+    def _create_dtmodel(
+        cls, dts_path: str, binding_dirs: Optional[Sequence[str]]
+    ) -> DTModel:
+        try:
+            return DTModel.create(dts_path, binding_dirs)
+        except (OSError, edtlib.EDTError) as e:
+            raise DTShError(f"DTS error: {e}") from e
+
+    @classmethod
+    def _create_dtsh(cls, dt: DTModel) -> DTSh:
+        return DTSh(
+            dt,
+            [
+                DTShBuiltinPwd(),
+                DTShBuiltinCd(),
+                DTShBuiltinLs(),
+                DTShBuiltinTree(),
+                DTShBuiltinFind(),
+                DTShBuiltinAlias(),
+                DTShBuiltinChosen(),
+            ],
+        )
 
     def _sig_handler(self, signum: int, frame: Optional[FrameType]) -> Any:
         # closing() the session when the pager is active breaks the TTY.
