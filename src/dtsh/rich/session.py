@@ -10,22 +10,24 @@ Extend the base session with:
 - batch commands to execute on start-up, before or instead of user input
 """
 
-from typing import Any, Sequence, Optional
+from typing import Any, Sequence, Optional, List, Union
 
 import os
 
 from dtsh.config import DTShConfig
 from dtsh.shell import (
     DTSh,
+    DTShError,
     DTShCommandNotFoundError,
     DTShUsageError,
     DTShCommandError,
 )
 from dtsh.session import DTShSession
-from dtsh.io import DTShOutput, DTShRedirect, DTShVT
+from dtsh.io import DTShInput, DTShOutput, DTShRedirect, DTShVT, DTShInputFile
 
 from dtsh.rich.io import (
     DTShRichVT,
+    DTShBatchRichVT,
     DTShOutputFileText,
     DTShOutputFileHtml,
     DTShOutputFileSVG,
@@ -41,6 +43,50 @@ _dtshconf: DTShConfig = DTShConfig.getinstance()
 
 class DTShRichSession(DTShSession):
     """Rich devicetree shell session."""
+
+    @classmethod
+    def create_batch(
+        cls,
+        dts_path: str,
+        binding_dirs: Optional[List[str]],
+        batch: Union[str, Sequence[str]],
+        interactive: bool,
+    ) -> DTShSession:
+        """Create batch session.
+
+        Args:
+            dts_path: Path to the Devicetree source to open the session with.
+            binding_dirs: List of directories to search for
+              the YAML binding files this Devicetree depends on.
+            batch: Batch input specification.
+              Commands to execute on start-up, either:
+              - string: path to a batch file
+              - list: a list of commands lines
+            interactive: Whether to continue with interactive session
+              after batch.
+
+        Returns:
+            An initialized batch session.
+
+        Raises:
+            DTShError: Invalid DTS or batch input file.
+        """
+        vt: Optional[DTShVT] = None
+        batch_is: DTShInput
+        if isinstance(batch, str):
+            # Batch input file.
+            try:
+                batch_is = DTShInputFile(batch)
+            except DTShInputFile.Error as e:
+                raise DTShError(str(e)) from e
+        else:
+            # Batch commands.
+            raise NotImplementedError("create_batch(CMD)")
+
+        dt = cls._create_dtmodel(dts_path, binding_dirs)
+        vt = DTShBatchRichVT(batch_is, interactive)
+        sh = cls._create_dtsh(dt)
+        return cls(sh, vt)
 
     def __init__(
         self,
