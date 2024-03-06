@@ -29,6 +29,7 @@ Unit tests and examples: tests/test_dtsh_model.py
 
 
 from typing import (
+    cast,
     Any,
     Optional,
     Iterator,
@@ -571,7 +572,9 @@ class DTNodeInterrupt:
     @property
     def number(self) -> int:
         """The IRQ number."""
-        return self._edtirq.data.get("irq", sys.maxsize)
+        if "irq" in self._edtirq.data:
+            return cast(int, self._edtirq.data["irq"])
+        return sys.maxsize
 
     @property
     def priority(self) -> Optional[int]:
