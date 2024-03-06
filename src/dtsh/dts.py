@@ -368,7 +368,6 @@ class DTS:
                 for binding_dir in self._binding_dirs:
                     vndpath = os.path.join(binding_dir, "vendor-prefixes.txt")
                     if os.path.isfile(vndpath):
-                        print(f"vendor file: {vndpath}")
                         vendors_file = vndpath
         return vendors_file
 
@@ -723,10 +722,23 @@ class CMakeCacheEntry:
 class YAMLFile:
     """Cheap wrapper around a YAML file.
 
-    This API is:
+    Rationale: simple API to access a YAML file's text content
+    and its "include: " element, if any.
 
-    - lazy-initialized: properties are initialized when accessed
-    - fail-safe: errors are logged once to stderr, and empty values are returned
+    We'll use this API for known valid binding files.
+    At this point, the DT model initialization has already red all involved
+    YAML bindings, ant it's very unlikely that reading or parsing the file
+    again will fail:
+
+    - this API won't fault: if an I/O or YAML error occurs, the content()
+      and raw() properties will just answer empty values
+    - the lasterr() property represents the last error, if any
+
+    This API is lazy-initialized:
+
+    - the file is opened and red when content() is first accessed
+    - the file is parsed into YAML when raw() or includes() is first accessed
+
     """
 
     # Absolute file path.
@@ -741,20 +753,19 @@ class YAMLFile:
     # Lazy-initialized YAML "include: ".
     _includes: Optional[List[str]]
 
+    # If set, we've failed to load the YAML file at some point:
+    # - OSError: all kinds of file system errors
+    # - YAMLError: invalid YAML content
+    _lasterr: Optional[BaseException]
+
     def __init__(self, path: str) -> None:
         """Lazy-initialize wrapper.
 
-        Only the YAML file path is set upon initialization.
-
-        Then accessing:
-
-        - the *includes* will require initializing the YAML model
-        - the YAML model will require loading the YAML file content
-
         Args:
-            path: Absolute path to a YAML file.
+            path: Absolute path to the YAML file.
         """
         self._path = path
+        self._lasterr = None
         # Lazy-initialized.
         self._content = None
         self._raw = None
@@ -767,26 +778,44 @@ class YAMLFile:
 
     @property
     def content(self) -> str:
-        """YAML file content."""
-        # Will Initialize an empty content if fails to load the YAML file.
+        """Text content."""
+        # Will Initialize an empty content if we can't read the YAML file.
         self._init_content()
         return self._content  # type: ignore
 
     @property
     def raw(self) -> Dict[str, object]:
-        """YAML model."""
-        # Will Initialize an empty model if the YAML file content unavailable.
+        """YAML model.
+
+        If empty, see lasterr().
+        """
+        # Will Initialize an empty model if the YAML file's content
+        # is unavailable or invalid.
         self._init_model()
         return self._raw  # type: ignore
 
     @property
     def includes(self) -> Sequence[str]:
         """Names of included YAML files."""
-        # Will Initialize an empty list if the YAML model is unavailable.
         self._init_includes()
         return self._includes  # type: ignore
 
+    @property
+    def lasterr(self) -> Optional[BaseException]:
+        """Last error that happened while loading this YAML file.
+
+        Possible values:
+
+        - None: no error
+        - OSError: all kinds of file system errors
+        - YAMLError: invalid YAML content
+        """
+        return self._lasterr
+
     def _init_content(self) -> None:
+        # Actually try top open the YAML file and read its content.
+        # Set lasterr accordingly.
+
         if self._content is not None:
             return
         # Only one attempt to initialize content.
@@ -796,15 +825,19 @@ class YAMLFile:
             with open(self._path, mode="r", encoding="utf-8") as f:
                 self._content = f.read().strip()
         except OSError as e:
+            self._lasterr = e
             print(f"YAML: {e}", file=sys.stderr)
 
     def _init_model(self) -> None:
+        # Actually try to parse the file's content into YAML.
+        # Set lasterr accordingly.
+
         if self._raw is not None:
             return
-        # Only one attempt to initialize model.
+        # Only one attempt to initialize YAML model.
         self._raw = {}
 
-        # Depends on YAML content.
+        # Depends on file's content.
         self._init_content()
         if not self._content:
             return
@@ -812,9 +845,12 @@ class YAMLFile:
         try:
             self._raw = yaml.load(self._content, Loader=YAMLBindingLoader)
         except yaml.YAMLError as e:
+            self._lasterr = e
             print(f"YAML: {self._path}: {e}", file=sys.stderr)
 
     def _init_includes(self) -> None:
+        # Search YAML model for include directives.
+
         if self._includes is not None:
             return
         # Only one attempt to initialize includes.
