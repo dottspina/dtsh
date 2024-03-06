@@ -979,3 +979,57 @@ def test_dtnode_criteria() -> None:
     assert not dtmodel.find(
         DTNodeCriteria([CriterionMatchAll()], negative_chain=True)
     )
+
+
+def test_dtnode_properties() -> None:
+    dtmodel = DTShTests.get_sample_dtmodel()
+    dt_qspi = dtmodel["/soc/qspi@40029000"]
+
+    assert dt_qspi.has_dtproperty("interrupts")
+    dtprop_irqs = dt_qspi.dtproperty("interrupts")
+    assert dtprop_irqs
+    assert "array" == dtprop_irqs.dttype
+    assert isinstance(dtprop_irqs.value, list)
+    assert [0x29, 0x1] == dtprop_irqs.value
+
+    assert dt_qspi.has_dtproperty("pinctrl-0")
+    dtprop_pinctrl0 = dt_qspi.dtproperty("pinctrl-0")
+    assert dtprop_pinctrl0
+    # NOTE: why isn't this a single phandle ?
+    assert "phandles" == dtprop_pinctrl0.dttype
+    assert isinstance(dtprop_pinctrl0.value, list)
+
+    assert dt_qspi.has_dtproperty("pinctrl-names")
+    dtprop_pinctrl_names = dt_qspi.dtproperty("pinctrl-names")
+    assert dtprop_pinctrl_names
+    assert "string-array" == dtprop_pinctrl_names.dttype
+    assert ["default", "sleep"] == dtprop_pinctrl_names.value
+
+    dt_mx25r64 = dt_qspi.get_child("mx25r6435f@0")
+    assert dt_mx25r64.has_dtproperty("jedec-id")
+    dtprop_jedec = dt_mx25r64.dtproperty("jedec-id")
+    assert dtprop_jedec
+    assert "uint8-array" == dtprop_jedec.dttype
+    assert isinstance(dtprop_jedec.value, bytes)
+    assert bytes([0xC2, 0x28, 0x17]) == dtprop_jedec.value
+
+    assert dt_mx25r64.has_dtproperty("has-dpd")
+    dtprop_dpd = dt_mx25r64.dtproperty("has-dpd")
+    assert dtprop_dpd
+    assert "boolean" == dtprop_dpd.dttype
+    assert isinstance(dtprop_dpd.value, bool)
+    assert dtprop_dpd.value is True
+
+    assert not dt_qspi.has_dtproperty("not-a-property")
+    with pytest.raises(KeyError):
+        # Properties MUST exist.
+        dt_qspi.dtproperty("not-a-property")
+
+    assert [
+        # Although these are properties of the root node in the DTS,
+        # they do not actually appear as properties via the edtlib API:
+        # - "#address-cells",
+        # - "#size-cells",
+        # - "model",
+        "compatible",
+    ] == [prop.name for prop in dtmodel.root.all_dtproperties()]
