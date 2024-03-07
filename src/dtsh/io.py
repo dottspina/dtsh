@@ -305,7 +305,19 @@ class DTShInputFile(DTShInput):
     def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
         """Overrides DTShInput.readline()."""
         line: str = self._in.readline()
+
+        # Skip empty and comment lines.
+        while line and not self._is_cmdline(line):
+            line = self._in.readline()
+
         if line:
+            # Strip trailing "\n".
             return line.rstrip()
+
         self._in.close()
         raise EOFError()
+
+    def _is_cmdline(self, line: str) -> bool:
+        # A non-empty line should be a command line if not only spaces,
+        # and not a comment.
+        return not (line.isspace() or line.startswith("#"))
