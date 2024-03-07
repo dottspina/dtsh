@@ -12,7 +12,7 @@ from typing import cast, List, Set
 
 import os
 
-from dtsh.model import DTPath, DTNode, DTBinding
+from dtsh.model import DTPath, DTNode, DTBinding, DTNodeProperty
 from dtsh.rl import DTShReadline
 from dtsh.io import DTShOutput
 from dtsh.config import DTShConfig
@@ -82,6 +82,30 @@ class RlStateDTPath(DTShReadline.CompleterState):
     def node(self) -> DTNode:
         """The corresponding Devicetree node."""
         return cast(DTNode, self._item)
+
+
+class RlStateDTProperty(DTShReadline.CompleterState):
+    """RL completer state for DT properties.
+
+    Produced for completion scopes like: "<path>$<property-name>", where:
+    - <path> is the DTSh path (absolute, relative, with DT labels) to a node
+    - <property-name> is the node's property name
+    """
+
+    def __init__(self, rlstr: str, prop: DTNodeProperty) -> None:
+        """Initialize completer state.
+
+        Args:
+          rlstr: The DT path expression to substitute
+            the RL completion scope with.
+          prop: The corresponding DT property.
+        """
+        super().__init__(rlstr, prop)
+
+    @property
+    def dtproperty(self) -> DTNodeProperty:
+        """The corresponding DT property."""
+        return cast(DTNodeProperty, self._item)
 
 
 class RlStateCompatStr(DTShReadline.CompleterState):
@@ -393,6 +417,44 @@ class DTShAutocomp:
                 for child in dirnode.children
                 if child.name.startswith(prefix)
             )
+
+        return sorted(states)
+
+    @staticmethod
+    def complete_dtpathx(
+        cs_txt: str, sh: DTSh
+    ) -> List[DTShReadline.CompleterState]:
+        """Complete devicetree path with support for properties.
+
+        These paths have the form "<path>[$<property-name>]",
+        see also RlStateDTProperty.
+
+        Behaves like complete_dtpath() if the extended path does not
+        contain a "$" separator.
+
+        Args:
+            cs_txt: The devicetree path to complete.
+            sh: The context shell.
+
+        Returns:
+            Sorted completion states for matched nodes or properties.
+        """
+        i_prop = cs_txt.rfind("$")
+        if i_prop == -1:
+            return DTShAutocomp.complete_dtpath(cs_txt, sh)
+
+        dtpath = cs_txt[:i_prop]
+        try:
+            node = sh.node_at(dtpath)
+        except DTPathNotFoundError:
+            return []
+
+        prefix = cs_txt[i_prop + 1 :]
+        states: List[DTShReadline.CompleterState] = [
+            RlStateDTProperty(f"{dtpath}${prop.name}", prop)
+            for prop in node.all_dtproperties()
+            if prop.name.startswith(prefix)
+        ]
 
         return sorted(states)
 
@@ -751,6 +813,9 @@ class DTShAutocomp:
 
             elif isinstance(state, RlStateDTChosen):
                 out.write(state.chosen)
+
+            elif isinstance(state, RlStateDTProperty):
+                out.write(state.dtproperty.name)
 
             elif isinstance(state, RlStateFsEntry):
                 dirent = state.dirent

@@ -442,3 +442,24 @@ def test_dtshautocomp_complete() -> None:
         # Command line: " ls >|"
         # Expects: missing space after ">".
         assert [] == autocomp.complete("", "ls >", 3, 3)
+
+
+def test_dtsh_autocomp_complete_dtpathx() -> None:
+    sh = DTSh(DTShTests.get_sample_dtmodel(), [])
+
+    # Should behave like complete_dtpath() when no "$" separator.
+    assert sorted(
+        [RlStateDTPath(node.name, node) for node in sh.dt.root.children]
+    ) == DTShAutocomp.complete_dtpathx("", sh)
+
+    assert [] == DTShAutocomp.complete_dtpathx("not-a-node$", sh)
+    assert [] == DTShAutocomp.complete_dtpathx("soc$not-a-property", sh)
+
+    assert sorted(
+        [f"${prop.name}" for prop in sh.dt.root.all_dtproperties()]
+    ) == [state.rlstr for state in DTShAutocomp.complete_dtpathx("$", sh)]
+
+    dt_power = sh.node_at("&power")
+    assert sorted(
+        [f"&power${prop.name}" for prop in dt_power.all_dtproperties()]
+    ) == [state.rlstr for state in DTShAutocomp.complete_dtpathx("&power$", sh)]
