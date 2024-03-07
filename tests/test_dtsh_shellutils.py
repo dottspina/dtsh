@@ -15,7 +15,7 @@ from typing import List, Tuple
 
 import pytest
 
-from dtsh.shell import DTSh, DTShCommand, DTShError
+from dtsh.shell import DTSh, DTShCommand, DTShError, DTShCommandError
 from dtsh.modelutils import (
     # Text-based criteria.
     DTNodeWithPath,
@@ -75,6 +75,7 @@ from dtsh.shellutils import (
     DTShArgOrderBy,
     DTShParamDTPath,
     DTShParamDTPaths,
+    DTShParamDTPathX,
     DTShParamAlias,
     DTShParamChosen,
     DTSH_NODE_ORDER_BY,
@@ -1389,6 +1390,96 @@ def test_dtshparam_dtpaths_expand() -> None:
     sh.cd("soc")
     param.parsed(["../leds*"])
     assert [DTSh.PathExpansion("..", [sh.dt["/leds"]])] == param.expand(cmd, sh)
+
+
+def test_dtshparam_dtpathx() -> None:
+    param = DTShParamDTPathX()
+    assert param.brief
+    assert "[XPATH]" == param.usage
+    # Default value.
+    assert ("", None) == param.xpath
+
+    # Parameter's state and multiplicity.
+    DTShTests.check_param(param)
+
+    # Won't fault, path resolution is deferred to command execution.
+    param.parsed(["path"])
+    assert ("path", None) == param.xpath
+    param.parsed(["path$prop"])
+    assert ("path", "prop") == param.xpath
+
+
+def test_dtshparam_dtpathx_xsplit() -> None:
+    param = DTShParamDTPathX()
+    cmd = DTShCommand("cmd", "", [], param)
+    sh = DTSh(DTShTests.get_sample_dtmodel(), [cmd])
+
+    param.parsed([""])
+    assert (sh.dt.root, None) == param.xsplit(cmd, sh)
+
+    param.parsed(["$compatible"])
+    assert (sh.dt.root, [sh.dt.root.dtproperty("compatible")]) == param.xsplit(
+        cmd, sh
+    )
+
+    param.parsed(["&nvic$reg"])
+    assert (
+        sh.node_at("&nvic"),
+        [sh.node_at("&nvic").dtproperty("reg")],
+    ) == param.xsplit(cmd, sh)
+
+    sh.cd("&nvic")
+    param.parsed(["$reg"])
+    assert (
+        sh.node_at("&nvic"),
+        [sh.node_at("&nvic").dtproperty("reg")],
+    ) == param.xsplit(cmd, sh)
+
+    dt_uart0 = sh.node_at("&uart0")
+    param.parsed(["&uart0$pinctrl*"])
+    assert (
+        dt_uart0,
+        [
+            dt_uart0.dtproperty("pinctrl-0"),
+            dt_uart0.dtproperty("pinctrl-1"),
+            dt_uart0.dtproperty("pinctrl-names"),
+        ],
+    ) == param.xsplit(cmd, sh)
+
+    with pytest.raises(DTShCommandError):
+        # Fault on missing property name.
+        param.parsed(["$"])
+        param.xsplit(cmd, sh)
+
+    with pytest.raises(DTShCommandError):
+        # Fault on undefined property name.
+        param.parsed(["$not-a-prop"])
+        param.xsplit(cmd, sh)
+
+
+def test_dtshparam_dtpathx_autocomp() -> None:
+    dtmodel = DTShTests.get_sample_dtmodel()
+    sh = DTSh(dtmodel, [])
+    param = DTShParamDTPathX()
+
+    # Should behave like DTShParamDTPath when no "$".
+    # Auto-complete DT path.
+    assert sorted([node.name for node in dtmodel.root.children]) == [
+        state.rlstr for state in param.autocomp("", sh)
+    ]
+    # Exact match.
+    assert ["soc"] == [state.rlstr for state in param.autocomp("so", sh)]
+    # No match.
+    assert [] == param.autocomp("not/a/path", sh)
+
+    assert sorted(
+        [f"${prop.name}" for prop in dtmodel.root.all_dtproperties()]
+    ) == [state.rlstr for state in param.autocomp("$", sh)]
+
+    dt_power = sh.node_at("&power")
+    assert sorted(
+        [f"&power${prop.name}" for prop in dt_power.all_dtproperties()]
+    ) == [state.rlstr for state in param.autocomp("&power$", sh)]
 
 
 def test_dtshparam_alias() -> None:

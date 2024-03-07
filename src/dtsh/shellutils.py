@@ -10,11 +10,11 @@ Unit tests and examples: tests/test_dtsh_shellutils.py
 """
 
 
-from typing import Any, Type, Optional, Sequence, Mapping, List
+from typing import Any, Type, Optional, Sequence, Mapping, List, Tuple
 
 import re
 
-from dtsh.model import DTNodeSorter, DTNodeCriterion
+from dtsh.model import DTNode, DTNodeProperty, DTNodeSorter, DTNodeCriterion
 from dtsh.modelutils import (
     DTNodeSortByPathName,
     DTNodeSortByNodeName,
@@ -882,6 +882,100 @@ class DTShParamDTPaths(DTShParameter):
         Overrides DTShParameter.autocomp().
         """
         return DTShAutocomp.complete_dtpath(txt, sh)
+
+
+class DTShParamDTPathX(DTShParameter):
+    """Extended devicetree path parameter which supports referencing properties.
+
+        XPATH := PATH[$PROP]
+
+    - PATH: a DT path, default to the current working branch if empty
+    - PROP: a property name, supports basic globbing if ends with "*"
+
+    This parameter is not intended to support path expansion (globbing).
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="xpath",
+            multiplicity="?",
+            brief="path to node or property",
+        )
+
+    @property
+    def xpath(self) -> Tuple[str, Optional[str]]:
+        """Parameter value interpreted as an extended DT path.
+
+        Returns:
+            The (PATH, PROP) tuple, where:
+             - PATH: the DT path
+             - PROP: possibly empty property name, or None if the extended path
+                     does not contain a "$" separator
+        """
+        if not self._raw:
+            return ("", None)
+
+        path = self._raw[0]
+        i_prop = path.rfind("$")
+        if i_prop != -1:
+            return (path[:i_prop], path[i_prop + 1 :])
+
+        return (path, None)
+
+    def xsplit(
+        self, cmd: DTShCommand, sh: DTSh
+    ) -> Tuple[DTNode, Optional[List[DTNodeProperty]]]:
+        """Actually split the parameter into node and properties.
+
+        Args:
+            cmd: The executing command.
+            sh: The context shell.
+
+        Returns:
+            The (node, properties) tuple, where:
+             - node: the node at PATH
+             - properties: the node properties matching the PROP parameter,
+                 or None if the extended path does not contain a "$" separator
+
+        Raises:
+            DTShCommandError: Path split failed (node or property not found).
+        """
+        param_path: str
+        param_prop: Optional[str]
+        param_path, param_prop = self.xpath
+
+        try:
+            node = sh.node_at(param_path)
+        except DTPathNotFoundError as e:
+            raise DTShCommandError(cmd, e.msg) from e
+
+        if param_prop is not None:
+            props: List[DTNodeProperty]
+
+            if param_prop.endswith("*"):
+                props = [
+                    prop
+                    for prop in node.all_dtproperties()
+                    if prop.name.startswith(param_prop[:-1])
+                ]
+            else:
+                if node.has_dtproperty(param_prop):
+                    props = [node.dtproperty(param_prop)]
+                else:
+                    raise DTShCommandError(
+                        cmd, f"property not found: '{param_prop}'"
+                    )
+
+            return (node, props)
+
+        return (node, None)
+
+    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+        """Auto-complete with extended devicetree paths (either nodes or props).
+
+        Overrides DTShParameter.autocomp().
+        """
+        return DTShAutocomp.complete_dtpathx(txt, sh)
 
 
 class DTShParamAlias(DTShParameter):
