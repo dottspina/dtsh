@@ -24,6 +24,7 @@ from dtsh.autocomp import (
     RlStateDTAlias,
     RlStateDTChosen,
     RlStateDTLabel,
+    RlStateDTProperty,
     RlStateFsEntry,
     RlStateEnum,
 )
@@ -81,6 +82,9 @@ class DTShRichAutocomp(DTShAutocomp):
 
             elif isinstance(state, RlStateDTLabel):
                 self._rlstates_view_add_label(grid, state)
+
+            elif isinstance(state, RlStateDTProperty):
+                self._rlstates_view_add_dtprop(grid, state)
 
             elif isinstance(state, RlStateFsEntry):
                 self._rlstates_view_add_fspath(grid, state)
@@ -219,6 +223,22 @@ class DTShRichAutocomp(DTShAutocomp):
                 style=DTShTheme.STYLE_FS_FILE,
             )
         layout.add_row(txt, None)
+
+    def _rlstates_view_add_dtprop(
+        self, grid: GridLayout, state: RlStateDTProperty
+    ) -> None:
+        txt_prop = TextUtil.mk_text(
+            state.dtproperty.name, DTShTheme.STYLE_DT_PROPERTY
+        )
+
+        if state.dtproperty.description:
+            txt_desc = TextUtil.mk_headline(
+                state.dtproperty.description, DTShTheme.STYLE_DT_BINDING_DESC
+            )
+        else:
+            txt_desc = None
+
+        grid.add_row(txt_prop, txt_desc)
 
     def _rlstates_view_add_enum(
         self, grid: GridLayout, state: RlStateEnum
