@@ -49,7 +49,7 @@ class DTShFlagAll(DTShFlag):
     - when "cat" operates on multiple properties
     """
 
-    BRIEF = "description"
+    BRIEF = "show all info about node or property"
     SHORTNAME = "A"
 
 

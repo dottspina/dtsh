@@ -40,6 +40,7 @@ from dtsh.builtins.tree import DTShBuiltinTree
 from dtsh.builtins.find import DTShBuiltinFind
 from dtsh.builtins.alias import DTShBuiltinAlias
 from dtsh.builtins.chosen import DTShBuiltinChosen
+from dtsh.builtins.cat import DTShBuiltinCat
 
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
@@ -340,6 +341,7 @@ class DTShSession:
                 DTShBuiltinFind(),
                 DTShBuiltinAlias(),
                 DTShBuiltinChosen(),
+                DTShBuiltinCat(),
             ],
         )
 
