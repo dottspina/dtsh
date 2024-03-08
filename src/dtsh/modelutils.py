@@ -14,7 +14,9 @@ Unit tests and examples: tests/test_dtsh_modelutils.py
 
 
 from typing import (
+    cast,
     Any,
+    Union,
     Callable,
     Tuple,
     Set,
@@ -29,7 +31,14 @@ import operator
 import re
 import sys
 
-from dtsh.model import DTWalkable, DTNode, DTNodeSorter, DTNodeCriterion
+from dtsh.model import (
+    DTWalkable,
+    DTNode,
+    DTNodeProperty,
+    DTNodePHandleData,
+    DTNodeSorter,
+    DTNodeCriterion,
+)
 
 
 class DTNodeSortByAttr(DTNodeSorter):
@@ -730,3 +739,257 @@ class DTWalkableComb(DTWalkable):
                     yield from self._walk(
                         child, order_by=order_by, reverse=reverse
                     )
+
+
+class DTSUtil:
+    """Factory for string representations of DTS types."""
+
+    @classmethod
+    def mk_property_value(cls, prop: DTNodeProperty) -> str:
+        """Make a string representation of a property value that resembles
+        its DTS format.
+
+        Args:
+            prop: The DT property.
+
+        Returns:
+            The property value as it could appear in the DTS:
+            - DT type "bool": true or false
+            - DT type "int": e.g. < 0x01 >
+            - DT type "array": e.g. < 0x2f >, < 0x01 >
+            - DT type "string": e.g. "str"
+            - DT type "string-array": e.g. "str1", "str2"
+            - DT type "uint8-array": e.g. [ C2 28 17 ]
+            - DT type "phandle": e.g. < &spi3_sleep >
+            - DT type "phandles": e.g. < &spi3_sleep &spi3_default >
+            - DT type "phandle-array": e.g. < &ctrl-1 0x01 0x02 >, < &ctrl-2 0x01 0x02 >
+        """
+        value: DTNodeProperty.ValueType = prop.value
+
+        if isinstance(value, list):
+            val0: Union[int, str, DTNode, DTNodePHandleData, None] = value[0]
+
+            if isinstance(val0, int):
+                # DTS "type: array".
+                int_array: List[int] = cast(List[int], value)
+                return cls.mk_array(int_array)
+
+            if isinstance(val0, str):
+                # DTS "type: string-array".
+                str_array: List[str] = cast(List[str], value)
+                return cls.mk_string_array(str_array)
+
+            if isinstance(val0, DTNode):
+                # DTS "type: phandles".
+                phandles: List[DTNode] = cast(List[DTNode], value)
+                return cls.mk_phandles(phandles)
+
+            if isinstance(val0, DTNodePHandleData):
+                # DTS "type: phandle-array".
+                phandle_array: List[DTNodePHandleData] = cast(
+                    List[DTNodePHandleData], value
+                )
+                return cls.mk_phandle_array(phandle_array)
+
+        if isinstance(value, bool):
+            # DTS "type: boolean".
+            return cls.mk_boolean(value)
+        if isinstance(value, int):
+            # DTS "type: int".
+            return cls.mk_int(value, as_cell=True)
+        if isinstance(value, str):
+            # DTS "type: string".
+            return cls.mk_string(value)
+        if isinstance(value, bytes):
+            # DTS "type: uint8-array".
+            return cls.mk_bytes(value)
+        if isinstance(value, DTNode):
+            # DTS "type: phandle".
+            return cls.mk_phandle(value)
+
+        # Answer empty string for properties with None value,
+        # e.g. the "ranges" property of the /soc node, of type "compound".
+        return ""
+
+    @classmethod
+    def mk_boolean(cls, value: bool) -> str:
+        """Make DTS-like output for values of type "boolean".
+
+        Args:
+            value: The DT value.
+
+        Returns:
+            "true" or "false".
+        """
+        return str(value).lower()
+
+    @classmethod
+    def mk_int(cls, value: int, as_cell: bool) -> str:
+        """Make DTS-like output for values of type "int".
+
+        Args:
+            value: The DT value.
+            as_cell: Whether to put the value in a "<>" cell.
+
+        Returns:
+            An integer cell, e.g. "< 0x01 >"
+        """
+        # We'll format hex according to the required number of bytes.
+        nbytes = 0
+        x = value
+        while x:
+            x >>= 8
+            nbytes += 1
+        nbytes = nbytes or 1
+
+        fmt = f"0x{{:0{2*nbytes}x}}"
+        strval = fmt.format(value)
+
+        if as_cell:
+            strval = cls._mk_cell(strval)
+        return strval
+
+    @classmethod
+    def mk_string(cls, value: str) -> str:
+        """Make DTS-like output for values of type "string".
+
+        Args:
+            value: The DT value.
+
+        Returns:
+            A quoted string.
+        """
+        return f'"{value}"'
+
+    @classmethod
+    def mk_bytes(cls, value: bytes) -> str:
+        """Make DTS-like output for values of type "uint8-array".
+
+        Args:
+            value: The DT value.
+
+        Returns:
+            An array of un-prefixed uppercase bytes, e.g. "[ C2 28 17 ]".
+        """
+        strbytes = " ".join(f"{b:02X}" for b in value)
+        return f"[ {strbytes} ]"
+
+    @classmethod
+    def mk_phandle(cls, node: DTNode, as_cell: bool = True) -> str:
+        """Make DTS-like output for values of type "phandle".
+
+        Args:
+            node: The DT value.
+            as_cell: Whether to put the value in a "<>" cell.
+
+        Returns:
+            By default, a cell containing the handle, e.g. "< &spi3_sleep >".
+        """
+        # These usually have at least one DTS label.
+        if node.labels:
+            strhandle = f"&{node.labels[0]}"
+        else:
+            # Fallback to node's path.
+            strhandle = node.path
+
+        if as_cell:
+            strhandle = cls._mk_cell(strhandle)
+        return strhandle
+
+    @classmethod
+    def mk_array(cls, int_arr: List[int], as_cell: bool = True) -> str:
+        """Make DTS-like output for values of type "array".
+
+        Args:
+            int_arr: The DT value.
+            as_cell: Whether to put the array in a single "<>" cell instead
+              of a comma separated list.
+
+        Returns:
+            A comma separated list of integer cells, e.g. "< 0x2f >, < 0x01 >"
+            or the array as a single cell e.g. "< 0x2f 0x01 >".
+        """
+        if as_cell:
+            # Array as single cell.
+            strval = " ".join(cls.mk_int(val, as_cell=False) for val in int_arr)
+            return cls._mk_cell(strval)
+
+        # Comma separated list.
+        return ", ".join(cls.mk_int(val, as_cell=True) for val in int_arr)
+
+    @classmethod
+    def mk_string_array(cls, str_arr: List[str]) -> str:
+        """Make DTS-like output for values of type "string-array".
+
+        Args:
+            str_arr: The DT value.
+
+        Returns:
+            A comma separated list of quoted strings.
+        """
+        return ", ".join(cls.mk_string(val) for val in str_arr)
+
+    @classmethod
+    def mk_phandles(cls, phandles: List[DTNode]) -> str:
+        """Make DTS-like output for values of type "phandles".
+
+        Args:
+            phandles: The DT value.
+
+        Returns:
+            A cell containing one or more phandles, e.g. "< &ctrl-1 &ctrl-2 >".
+        """
+        strval = " ".join(
+            cls.mk_phandle(node, as_cell=False) for node in phandles
+        )
+        return cls._mk_cell(strval)
+
+    @classmethod
+    def mk_phandle_array(cls, phandle_array: List[DTNodePHandleData]) -> str:
+        """Make DTS-like output for values of type "phandle-array".
+
+        Args:
+            phandle_array: The DT value.
+
+        Returns:
+            A comma separated list of phandle-array entries.
+        """
+        phdata_entries = [
+            cls.mk_phandle_and_data(entry, as_cell=True)
+            for entry in phandle_array
+        ]
+        return ", ".join(phdata_entries)
+
+    @classmethod
+    def mk_phandle_and_data(
+        cls, phdata: DTNodePHandleData, as_cell: bool = True
+    ) -> str:
+        """Make DTS-like output for entries in a "phandle-array".
+
+        Args:
+            phdata: The DT value.
+
+        Returns:
+            By default, a cell containing the PHandle and its data,
+            e.g. < &ctrl-1 0x01 0x10 >.
+            Non-integer data values are converted to their default
+            string representation.
+        """
+        data_values: List[str] = [
+            cls.mk_int(data, as_cell=False)
+            if isinstance(data, int)
+            else str(data)
+            for data in phdata.data.values()
+        ]
+
+        str_data = " ".join(val for val in data_values)
+        str_phandle = cls.mk_phandle(phdata.phandle, as_cell=False)
+        strval = f"{str_phandle} {str_data}"
+
+        if as_cell:
+            strval = cls._mk_cell(strval)
+        return strval
+
+    @classmethod
+    def _mk_cell(cls, content: str) -> str:
+        return f"< {content} >"

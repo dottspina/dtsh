@@ -10,15 +10,16 @@
 # pylint: disable=missing-function-docstring
 
 
-from typing import List, Tuple, Type
+from typing import cast, List, Tuple, Type
 import operator
 import re
 import sys
 
 import pytest
 
-from dtsh.model import DTNode, DTNodeSorter
+from dtsh.model import DTNode, DTNodePHandleData, DTNodeSorter
 from dtsh.modelutils import (
+    DTSUtil,
     # Text-based criteria.
     DTNodeTextCriterion,
     DTNodeWithPath,
@@ -1109,3 +1110,119 @@ def test_dtwalkable_comb() -> None:
         dt_cpu0,
         dt_cpu_itm,
     ] == list(walkable.walk(order_by=order_by, reverse=True))
+
+
+def test_dtsutil_mk_boolean() -> None:
+    assert "true" == DTSUtil.mk_boolean(True)
+    assert "false" == DTSUtil.mk_boolean(False)
+
+
+def test_dtsutil_mk_int() -> None:
+    assert "0x01" == DTSUtil.mk_int(1, as_cell=False)
+    assert "< 0x01 >" == DTSUtil.mk_int(1, as_cell=True)
+    assert "< 0xff >" == DTSUtil.mk_int(255, as_cell=True)
+    assert "0x0100" == DTSUtil.mk_int(256, as_cell=False)
+
+
+def test_dtsutil_mk_string() -> None:
+    assert '"str"' == DTSUtil.mk_string("str")
+
+
+def test_dtsutil_mk_bytes() -> None:
+    assert "[ 01 10 FF ]" == DTSUtil.mk_bytes(bytes([0x01, 0x010, 0xFF]))
+    assert "[  ]" == DTSUtil.mk_bytes(bytes([]))
+
+
+def test_dtsutil_mk_phandle() -> None:
+    dtmodel = DTShTests.get_sample_dtmodel()
+    dt_i2c = dtmodel["/soc/i2c@40003000"]
+    # Should be the first DT label when available.
+    assert "&i2c0" == DTSUtil.mk_phandle(dt_i2c, as_cell=False)
+    assert "< &i2c0 >" == DTSUtil.mk_phandle(dt_i2c, as_cell=True)
+    # Otherwise, the node's path (very few nodes don't have at least one label).
+    assert "/chosen" == DTSUtil.mk_phandle(dtmodel["/chosen"], as_cell=False)
+
+
+def test_dtsutil_mk_array() -> None:
+    assert "< 0x01 >" == DTSUtil.mk_array([1])
+    assert "< 0x01 0x0100 >" == DTSUtil.mk_array([1, 256])
+    assert "< 0x01 0x0100 >" == DTSUtil.mk_array([1, 256], as_cell=True)
+
+
+def test_dtsutil_mk_string_array() -> None:
+    assert '"str1", "str2"' == DTSUtil.mk_string_array(["str1", "str2"])
+
+
+def test_dtsutil_mk_phandles() -> None:
+    dtmodel = DTShTests.get_sample_dtmodel()
+    dt_i2c = dtmodel["/soc/i2c@40003000"]
+    dt_timer = dtmodel["/soc/timer@40008000"]
+    assert "< &i2c0 &timer0 >" == DTSUtil.mk_phandles([dt_i2c, dt_timer])
+
+
+def test_dtsutil_mk_phandle_array() -> None:
+    dtmodel = DTShTests.get_sample_dtmodel()
+    dt_led0 = dtmodel["/leds/led_0"]
+    prop_gpios = dt_led0.dtproperty("gpios")
+    assert "< &gpio0 0x0d 0x01 >" == DTSUtil.mk_phandle_array(
+        cast(List[DTNodePHandleData], prop_gpios.value)
+    )
+
+
+def test_dtsutil_mk_property_value() -> None:
+    dt = DTShTests.get_sample_dtmodel()
+
+    # bool:
+    prop = dt["/soc/pwm@4001c000"].dtproperty("center-aligned")
+    assert "boolean" == prop.dttype
+    assert isinstance(prop.value, bool)
+    assert prop.value is False
+    assert "false" == DTSUtil.mk_property_value(prop)
+
+    # int:
+    prop = dt["/soc/timer@40008000"].dtproperty("cc-num")
+    assert "int" == prop.dttype
+    assert isinstance(prop.value, int)
+    assert 0x4 == prop.value
+    assert "< 0x04 >" == DTSUtil.mk_property_value(prop)
+
+    # array:
+    prop = dt["/soc/pwm@4001c000"].dtproperty("interrupts")
+    assert "array" == prop.dttype
+    assert isinstance(prop.value, list)
+    assert [0x1C, 0x1] == prop.value
+    assert "< 0x1c 0x01 >" == DTSUtil.mk_property_value(prop)
+
+    # string:
+    prop = dt["/soc/clock@40000000"].dtproperty("status")
+    assert "string" == prop.dttype
+    assert isinstance(prop.value, str)
+    assert "okay" == prop.value
+    assert '"okay"' == DTSUtil.mk_property_value(prop)
+
+    # string-array:
+    prop = dt["/soc/i2c@40003000"].dtproperty("pinctrl-names")
+    assert "string-array" == prop.dttype
+    assert isinstance(prop.value, list)
+    assert ["default", "sleep"] == prop.value
+    assert '"default", "sleep"' == DTSUtil.mk_property_value(prop)
+
+    # bytes:
+    prop = dt["/soc/qspi@40029000/mx25r6435f@0"].dtproperty("jedec-id")
+    assert "uint8-array" == prop.dttype
+    assert isinstance(prop.value, bytes)
+    assert bytes([0xC2, 0x28, 0x17]) == prop.value
+    assert "[ C2 28 17 ]" == DTSUtil.mk_property_value(prop)
+
+    # phandle:
+    prop = dt["/sw-pwm"].dtproperty("generator")
+    assert "phandle" == prop.dttype
+    assert isinstance(prop.value, DTNode)
+    assert dt["/soc/timer@40009000"] == prop.value
+    assert "< &timer1 >" == DTSUtil.mk_property_value(prop)
+
+    # phandle-array:
+    prop = dt["/leds/led_0"].dtproperty("gpios")
+    assert "phandle-array" == prop.dttype
+    assert isinstance(prop.value, list)
+    assert "< &gpio0 0x0d 0x01 >" == DTSUtil.mk_property_value(prop)
