@@ -22,6 +22,7 @@ Unit tests and examples: tests/test_dtsh_theme.py
 
 from typing import Optional, Dict, Mapping
 
+import configparser
 import os
 
 
@@ -41,6 +42,7 @@ class DTShTheme:
     STYLE_ERROR = "dtsh.error"
     STYLE_WARNING = "dtsh.warning"
     STYLE_DISABLED = "dtsh.disabled"
+    STYLE_APOLOGIES = "dtsh.apologies"
 
     STYLE_FS_FILE = "dtsh.fs.file"
     STYLE_FS_DIR = "dtsh.fs.dir"
@@ -53,6 +55,8 @@ class DTShTheme:
 
     STYLE_DT_PATH_BRANCH = "dtsh.dt.path_branch"
     STYLE_DT_PATH_NODE = "dtsh.dt.path_node"
+
+    STYLE_DT_DESCRIPTION = "dtsh.dt.description"
 
     STYLE_DT_NODE_NAME = "dtsh.dt.node_name"
     STYLE_DT_UNIT_NAME = "dtsh.dt.unit_name"
@@ -81,6 +85,23 @@ class DTShTheme:
     STYLE_DT_REQ_BY = "dtsh.dt.required_by"
     STYLE_DT_VENDOR_NAME = "dtsh.dt.vendor_name"
     STYLE_DT_VENDOR_PREFIX = "dtsh.dt.vendor_prefix"
+
+    STYLE_DT_PROPERTY = "dtsh.dt.property"
+    STYLE_DTVALUE_BOOL = "dtsh.dtvalue.bool"
+    STYLE_DTVALUE_TRUE = "dtsh.dtvalue.true"
+    STYLE_DTVALUE_FALSE = "dtsh.dtvalue.false"
+    STYLE_DTVALUE_INT = "dtsh.dtvalue.int"
+    STYLE_DTVALUE_INT_ARRAY = "dtsh.dtvalue.int_array"
+    STYLE_DTVALUE_STR = "dtsh.dtvalue.string"
+    STYLE_DTVALUE_UINT8 = "dtsh.dtvalue.uint8"
+    STYLE_DTVALUE_PHANDLE = "dtsh.dtvalue.phandle"
+    STYLE_DTVALUE_PHANDLE_DATA = "dtsh.dtvalue.phandle_data"
+
+    STYLE_YAML_BINDING = "dtsh.yaml.binding"
+    STYLE_YAML_INCLUDE = "dtsh.yaml.include"
+
+    STYLE_FORM_LABEL = "dtsh.form.label"
+    STYLE_FORM_DEFAULT = "dtsh.form.default"
 
     class Error(BaseException):
         """Error loading styles file."""
@@ -138,7 +159,12 @@ class DTShTheme:
         """
         try:
             self._styles.update(Theme.read(path, encoding="utf-8").styles)
-        except (OSError, StyleError, StyleSyntaxError) as e:
+        except (
+            OSError,
+            StyleError,
+            StyleSyntaxError,
+            configparser.Error,
+        ) as e:
             raise DTShTheme.Error(str(e)) from e
 
 

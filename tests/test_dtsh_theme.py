@@ -64,6 +64,8 @@ def test_dtshtheme_defaults() -> None:
     assert theme_defaults.styles[DTShTheme.STYLE_DT_PATH_BRANCH]
     assert theme_defaults.styles[DTShTheme.STYLE_DT_PATH_NODE]
 
+    assert theme_defaults.styles[DTShTheme.STYLE_DT_DESCRIPTION]
+
     assert theme_defaults.styles[DTShTheme.STYLE_DT_NODE_NAME]
     assert theme_defaults.styles[DTShTheme.STYLE_DT_UNIT_NAME]
     assert theme_defaults.styles[DTShTheme.STYLE_DT_UNIT_ADDR]
@@ -88,3 +90,19 @@ def test_dtshtheme_defaults() -> None:
     assert theme_defaults.styles[DTShTheme.STYLE_DT_REQ_BY]
     assert theme_defaults.styles[DTShTheme.STYLE_DT_VENDOR_NAME]
     assert theme_defaults.styles[DTShTheme.STYLE_DT_VENDOR_PREFIX]
+
+    assert theme_defaults.styles[DTShTheme.STYLE_DT_PROPERTY]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_TRUE]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_FALSE]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_INT]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_INT_ARRAY]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_STR]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_UINT8]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_PHANDLE]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTVALUE_PHANDLE_DATA]
+
+    assert theme_defaults.styles[DTShTheme.STYLE_YAML_BINDING]
+    assert theme_defaults.styles[DTShTheme.STYLE_YAML_INCLUDE]
+
+    assert theme_defaults.styles[DTShTheme.STYLE_FORM_LABEL]
+    assert theme_defaults.styles[DTShTheme.STYLE_FORM_DEFAULT]
