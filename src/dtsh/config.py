@@ -106,6 +106,11 @@ class DTShConfig:
         Args:
             path: Path to configuration file,
               or None for default configuration initialization.
+
+        Raises:
+            DTShConfig.Error: Failed to read or parse the unique
+              preferences file. Unlikely to happen with typical API usage.
+
         """
         self._init_app_dir()
 
@@ -116,16 +121,18 @@ class DTShConfig:
         )
 
         if path:
-            # If explicitly specified, load only this one.
-            self.load_ini_file(path)
+            # If explicitly specified, load only this one: fault if invalid.
+            self.load_ini_file(path, fail_early=True)
         else:
-            # Load defaults from bundled configuration file.
+            # Load defaults from bundled configuration file
+            # (fault if invalid, should not happen).
             path = os.path.join(os.path.dirname(__file__), "dtsh.ini")
-            self.load_ini_file(path)
-            # Load user's configuration file if any.
+            self.load_ini_file(path, fail_early=True)
+
+            # Load user's configuration file if any: don't fault.
             path = self.get_user_file("dtsh.ini")
             if os.path.isfile(path):
-                self.load_ini_file(path)
+                self.load_ini_file(path, fail_early=False)
 
     @property
     def app_dir(self) -> str:
@@ -376,12 +383,12 @@ class DTShConfig:
 
                 return 0
 
-            except (OSError, OSError) as e:
+            except OSError as e:
                 print(f"Failed to create file: {dst}", file=sys.stderr)
-                print(f"Cause: {e}", file=sys.stderr)
+                print(f"Cause: {e.strerror}", file=sys.stderr)
+                return -e.errno
 
-        # Per-user configuration files don't exist (-ENOENT).
-        return -2
+        return 0
 
     def get_user_file(self, *paths: str) -> str:
         """Get path to a use file within the DTSh application directory.
@@ -524,13 +531,15 @@ class DTShConfig:
         # Fall-back, we don't want to fault.
         return ActionableType.LINK
 
-    def load_ini_file(self, path: str) -> None:
+    def load_ini_file(self, path: str, fail_early: bool = True) -> None:
         """Load options from configuration file (INI format).
 
         Overrides already loaded values with the same keys.
 
         Args:
             path: Path to a configuration file.
+            fail_early: If set, fault when we can't open the file for reading,
+              or its content is invalid. This is the default.
 
         Raises:
             DTShConfig.Error: Failed to load configuration file.
@@ -542,7 +551,13 @@ class DTShConfig:
             self._cfg.read_file(f)
 
         except (OSError, configparser.Error) as e:
-            raise DTShConfig.Error(str(e)) from e
+            if isinstance(e, OSError):
+                msg = e.strerror
+            else:
+                msg = e.message
+            if fail_early:
+                raise DTShConfig.Error(msg) from e
+            print(f"Failed to load preferences file: {msg}", file=sys.stderr)
 
     def _init_app_dir(self) -> None:
         if sys.platform == "darwin":

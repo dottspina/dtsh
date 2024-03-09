@@ -28,6 +28,9 @@ def test_dtshconfig_load_ini_file() -> None:
     assert cfg.getstr("test.string") == "overridden"
     assert cfg.getstr("test.new") == "new"
 
+    # Should not fault.
+    cfg.load_ini_file("not/a/config/file.ini", fail_early=False)
+
     with pytest.raises(DTShConfig.Error):
         cfg.load_ini_file("not/a/config/file.ini")
 
