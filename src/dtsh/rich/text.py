@@ -211,6 +211,18 @@ class TextUtil:
         return cls.mk_text(headline, style)
 
     @classmethod
+    def mk_apologies(cls, msg: str) -> Text:
+        """Make a simple message styled for apologies.
+
+        Args:
+            msg: The message.
+
+        Returns:
+            A new text view.
+        """
+        return Text(msg, style=DTShTheme.STYLE_APOLOGIES)
+
+    @classmethod
     def join(cls, sep: Union[str, Text], parts: Iterable[Text]) -> Text:
         """Join rich text elements."""
         if isinstance(sep, str):
