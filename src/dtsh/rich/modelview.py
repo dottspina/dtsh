@@ -10,6 +10,7 @@ Context-aware views of DT nodes.
 """
 
 from typing import (
+    cast,
     Type,
     Optional,
     Union,
@@ -19,23 +20,32 @@ from typing import (
     Generator,
     Mapping,
     Dict,
+    Tuple,
 )
 
 import enum
+import os
 
 from rich import box
 from rich.console import RenderableType
-from rich.padding import PaddingDimensions
+from rich.padding import PaddingDimensions, Padding
 from rich.style import StyleType
+from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
+from dtsh.io import DTShOutput
+from dtsh.dts import YAMLFile, YAMLFilesystem
 from dtsh.model import (
     DTPath,
     DTWalkable,
     DTNode,
     DTNodeRegister,
     DTNodeInterrupt,
+    DTNodeProperty,
+    DTPropertySpec,
+    DTNodePHandleData,
+    DTBinding,
     DTNodeSorter,
 )
 from dtsh.modelutils import (
@@ -47,8 +57,9 @@ from dtsh.modelutils import (
     DTNodeSortByIrqNumber,
     DTNodeSortByIrqPriority,
     DTNodeSortByBus,
+    DTSUtil,
 )
-from dtsh.config import DTShConfig
+from dtsh.config import DTShConfig, ActionableType
 
 from dtsh.rich.tui import View, TableLayout, GridLayout
 from dtsh.rich.text import TextUtil
@@ -233,7 +244,7 @@ class DTModelView:
     @classmethod
     def mk_binding_headline(cls, desc: str) -> Text:
         """Text view factory for description headlines."""
-        return TextUtil.mk_headline(desc, DTShTheme.STYLE_DT_BINDING_DESC)
+        return TextUtil.mk_headline(desc, DTShTheme.STYLE_DT_DESCRIPTION)
 
     @classmethod
     def mk_binding_depth(cls, cb_depth: int) -> Text:
@@ -441,7 +452,7 @@ class SketchMV:
         else:
             raise ValueError(self._layout)
 
-        return TextUtil().mk_text(placeholder) if placeholder else None
+        return TextUtil.mk_text(placeholder) if placeholder else None
 
     def link(self, text: Union[str, Text], uri: str) -> Text:
         """Link text.
@@ -1426,3 +1437,976 @@ class ViewNodeAkaList(GridLayout):
             grid_aka.top_indent(2)
 
         self.add_row(grid_aka, listview)
+
+
+class DTTypesMV:
+    """Stateless view factory for typed DT values.
+
+    This is a styled variant (aka rich) of the DTSUtil API.
+    """
+
+    @classmethod
+    def mk_value(cls, dtvalue: DTNodeProperty.ValueType) -> Text:
+        """Make a styled text representation of a property value.
+
+        Args:
+            dtvalue: The DT property value.
+
+        Returns:
+            A styled text representation of the property's value.
+        """
+        if isinstance(dtvalue, list):
+            val0: Union[int, str, DTNode, DTNodePHandleData, None] = dtvalue[0]
+
+            if isinstance(val0, int):
+                # DTS "type: array".
+                int_array: List[int] = cast(List[int], dtvalue)
+                return cls.mk_array(int_array)
+
+            if isinstance(val0, str):
+                # DTS "type: string-array".
+                str_array: List[str] = cast(List[str], dtvalue)
+                return cls.mk_string_array(str_array)
+
+            if isinstance(val0, DTNode):
+                # DTS "type: phandles".
+                phandles: List[DTNode] = cast(List[DTNode], dtvalue)
+                return cls.mk_phandles(phandles)
+
+            if isinstance(val0, DTNodePHandleData):
+                # DTS "type: phandle-array".
+                phandle_array: List[DTNodePHandleData] = cast(
+                    List[DTNodePHandleData], dtvalue
+                )
+                return cls.mk_phandle_array(phandle_array)
+
+        if isinstance(dtvalue, bool):
+            # DTS "type: boolean".
+            return cls.mk_boolean(dtvalue)
+        if isinstance(dtvalue, int):
+            # DTS "type: int".
+            return cls.mk_int(dtvalue, as_cell=True)
+        if isinstance(dtvalue, str):
+            # DTS "type: string".
+            return cls.mk_string(dtvalue)
+        if isinstance(dtvalue, bytes):
+            # DTS "type: uint8-array".
+            return cls.mk_bytes(dtvalue)
+        if isinstance(dtvalue, DTNode):
+            # DTS "type: phandle".
+            return cls.mk_phandle(dtvalue)
+
+        # Fallback to default string representation.
+        return TextUtil.mk_text(str(dtvalue))
+
+    @classmethod
+    def mk_property_value(cls, dtprop: DTNodeProperty) -> Optional[Text]:
+        """Make a styled text representation of a property value.
+
+        Args:
+            dtprop: The DT property.
+
+        Returns:
+            A styled text representation of the property's value,
+            or none if the property has no value.
+        """
+        if dtprop.value is not None:
+            return cls.mk_value(dtprop.value)
+        return None
+
+    @classmethod
+    def mk_boolean(cls, value: bool) -> Text:
+        """Make styled text for DT values of type "boolean".
+
+        See also DTSUtil.mk_boolean().
+
+        Args:
+            value: The DT value
+
+        Returns:
+            A styled text representation of value.
+        """
+        return TextUtil.mk_text(
+            DTSUtil.mk_boolean(value),
+            style=DTShTheme.STYLE_DTVALUE_TRUE
+            if value
+            else DTShTheme.STYLE_DTVALUE_FALSE,
+        )
+
+    @classmethod
+    def mk_int(cls, value: int, as_cell: bool) -> Text:
+        """Make styled text for DT values of type "int".
+
+        See also DTSUtil.mk_int().
+
+        Args:
+            value: The DT value
+            as_cell: Whether to put the value in a "<>" cell.
+
+        Returns:
+            A styled text representation of value.
+        """
+        strval = DTSUtil.mk_int(value, as_cell=False)
+        txt_int = TextUtil.mk_text(strval, DTShTheme.STYLE_DTVALUE_INT)
+
+        if as_cell:
+            txt_int = cls._mk_cell(txt_int)
+        return txt_int
+
+    @classmethod
+    def mk_string(cls, value: str) -> Text:
+        """Make styled text for DT values of type "string".
+
+        See also DTSUtil.mk_string().
+
+        Args:
+            value: The DT value
+
+        Returns:
+            A styled text representation of value.
+        """
+        return TextUtil.mk_text(f'"{value}"', DTShTheme.STYLE_DTVALUE_STR)
+
+    @classmethod
+    def mk_bytes(cls, value: bytes) -> Text:
+        """Make styled text for DT values of type "uint8-array".
+
+        See also DTSUtil.mk_bytes().
+
+        Args:
+            value: The DT value
+
+        Returns:
+            A styled text representation of value.
+        """
+        strbytes = " ".join(f"{b:02X}" for b in value)
+        return TextUtil.assemble(
+            TextUtil.mk_text("[ "),
+            TextUtil.mk_text(strbytes, DTShTheme.STYLE_DTVALUE_UINT8),
+            TextUtil.mk_text(" ]"),
+        )
+
+    @classmethod
+    def mk_phandle(cls, node: DTNode, as_cell: bool = True) -> Text:
+        """Make styled text for DT values of type "phandle".
+
+        See also DTSUtil.mk_phandle().
+
+        Args:
+            node: The pointed-to DT node.
+            as_cell: Whether to put the value in a "<>" cell.
+
+        Returns:
+            A styled text representation of the phandle.
+        """
+        strval = DTSUtil.mk_phandle(node, as_cell=False)
+        txt_phandle = TextUtil.mk_text(strval, DTShTheme.STYLE_DTVALUE_PHANDLE)
+
+        if as_cell:
+            txt_phandle = cls._mk_cell(txt_phandle)
+        return txt_phandle
+
+    @classmethod
+    def mk_array(cls, int_arr: List[int], as_cell: bool = True) -> Text:
+        """Make styled text for DT values of type "array".
+
+        See also DTSUtil.mk_array().
+
+        Args:
+            int_arr: The DT value
+            as_cell: Whether to put the array in a single "<>" cell instead
+              of a comma separated list.
+
+        Returns:
+            A styled text representation of the array.
+        """
+        if as_cell:
+            strval = " ".join(
+                DTSUtil.mk_int(val, as_cell=False) for val in int_arr
+            )
+            txt_array = TextUtil.mk_text(
+                strval, DTShTheme.STYLE_DTVALUE_INT_ARRAY
+            )
+            return cls._mk_cell(txt_array)
+
+        return TextUtil.join(
+            TextUtil.mk_text(", "),
+            (cls.mk_int(val, as_cell=True) for val in int_arr),
+        )
+
+    @classmethod
+    def mk_string_array(cls, str_arr: List[str]) -> Text:
+        """Make styled text for DT values of type "string-array".
+
+        See also DTSUtil.mk_string_array().
+
+        Args:
+            str_arr: The DT value
+
+        Returns:
+            A styled text representation of the string array.
+        """
+        return TextUtil.join(
+            TextUtil.mk_text(", "), (cls.mk_string(val) for val in str_arr)
+        )
+
+    @classmethod
+    def mk_phandles(cls, phandles: List[DTNode]) -> Text:
+        """Make styled text for DT values of type "phandles".
+
+        See also DTSUtil.mk_phandles().
+
+        Args:
+            phandles: The pointed-to DT nodes.
+
+        Returns:
+            A styled text representation of the "phandles" value.
+        """
+        txt_phandles = TextUtil.join(
+            TextUtil.mk_text(" "),
+            [cls.mk_phandle(node, as_cell=False) for node in phandles],
+        )
+        return cls._mk_cell(txt_phandles)
+
+    @classmethod
+    def mk_phandle_array(cls, phandle_array: List[DTNodePHandleData]) -> Text:
+        """Make styled text for DT values of type "phandle-array".
+
+        See also DTSUtil.mk_phandle_array().
+
+        Args:
+            phandle_array: The "phandle-array" entries.
+
+        Returns:
+            A styled text representation of the "phandle-array" value.
+        """
+        return TextUtil.join(
+            TextUtil.mk_text(", "),
+            (
+                cls.mk_phandle_data(entry, as_cell=True)
+                for entry in phandle_array
+            ),
+        )
+
+    @classmethod
+    def mk_phandle_data(
+        cls, phdata: DTNodePHandleData, as_cell: bool = True
+    ) -> Text:
+        """Make DTS-like output for entries in a "phandle-array".
+
+        Args:
+            phdata: The DT value.
+
+        Returns:
+            A styled text representation of the "phandle-array" entry.
+        """
+        data_values: List[str] = [
+            DTSUtil.mk_int(data, as_cell=False)
+            if isinstance(data, int)
+            else str(data)
+            for data in phdata.data.values()
+        ]
+
+        txt_phdata = TextUtil.join(
+            TextUtil.mk_text(" "),
+            [
+                cls.mk_phandle(phdata.phandle, as_cell=False),
+                TextUtil.mk_text(
+                    " ".join(data_values), DTShTheme.STYLE_DTVALUE_PHANDLE_DATA
+                ),
+            ],
+        )
+
+        if as_cell:
+            txt_phdata = cls._mk_cell(txt_phdata)
+        return txt_phdata
+
+    @classmethod
+    def _mk_cell(cls, content: Text) -> Text:
+        return TextUtil.assemble(
+            TextUtil.mk_text("< "), content, TextUtil.mk_text(" >")
+        )
+
+
+class NodePropertyMV:
+    """Helper for making views (e.g. lists) of node properties."""
+
+    @classmethod
+    def mk_name(cls, dtprop: DTNodeProperty, link_spec: bool = False) -> Text:
+        """Make styled property name."""
+        txt_name = TextUtil.mk_text(dtprop.name, DTShTheme.STYLE_DT_PROPERTY)
+        if link_spec and dtprop.path:
+            txt_name = TextUtil.link(txt_name, dtprop.path)
+        return txt_name
+
+    @classmethod
+    def mk_type(cls, dtprop: DTNodeProperty, link_spec: bool = False) -> Text:
+        """Make styled property type."""
+        txt_type = TextUtil.mk_text(dtprop.dttype)
+        if link_spec and dtprop.path:
+            txt_type = TextUtil.link(txt_type, dtprop.path)
+        return txt_type
+
+    @classmethod
+    def mk_headline(
+        cls, prop: DTNodeProperty, link_spec: bool = True
+    ) -> Optional[Text]:
+        """Make styled property description's headline."""
+        if prop.description:
+            txt_desc = TextUtil.mk_headline(
+                prop.description, DTShTheme.STYLE_DT_DESCRIPTION
+            )
+            if link_spec and prop.path:
+                txt_desc = TextUtil.link(txt_desc, prop.path)
+            return txt_desc
+        return None
+
+    @classmethod
+    def mk_value(
+        cls, dtprop: DTNodeProperty, hint_status: bool = True
+    ) -> Optional[Text]:
+        """Make styled property value."""
+        txt_value = DTTypesMV.mk_property_value(dtprop)
+        if txt_value and (hint_status and not dtprop.node.enabled):
+            txt_value = TextUtil.disabled(txt_value)
+        return txt_value
+
+
+class FormLayout(GridLayout):
+    """Base view for forms.
+
+    A form is a table with "Label: <content>" rows,
+    where <content> may be any of renderable type.
+    """
+
+    _label_style: Optional[StyleType]
+
+    def __init__(
+        self, label_style: Optional[StyleType] = DTShTheme.STYLE_FORM_LABEL
+    ) -> None:
+        """Initialize form.
+
+        Args:
+            label_style: Default style to use for the form's lables.
+        """
+        super().__init__(2, padding=(0, 1, 0, 0), no_wrap=False)
+        self._label_style = label_style
+        self._grid.columns[0].justify = "right"
+
+    def add_content(
+        self, label: str, content: Optional[Union[View, RenderableType]]
+    ) -> None:
+        """Add en entry to this form.
+
+        Args:
+            label: The entry's label.
+            content: The entry's content as renderable.
+              Empty contents are allowed.
+
+        """
+        self.add_row(self._mk_label(label), content)
+
+    def _mk_label(self, label: str) -> Text:
+        return TextUtil.assemble(
+            TextUtil.mk_text(label, self._label_style),
+            TextUtil.mk_text(":"),
+        )
+
+
+class FormPropertySpec(FormLayout):
+    """Form view of a property specification.
+
+    Includes fields for where the property comes from
+    and known constraints or helpful definitions.
+    """
+
+    @staticmethod
+    def mk_dttype(spec: DTPropertySpec) -> Text:
+        """Make a style representation of DT type."""
+        # NOTE: We should cache these and:
+        # - change API to mk_dttype(dttype: str)
+        # - return dttypes[dttype]
+        style: Optional[StyleType] = None
+        if spec.dttype == "boolean":
+            style = DTShTheme.STYLE_DTVALUE_BOOL
+        elif spec.dttype in ("int", "array"):
+            style = DTShTheme.STYLE_DTVALUE_INT
+        elif spec.dttype in ("string", "string-array"):
+            style = DTShTheme.STYLE_DTVALUE_STR
+        elif spec.dttype == "uint8-array":
+            style = DTShTheme.STYLE_DTVALUE_UINT8
+        elif spec.dttype in ("phandle", "phandles", "path"):
+            style = DTShTheme.STYLE_DTVALUE_PHANDLE
+        elif spec.dttype == "phandle-array":
+            style = DTShTheme.STYLE_DTVALUE_PHANDLE_DATA
+        elif spec.dttype == "compound":
+            # We don't know how to represent these
+            # (should not happen in-real-life-Tm).
+            style = DTShTheme.STYLE_APOLOGIES
+        return TextUtil.mk_text(spec.dttype, style)
+
+    _spec: DTPropertySpec
+
+    def __init__(self, spec: DTPropertySpec) -> None:
+        super().__init__()
+        self._spec = spec
+        self._init_content()
+
+    def _init_content(self) -> None:
+        show_all: bool = _dtshconf.pref_form_show_all
+
+        self.add_content("Name", self._mk_name())
+        self.add_content("From", self._mk_file())
+        self.add_content("Type", FormPropertySpec.mk_dttype(self._spec))
+        self.add_content("Required", self._mk_required())
+        self.add_content("Deprecated", self._mk_deprecated())
+
+        if show_all or self._spec.enum is not None:
+            self.add_content("Enum", self._mk_enum())
+
+        if show_all or self._spec.const is not None:
+            self.add_content("Const", self._mk_const())
+
+        if show_all or self._spec.default is not None:
+            self.add_content("Default", self._mk_default())
+
+        if show_all or self._spec.specifier_space is not None:
+            self.add_content("Specifier Space", self._mk_specifier_space())
+
+    def _mk_name(self) -> Text:
+        return TextUtil.mk_text(self._spec.name, DTShTheme.STYLE_DT_PROPERTY)
+
+    def _mk_required(self) -> Optional[Text]:
+        if self._spec.required:
+            return TextUtil.bold("Yes")
+        return TextUtil.dim("No")
+
+    def _mk_deprecated(self) -> Optional[Text]:
+        if self._spec.deprecated:
+            return TextUtil.strike("Yes")
+        return TextUtil.dim("No")
+
+    def _mk_enum(self) -> Text:
+        if self._spec.enum:
+            return DTTypesMV.mk_value(self._spec.enum)
+        return TextUtil.mk_apologies("Not an enum")
+
+    def _mk_const(self) -> Text:
+        if self._spec.const:
+            return DTTypesMV.mk_value(self._spec.const)
+        return TextUtil.mk_apologies("Not a const")
+
+    def _mk_default(self) -> Text:
+        if self._spec.default:
+            return DTTypesMV.mk_value(self._spec.default)
+        return TextUtil.mk_apologies("No default value")
+
+    def _mk_specifier_space(self) -> Optional[Text]:
+        if self._spec.specifier_space:
+            return TextUtil.mk_text(self._spec.specifier_space)
+        return TextUtil.mk_apologies("No specifier space")
+
+    def _mk_file(self) -> Optional[Text]:
+        if not self._spec.path:
+            return TextUtil.mk_apologies("No specification file")
+        txt_file = TextUtil.mk_text(
+            os.path.basename(self._spec.path), DTShTheme.STYLE_YAML_INCLUDE
+        )
+        txt_file = TextUtil.link(txt_file, self._spec.path)
+        return txt_file
+
+
+class ViewPropertyValueTable(TableLayout):
+    """Table view for DT property values."""
+
+    def __init__(self, dtprops: Sequence[DTNodeProperty]) -> None:
+        """Initialize view.
+
+        Args:
+            dtprops: The properties to show the value of.
+        """
+        super().__init__(
+            ["Property", "Type", "Value"],
+            padding=(0, 1, 0, 0),
+            no_wrap=False,
+        )
+
+        for dtprop in dtprops:
+            self.add_row(
+                NodePropertyMV.mk_name(dtprop, link_spec=True),
+                NodePropertyMV.mk_type(dtprop),
+                NodePropertyMV.mk_value(dtprop),
+            )
+
+
+class ViewDescription(View):
+    """Generic view for descriptions."""
+
+    _txt: Text
+
+    def __init__(
+        self,
+        description: Optional[str],
+        style: Optional[StyleType] = DTShTheme.STYLE_DT_DESCRIPTION,
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            description: The possibly multiple-line description.
+            style: The style to apply.
+        """
+        super().__init__()
+
+        if description:
+            self._txt = TextUtil.mk_text(description.strip(), style)
+        else:
+            self._txt = TextUtil.mk_apologies("No description available.")
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides View.renderable()."""
+        return self._txt
+
+
+class ViewNodeChildBindings(View):
+    """View child-bindings as tree.
+
+    Useful when the a node's binding either is a child-binding
+    or has child-bindings.
+    """
+
+    # The binding we shows in a tree,
+    # not necessarily the root or a leaf.
+    _binding: DTBinding
+
+    _tree: Tree
+
+    def __init__(
+        self,
+        node: DTNode,
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            node: The node to show the binding in a child-bindings tree.
+              The node MUST have a binding.
+        """
+        super().__init__()
+        self._binding, toplevel_binding = self._init_bindings(node)
+
+        anchor: Text = self._mk_anchor(toplevel_binding)
+        TextUtil.link(anchor, toplevel_binding.path)
+        self._tree = Tree(anchor)
+
+        if toplevel_binding.child_binding:
+            self._add_child_binding(toplevel_binding.child_binding, self._tree)
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides View.renderable()."""
+        return self._tree
+
+    def _init_bindings(self, node: DTNode) -> Tuple[DTBinding, DTBinding]:
+        binding = node.binding
+        if not binding:
+            raise ValueError(node)
+
+        # The device node that has the top-level bindings we're looking for.
+        toplevel_node = node
+        cb_depth = binding.cb_depth
+
+        while cb_depth != 0:
+            toplevel_node = toplevel_node.parent
+            cb_depth -= 1
+
+        if not toplevel_node.binding:
+            raise ValueError(node)
+
+        return (binding, toplevel_node.binding)
+
+    def _add_child_binding(self, binding: DTBinding, parent: Tree) -> Tree:
+        anchor = parent.add(self._mk_anchor(binding))
+        if binding.child_binding:
+            self._add_child_binding(binding.child_binding, anchor)
+        return anchor
+
+    def _mk_anchor(self, binding: DTBinding) -> Text:
+        txt_anchor: Text
+
+        if binding.compatible:
+            if binding is self._binding:
+                style = DTShTheme.STYLE_DT_BINDING_COMPAT
+            else:
+                style = DTShTheme.STYLE_DT_COMPAT_STR
+            txt_anchor = TextUtil.mk_text(binding.compatible, style)
+
+        elif binding.description:
+            if binding is self._binding:
+                style = DTShTheme.STYLE_DT_BINDING_DESC
+            else:
+                style = DTShTheme.STYLE_DT_DESCRIPTION
+            txt_anchor = TextUtil.mk_headline(binding.description, style)
+
+        else:
+            txt_anchor = TextUtil.mk_apologies("...?")
+
+        return txt_anchor
+
+
+class ViewPropertySpecTable(TableLayout):
+    """Table view for DT property specifications."""
+
+    def __init__(self, dtspecs: Sequence[DTPropertySpec]) -> None:
+        """Initialize the view.
+
+        Args:
+            dtspecs: DT property specifications to show.
+        """
+        super().__init__(
+            ["Property", "Type", "Description"],
+            padding=(0, 1, 0, 0),
+            no_wrap=True,
+        )
+        # Allow wrapping descriptions.
+        self._table.columns[2].no_wrap = False
+
+        for spec in dtspecs:
+            self.add_row(
+                self._mk_name(spec),
+                FormPropertySpec.mk_dttype(spec),
+                self._mk_description(spec),
+            )
+
+    def _mk_name(self, spec: DTPropertySpec) -> Text:
+        txt_name = TextUtil.mk_text(spec.name, DTShTheme.STYLE_DT_PROPERTY)
+        if spec.required:
+            TextUtil.bold(txt_name)
+        if spec.deprecated:
+            TextUtil.dim(txt_name)
+        return txt_name
+
+    def _mk_description(self, spec: DTPropertySpec) -> Optional[Text]:
+        if spec.description:
+            txt_desc = TextUtil.mk_headline(
+                spec.description, DTShTheme.STYLE_DT_DESCRIPTION
+            )
+            if spec.path:
+                txt_desc = TextUtil.link(
+                    txt_desc, spec.path, _dtshconf.pref_form_actionable_type
+                )
+            return txt_desc
+        return None
+
+
+class FormNodeBinding(FormLayout):
+    """Form view for node bindings."""
+
+    _node: DTNode
+    _binding: DTBinding
+    _sketch = SketchMV(SketchMV.Layout.LIST_VIEW)
+
+    def __init__(self, node: DTNode) -> None:
+        """Initialize view.
+
+        Args:
+            node: The node to show the binding in a form.
+              The node MUST have a binding.
+        """
+        super().__init__()
+        if not node.binding:
+            raise ValueError(node)
+
+        self._node = node
+        self._binding = node.binding
+        self._init_content()
+
+    def _init_content(self) -> None:
+        show_all: bool = _dtshconf.pref_form_show_all
+
+        if show_all or self._node.compatible:
+            self.add_content("Compatible", self._mk_compatible())
+
+        if show_all or (self._node.buses or self._node.on_bus):
+            self.add_content("Bus", self._mk_bus_info())
+
+        if show_all or (self._binding.cb_depth or self._binding.child_binding):
+            self.add_content("Child-Bindings", self._mk_child_bindings())
+
+    def _mk_compatible(self) -> Text:
+        tvs: Sequence[Text] = CompatibleNodeMV.mk_text(self._node, self._sketch)
+        if tvs:
+            return tvs[0]
+        return TextUtil.mk_apologies(
+            "This binding does not define a compatible string."
+        )
+
+    def _mk_bus_info(self) -> Text:
+        tvs: Sequence[Text] = BusNodeMV.mk_text(self._node, self._sketch)
+        if tvs:
+            return tvs[0]
+
+        return TextUtil.mk_apologies(
+            "This binding neither provides nor depends on buses."
+        )
+
+    def _mk_child_bindings(self) -> Union[View, Text]:
+        if self._binding.cb_depth or self._binding.child_binding:
+            return ViewNodeChildBindings(self._node)
+
+        return TextUtil.mk_apologies(
+            "This binding neither is a child-binding nor has child-bindings."
+        )
+
+
+class ViewNodeBinding(GridLayout):
+    """Detailed view of node bindings.
+
+    Includes form and property specifications table.
+    """
+
+    _txt_nobinding: Optional[Text] = None
+
+    def __init__(
+        self,
+        node: DTNode,
+        padding: PaddingDimensions = (0, 1, 0, 1),
+        no_wrap: bool = True,
+    ) -> None:
+        super().__init__(padding=padding, no_wrap=no_wrap)
+
+        if node.binding:
+            self.add_row(FormNodeBinding(node))
+
+            dtprops = node.binding.all_dtproperties()
+            if dtprops:
+                self.add_row(None)
+                self.add_row(ViewPropertySpecTable(dtprops))
+
+        else:
+            self._txt_nobinding = TextUtil.mk_apologies(
+                "No bindings specification available."
+            )
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides GridLayout.renderable()."""
+        if self._txt_nobinding:
+            return self._txt_nobinding
+        return super().renderable
+
+
+class ViewYAMLContent(View):
+    """View of YAML content with syntax highlighting."""
+
+    _view: Syntax
+
+    def __init__(
+        self, content: str, theme: str = _dtshconf.pref_yaml_theme
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            content: YAML text content.
+            theme: Syntax highlighting theme.
+               For dark Terminal profiles:
+               - "ansi_dark"
+               - "monokai" (default)
+               - "dracula"
+               - "material"
+               For light Terminal profiles:
+               - "ansi"
+               - "bw"
+               - "sas"
+
+               If unset, default to configured preference.
+
+               See also: https://pygments.org/styles/
+        """
+        super().__init__()
+        self._view = Syntax(
+            content,
+            lexer="yaml",
+            theme=theme,
+            dedent=True,
+        )
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides View.renderable()."""
+        return self._view
+
+
+class ViewYAML(View):
+    """View YAML and included contents.
+
+    Recursive view of a YAML file, showing the top-level content
+    and a tree of the included contents.
+
+    Fallback to apologies if the YAML file is unreadable or invalid.
+    """
+
+    _yamlfs: YAMLFilesystem
+    _view: Union[Tree, Text]
+
+    def __init__(
+        self,
+        yaml: YAMLFile,
+        yamlfs: YAMLFilesystem,
+        is_binding: bool,
+        expand_includes: bool = _dtshconf.pref_yaml_expand,
+    ) -> None:
+        """Initialize view.
+
+        The view is immediately renderable after initialization.
+
+        Args:
+            yaml: The YAML file to show.
+            yamlfs: Where to search for included YAML files.
+            is_binding: Whether to render the tree's root as a binding.
+            expand_includes: Whether to expand included files.
+              This is the default behavior, but may be overridden in preferences.
+        """
+        super().__init__()
+        self._yamlfs = yamlfs
+
+        if yaml.content:
+            self._view = self._init_tree(yaml, is_binding, expand_includes)
+        else:
+            self._view = TextUtil.mk_apologies(
+                "No YAML specification available."
+            )
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides View.renderable()."""
+        return self._view
+
+    def _init_tree(
+        self, yaml: YAMLFile, is_binding: bool, expand_includes: bool
+    ) -> Tree:
+        tree = Tree(
+            self._mk_anchor(
+                yaml,
+                expand_includes=expand_includes,
+                style=DTShTheme.STYLE_YAML_BINDING
+                if is_binding
+                else DTShTheme.STYLE_YAML_INCLUDE,
+            )
+        )
+        if expand_includes:
+            for inc_name in yaml.includes:
+                self._init_include(inc_name, tree)
+        return tree
+
+    def _init_include(self, basename: str, parent: Tree) -> Tree:
+        yaml = self._yamlfs.find_file(basename)
+        if yaml:
+            yaml_anchor = parent.add(
+                self._mk_anchor(yaml, expand_includes=True)
+            )
+            for inc_name in yaml.includes:
+                self._init_include(inc_name, yaml_anchor)
+            return yaml_anchor
+
+        # Should not happen: included binding files have already been
+        # successfully resolved by edtlib during model initialization.
+        raise ValueError(basename)
+
+    def _mk_anchor(
+        self,
+        yaml: YAMLFile,
+        expand_includes: bool,
+        style: StyleType = DTShTheme.STYLE_YAML_INCLUDE,
+        linktype: Optional[ActionableType] = None,
+    ) -> RenderableType:
+        linktype = linktype or _dtshconf.pref_yaml_actionable_type
+
+        view_yaml = ViewYAMLContent(yaml.content)
+        if not expand_includes:
+            return view_yaml
+
+        layout = GridLayout(no_wrap=True)
+        txt_file = TextUtil.mk_text(os.path.basename(yaml.path), style)
+        txt_file = TextUtil.link(txt_file, yaml.path, linktype)
+        layout.add_row(txt_file)
+        layout.add_row(view_yaml)
+        return layout
+
+
+class HeadingsContentWriter:
+    """Helper for views with headings an contents.
+
+    This permits to write contents one-by-one instead of building
+    a single complete view before we print something to the console.
+    """
+
+    ContentType = Union[RenderableType, View]
+
+    class Section:
+        """Contents."""
+
+        title: str
+        level: int
+        content: "HeadingsContentWriter.ContentType"
+
+        def __init__(
+            self,
+            title: str,
+            level: int,
+            content: "HeadingsContentWriter.ContentType",
+        ) -> None:
+            self.title = title
+            self.level = level
+            self.content = content
+
+    # The TAB size in characters.
+    _tab: int
+
+    # Whether we've should insert a .
+    _blank: bool
+
+    def __init__(self, tab: int = 4) -> None:
+        self._tab = tab
+        self._blank = True
+
+    def write(
+        self,
+        title: str,
+        level: int,
+        content: "HeadingsContentWriter.ContentType",
+        out: DTShOutput,
+    ) -> None:
+        """Write content.
+
+        Args:
+            title: Content's title.
+            level: Headings level.
+            content: Renderable content.
+            out: Where to write the content.
+        """
+        if self._blank:
+            self._blank = False
+        else:
+            out.write()
+
+        i_left: int = self._tab + (self._tab // 2) * (level - 1)
+        if isinstance(content, View):
+            content.left_indent(i_left)
+        else:
+            content = Padding(content, (0, 0, 0, i_left))
+
+        out.write(TextUtil.bold(title.upper()))
+        out.write(content)
+
+    def write_section(
+        self,
+        section: "HeadingsContentWriter.Section",
+        out: DTShOutput,
+    ) -> None:
+        """Write section.
+
+        Args:
+            section: What to write.
+            out: Where to write.
+        """
+        self.write(section.title, section.level, section.content, out)
