@@ -493,6 +493,17 @@ class DTBinding:
         """The nested child-binding this binding defines, if any."""
         return self._child_binding
 
+    def all_dtproperties(self) -> List["DTPropertySpec"]:
+        """Enumerate specifications for all properties defined by this binding.
+
+        Returns:
+            A list client code can sort, filter, etc.
+        """
+        return [
+            DTPropertySpec(edtspec)
+            for edtspec in self._edtbinding.prop2specs.values()
+        ]
+
     def get_headline(self) -> Optional[str]:
         """The headline of this binding description, if any."""
         desc = self._edtbinding.description
@@ -780,6 +791,70 @@ class DTNodePHandleData:
         return f"{self.phandle}: {self._edtcad.data}"
 
 
+class DTPropertySpec:
+    """DT property specification."""
+
+    _edtspec: edtlib.PropertySpec
+
+    def __init__(self, edtspec: edtlib.PropertySpec) -> None:
+        """Initialize specification.
+
+        Args:
+            edtcad: Peer edtlib object.
+        """
+        self._edtspec = edtspec
+
+    @property
+    def name(self) -> str:
+        """See edtlib.PropertySpec.name"""
+        return self._edtspec.name
+
+    @property
+    def path(self) -> Optional[str]:
+        """See edtlib.PropertySpec.path"""
+        return self._edtspec.path
+
+    @property
+    def dttype(self) -> str:
+        """See edtlib.PropertySpec.path"""
+        return self._edtspec.type
+
+    @property
+    def description(self) -> Optional[str]:
+        """See edtlib.PropertySpec.description"""
+        return self._edtspec.description
+
+    @property
+    def enum(self) -> Optional[List[Any]]:
+        """See edtlib.PropertySpec.enum"""
+        return self._edtspec.enum
+
+    @property
+    def const(self) -> Union[None, int, List[int], str, List[str]]:
+        """See edtlib.PropertySpec.const"""
+        return self._edtspec.const
+
+    @property
+    def default(self) -> Union[None, int, List[int], str, List[str]]:
+        """See edtlib.PropertySpec.default"""
+        return self._edtspec.default
+
+    @property
+    def required(self) -> bool:
+        """See edtlib.PropertySpec.required"""
+        return self._edtspec.required
+
+    @property
+    def deprecated(self) -> bool:
+        """See edtlib.PropertySpec.deprecated"""
+        return self._edtspec.deprecated
+
+    @property
+    def specifier_space(self) -> Optional[str]:
+        """See edtlib.PropertySpec.specifier_space"""
+        return self._edtspec.specifier_space
+
+
 class DTNodeProperty:
     """Node property value and bindings."""
 
@@ -846,6 +921,11 @@ class DTNodeProperty:
         - "phandle-array"
         """
         return self._edtprop.type
+
+    @property
+    def dtspec(self) -> DTPropertySpec:
+        """Property specification."""
+        return DTPropertySpec(self._edtprop.spec)
 
     @property
     def value(self) -> "DTNodeProperty.ValueType":
