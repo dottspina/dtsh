@@ -327,6 +327,31 @@ class DTShConfig:
         """Font family for command output redirection to HTML."""
         return self.getstr("pref.html.font_family")
 
+    @property
+    def pref_yaml_theme(self) -> str:
+        """Theme for YAML syntax highlighting."""
+        return self.getstr("pref.yaml.theme")
+
+    @property
+    def pref_yaml_expand(self) -> bool:
+        """whether to expand included files in YAML views."""
+        return self.getbool("pref.yaml.expand")
+
+    @property
+    def pref_yaml_actionable_type(self) -> ActionableType:
+        """Actionable type for YAML views."""
+        return self.get_actionable_type("pref.yaml.actionable_type")
+
+    @property
+    def pref_form_show_all(self) -> bool:
+        """Whether to show missing fields in form views."""
+        return self.getbool("pref.form.show_all")
+
+    @property
+    def pref_form_actionable_type(self) -> ActionableType:
+        """Actionable type for forms."""
+        return self.get_actionable_type("pref.form.actionable_type")
+
     def init_user_files(self) -> int:
         """Initialize per-user configuration files."""
         if os.path.isdir(self._app_dir):

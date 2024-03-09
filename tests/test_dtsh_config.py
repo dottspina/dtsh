@@ -134,3 +134,12 @@ def test_dtshconfig_defaults() -> None:
     assert "svg" == cfg_defaults.pref_svg_theme
     assert "Courier New" == cfg_defaults.pref_svg_font_family
     assert 0.6 == cfg_defaults.pref_svg_font_ratio
+
+    # YAML.
+    assert "monokai" == cfg_defaults.pref_yaml_theme
+    assert cfg_defaults.pref_yaml_expand
+    assert ActionableType.ALT == cfg_defaults.pref_yaml_actionable_type
+
+    # Forms.
+    assert cfg_defaults.pref_form_show_all
+    assert ActionableType.LINK == cfg_defaults.pref_form_actionable_type
