@@ -24,7 +24,7 @@ from typing import Optional, Dict, Mapping
 
 import configparser
 import os
-
+import sys
 
 from rich.errors import StyleError, StyleSyntaxError
 from rich.style import Style
@@ -132,30 +132,35 @@ class DTShTheme:
         self._styles = {}
 
         if path:
-            # If explicitly specified, load only this one.
-            self.load_theme_file(path)
+            # If explicitly specified, load only this one: fault if invalid.
+            self.load_theme_file(path, fail_early=True)
         else:
-            # Load defaults from bundled configuration file.
+            # Load defaults from bundled styles file
+            # (fault if invalid, should not happen).
             path = os.path.join(os.path.dirname(__file__), "theme.ini")
-            self.load_theme_file(path)
-            # Load user's theme file if any.
+            self.load_theme_file(path, fail_early=True)
+
+            # Load user's theme file if any,
+            # don't fault if unreadable or invalid.
             path = _dtshconf.get_user_file("theme.ini")
             if path and os.path.isfile(path):
-                self.load_theme_file(path)
+                self.load_theme_file(path, fail_early=False)
 
     @property
     def styles(self) -> Mapping[str, Style]:
         """The theme's rich styles."""
         return self._styles
 
-    def load_theme_file(self, path: str) -> None:
+    def load_theme_file(self, path: str, fail_early: bool = True) -> None:
         """Load a rich styles file.
 
         Args:
             path: Path to a styles file.
+            fail_early: If set, fault when we can't open the file for reading,
+              or its content is invalid. This is the default.
 
         Raises:
-            DTShTheme.Error: Failed to styles file.
+            DTShTheme.Error: Failed to load styles file.
         """
         try:
             self._styles.update(Theme.read(path, encoding="utf-8").styles)
@@ -165,7 +170,15 @@ class DTShTheme:
             StyleSyntaxError,
             configparser.Error,
         ) as e:
-            raise DTShTheme.Error(str(e)) from e
+            if isinstance(e, OSError):
+                msg = e.strerror
+            elif isinstance(e, configparser.Error):
+                msg = e.message
+            else:
+                msg = str(e)
+            if fail_early:
+                raise DTShTheme.Error(msg) from e
+            print(f"Failed to load theme file: {msg}", file=sys.stderr)
 
 
 _dtshtheme = DTShTheme()
