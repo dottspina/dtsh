@@ -55,13 +55,11 @@ class DTShCliArgv:
         grp_user_files.add_argument(
             "--preferences",
             help="load additional preferences file",
-            nargs=1,
             metavar="FILE",
         )
         grp_user_files.add_argument(
             "--theme",
             help="load additional styles file",
-            nargs=1,
             metavar="FILE",
         )
 
@@ -99,7 +97,7 @@ class DTShCliArgv:
     def dts(self) -> str:
         """Path to the Devicetree source file."""
         if self._argv.dts:
-            return str(self._argv.dts)
+            return cast(str, self._argv.dts)
         return os.path.join(os.path.abspath("build"), "zephyr", "zephyr.dts")
 
     @property
@@ -110,14 +108,16 @@ class DTShCliArgv:
     @property
     def preferences(self) -> Optional[str]:
         """Additional preferences file."""
-        return (
-            str(self._argv.preferences[0]) if self._argv.preferences else None
-        )
+        if self._argv.preferences:
+            return cast(str, self._argv.preferences)
+        return None
 
     @property
     def theme(self) -> Optional[str]:
         """Additional styles file."""
-        return str(self._argv.theme[0]) if self._argv.theme else None
+        if self._argv.theme:
+            return cast(str, self._argv.theme)
+        return None
 
     @property
     def batch_source(self) -> Optional[Union[str, List[str]]]:
