@@ -141,17 +141,17 @@ def _load_preference_file(path: str) -> None:
     try:
         DTShConfig.getinstance().load_ini_file(path)
     except DTShConfig.Error as e:
-        print(e, file=sys.stderr)
         print(f"Failed to load preferences file: {path}", file=sys.stderr)
+        print(str(e), file=sys.stderr)
         sys.exit(-22)
 
 
 def _load_theme_file(path: str) -> None:
     try:
         DTShTheme.getinstance().load_theme_file(path)
-    except DTShConfig.Error as e:
-        print(e, file=sys.stderr)
+    except DTShTheme.Error as e:
         print(f"Failed to load styles file: {path}", file=sys.stderr)
+        print(str(e), file=sys.stderr)
         sys.exit(-22)
 
 
@@ -183,8 +183,8 @@ def run() -> None:
         else:
             session = DTShRichSession.create(argv.dts, argv.binding_dirs)
     except DTShError as e:
+        print("Failed to initialize devicetree:", file=sys.stderr)
         print(e.msg, file=sys.stderr)
-        print("Failed to initialize devicetree", file=sys.stderr)
         sys.exit(-22)
 
     if session:
