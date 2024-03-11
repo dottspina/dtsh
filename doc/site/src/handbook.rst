@@ -1802,6 +1802,177 @@ Search for *large* memory resources:
    flash@0        0x0 (1 MB)                              soc-nv-flash
 
 
+.. _dtsh-builtin-cat:
+
+cat
+=====
+
+**cat** Concatenate and output information about a node and its properties.
+
+Synopsis:
+
+.. code-block:: none
+
+   cat [OPTIONS] [XPATH]
+
+``XPATH``
+   Extended devicetree path with support for referencing properties.
+
+   Syntax::
+
+      XPATH := PATH[$PROP]
+
+   Where:
+
+   - ``PATH`` is a usual :ref:`devicetree path <dtsh-fs-metaphor>`,
+     default to the current working branch if unset
+   - ``PROP`` is a property name, with support for basic *globbing* if ending with ``*``
+
+   .. code-block:: none
+
+      /soc/flash-controller@4001e000/flash@0
+      > cat $w*
+      wakeup-source: false
+      write-block-size: < 0x04 >
+
+
+   .. note::
+
+      We can safely *hijack* the ``$`` character:
+
+      - it's invalid in `DTSpec 2.2.1 Node Names <DTSpec 2.2.1_>`_
+        and `DTSpec 2.2.3 Path Names <DTSpec 2.2.3_>`_
+      - it's invalid in `DTSpec 2.2.4.1 Property Names <DTSpec 2.2.4.1_>`_
+
+
+.. _dtsh-cat-options:
+
+Options
+-------
+
+``-l``
+   Use a :ref:`long listing format <dtsh-format-output>`.
+
+   This option is:
+
+   - required when setting more than one option among ``-DBY``
+   - implied by ``-A``
+
+   This *long listing format* is not described by a format string,
+   see options ``-D``, ``-B``, and ``-Y`` instead.
+
+``-D``
+   Print complete description from bindings.
+
+``-B``
+   Print detailed view of bindings or property specification.
+
+   If not using a *long listing format*,
+   will output only the bindings file path.
+
+``-Y``
+   Print YAML view of bindings or property specification.
+
+   .. figure:: img/yaml.png
+      :align: center
+      :alt: YAML view
+
+      YAML view
+
+   If not using a *long listing format*,
+   will output only the bindings file path.
+
+``-A``
+   Show all info about a node or property.
+
+   .. figure:: img/catA.png
+      :align: center
+      :alt: Detailed view
+
+      ``cat &qspi/mx25r6435f@0$quad-enable-requirements -A``
+
+``--pager``
+   Page command output.
+
+   See :ref:`dtsh-pager`.
+
+
+.. tip::
+
+   Consider using the pager whenever the output is expected to be longer
+   than a short description.
+
+
+.. _dtsh-cat-examples:
+
+Examples
+--------
+
+Default POSIX-like output, *file contents* are node property values:
+
+.. code-block:: none
+
+   /
+   > cat &flash0
+   wakeup-source: false
+   zephyr,pm-device-runtime-auto: false
+   compatible: "soc-nv-flash"
+   reg: < 0x00 0x100000 >
+   erase-block-size: < 0x1000 >
+   write-block-size: < 0x04 >
+
+*Cat* node bindings:
+
+.. code-block:: none
+
+   /
+   > cat leds/led_0 -lB
+       Compatible: This binding does not define a compatible string.
+              Bus: This binding neither provides nor depends on buses.
+   Child-Bindings: gpio-leds
+                   └── GPIO LED child node
+
+   Property  Type           Description
+   ────────────────────────────────────────────────────────────────────────────────────────
+   gpios     phandle-array
+   label     string         Human readable string describing the LED. It can be used by an…
+
+
+*Cat* property bindings:
+
+.. code-block:: none
+
+   /
+   > cat &qspi/mx25r6435f@0$quad-enable-requirements -Bl
+              Name: quad-enable-requirements
+              From: nordic,qspi-nor.yaml
+              Type: string
+          Required: No
+        Deprecated: No
+              Enum: "NONE", "S2B1v1", "S1B6", "S2B7", "S2B1v4", "S2B1v5", "S2B1v6"
+             Const: Not a const
+           Default: "S1B6"
+   Specifier Space: No specifier space
+
+
+Use *globbing* to output selected property values:
+
+.. code-block:: none
+
+   /
+   > cat &qspi$pin* -l
+    Property       Type          Value
+    ───────────────────────────────────────────────
+    pinctrl-0      phandles      < &qspi_default >
+    pinctrl-1      phandles      < &qspi_sleep >
+    pinctrl-names  string-array  "default", "sleep"
+
+
+.. tip::
+
+   To get the most detailed view of a node or property use ``-Al --pager``.
+
+
 .. _dtsh-builtin-alias:
 
 alias
@@ -2197,6 +2368,15 @@ Auto-completion for devicetree paths also supports DTS labels:
    i2c1            Nordic nRF family TWI (TWI master)…
    i2c1_default    nRF pin controller pin configuration state nodes.
    i2c1_sleep      nRF pin controller pin configuration state nodes.
+
+Auto-completion for devicetree paths may also support property names:
+
+.. code-block:: none
+
+   /
+   > cat &led0$[TAB][TAB]
+   gpios
+   label    Human readable string describing the LED. It can be used by an…
 
 
 .. _dtsh-autocomp-fs:
