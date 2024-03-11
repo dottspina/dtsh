@@ -250,7 +250,15 @@ class DTShRedirect(DTShOutput):
         path = os.path.abspath(path)
 
         if os.path.isfile(path):
+            err_exists = False
             if _dtshconf.pref_fs_no_overwrite:
+                if append:
+                    if _dtshconf.pref_fs_no_overwrite_strict:
+                        err_exists = True
+                else:
+                    err_exists = True
+
+            if err_exists:
                 raise DTShRedirect.Error(f"file exists: '{path}'")
         else:
             # We won't actually append if the file does not exist,
