@@ -104,6 +104,7 @@ def test_dtshconfig_defaults() -> None:
     assert cfg_defaults.pref_fs_hide_dotted
     assert cfg_defaults.pref_fs_no_spaces
     assert cfg_defaults.pref_fs_no_overwrite
+    assert not cfg_defaults.pref_fs_no_overwrite_strict
     assert ActionableType.LINK == cfg_defaults.pref_actionable_type
 
     # List views.

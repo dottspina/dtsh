@@ -228,6 +228,12 @@ class DTShConfig:
         return self.getbool("pref.fs.no_overwrite")
 
     @property
+    def pref_fs_no_overwrite_strict(self) -> bool:
+        """Whether to forbid redirection to overwrite existing files,
+        even when appending."""
+        return self.getbool("pref.fs.no_overwrite_strict")
+
+    @property
     def pref_sizes_si(self) -> bool:
         """Whether to print sizes with SI units (bytes, kB, MB)."""
         return self.getbool("pref.sizes_si")
