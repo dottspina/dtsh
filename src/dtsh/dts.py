@@ -763,6 +763,7 @@ class YAMLFile:
 
         Args:
             path: Absolute path to the YAML file.
+              Invalid path or file will produce an empty content.
         """
         self._path = path
         self._lasterr = None
@@ -821,12 +822,13 @@ class YAMLFile:
         # Only one attempt to initialize content.
         self._content = ""
 
-        try:
-            with open(self._path, mode="r", encoding="utf-8") as f:
-                self._content = f.read().strip()
-        except OSError as e:
-            self._lasterr = e
-            print(f"YAML: {e}", file=sys.stderr)
+        if self._path:
+            try:
+                with open(self._path, mode="r", encoding="utf-8") as f:
+                    self._content = f.read().strip()
+            except OSError as e:
+                self._lasterr = e
+                print(f"YAML: {e}", file=sys.stderr)
 
     def _init_model(self) -> None:
         # Actually try to parse the file's content into YAML.
