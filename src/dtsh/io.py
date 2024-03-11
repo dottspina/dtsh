@@ -12,7 +12,7 @@
 Unit tests and examples: tests/test_dtsh_io.py
 """
 
-from typing import Any, IO, Tuple, Optional, Sequence
+from typing import Any, IO, Tuple, Optional, List, Sequence
 
 import os
 import sys
@@ -321,3 +321,28 @@ class DTShInputFile(DTShInput):
         # A non-empty line should be a command line if not only spaces,
         # and not a comment.
         return not (line.isspace() or line.startswith("#"))
+
+
+class DTShInputCmds(DTShInput):
+    """Command-line argument source.
+
+    Returns commands as they are provided on the tool command line.
+    """
+
+    _cmds: List[str]
+
+    def __init__(self, cmds: List[str]) -> None:
+        """Initialize object.
+
+        Args:
+            cmds: List of commands to execute.
+        """
+        self._cmds = cmds
+
+    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+        """Overrides DTShInput.readline()."""
+        if self._cmds:
+            line: str = self._cmds.pop(0)
+            return line
+
+        raise EOFError()
