@@ -2233,6 +2233,7 @@ built-in commands:
    /
    > [TAB][TAB]
    alias     list aliased nodes
+   cat       concat and output info about a node and its properties
    cd        change the current working branch
    chosen    list chosen nodes
    find      search branches for nodes
