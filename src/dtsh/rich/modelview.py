@@ -671,19 +671,22 @@ class ViewNodeList(ViewNodeTable):
         self,
         cols: Sequence[NodeColumnMV],
         sketch: SketchMV,
+        no_wrap: bool = False,
     ) -> None:
         """Initialize view.
 
         Args:
             cols: The table columns.
             sketch: Rendering context.
+            no_wrap: Whether to disable contents wrapping.
+              Default is to wrap contents.
         """
         super().__init__(
             cols,
             sketch,
             padding=(0, 1, 0, 1),
             show_header=_dtshconf.pref_list_headers,
-            no_wrap=True,
+            no_wrap=no_wrap,
         )
         if self._sketch.layout == SketchMV.Layout.LIST_MULTI:
             # When we allow multiple-line cells, draw lines to distinguish rows.
@@ -924,6 +927,7 @@ class ViewNodeTwoSided(GridLayout):
         right_listview = ViewNodeList(
             self._cols[1:],
             SketchMV(SketchMV.Layout.TWO_SIDED, order_by, reverse),
+            no_wrap=True,
         )
         # Left-indented with two spaces relative to the tree at left-side.
         right_listview.left_indent(2)
