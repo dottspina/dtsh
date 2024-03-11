@@ -127,7 +127,7 @@ class DTShRichAutocomp(DTShAutocomp):
                 binding = state.bindings.pop()
                 if binding.description:
                     txt_desc = TextUtil.mk_headline(
-                        binding.description, DTShTheme.STYLE_DT_BINDING_DESC
+                        binding.description, DTShTheme.STYLE_DT_DESCRIPTION
                     )
             else:
                 headlines: Set[str] = set()
@@ -144,7 +144,7 @@ class DTShRichAutocomp(DTShAutocomp):
                     # All associated bindings have the same description
                     # headline, use it.
                     txt_desc = TextUtil.mk_headline(
-                        headlines.pop(), DTShTheme.STYLE_DT_BINDING_DESC
+                        headlines.pop(), DTShTheme.STYLE_DT_DESCRIPTION
                     )
                 elif buses:
                     # Tell user about different buses of appearance.
@@ -201,7 +201,7 @@ class DTShRichAutocomp(DTShAutocomp):
             TextUtil.dim(txt_label)
         if state.node.description:
             txt_desc = TextUtil.mk_headline(
-                state.node.description, DTShTheme.STYLE_DT_BINDING_DESC
+                state.node.description, DTShTheme.STYLE_DT_DESCRIPTION
             )
             if not state.node.enabled:
                 TextUtil.dim(txt_desc)
@@ -233,7 +233,7 @@ class DTShRichAutocomp(DTShAutocomp):
 
         if state.dtproperty.description:
             txt_desc = TextUtil.mk_headline(
-                state.dtproperty.description, DTShTheme.STYLE_DT_BINDING_DESC
+                state.dtproperty.description, DTShTheme.STYLE_DT_DESCRIPTION
             )
         else:
             txt_desc = None
