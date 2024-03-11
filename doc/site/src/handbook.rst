@@ -160,9 +160,9 @@ Then, the command line bellow will *append* details about individual partitions:
 
   ``flash.svg``
 
-.. tip::
+.. note::
 
-   By default, DTSh won't override any existing file, to prevent unintentional operations, e.g.:
+   By default, DTSh won't overwrite existing files, to prevent unintentional operations, e.g.:
 
    .. code-block:: none
 
@@ -170,21 +170,12 @@ Then, the command line bellow will *append* details about individual partitions:
       > ls > ~/.bashrc
       dtsh: file exists: '.bashrc'
 
-   This is obviously orthogonal to the appending (``>>``) commands output:
+   This precaution is however relaxed when appending (``>>``) commands output to an existing file.
+   To never overwrite files, set ``pref.fs.no_overwrite_strict`` in your
+   preferences (see :ref:`dtsh-prefs-fs`)::
 
-   .. code-block:: none
+      pref.fs.no_overwrite_strict = yes
 
-      /
-      > tree /soc > soc.svg
-
-      /
-      > ls /soc >> soc.svg
-      dtsh: file exists: 'soc.svg'
-
-   To enable the append mode, override ``pref.fs.no_overwrite`` in your
-   preferences file (see :ref:`dtsh-prefs-fs`)::
-
-      pref.fs.no_overwrite = no
 
 :ref:`Output redirection preferences <dtsh-prefs-redir2fs>` allow basic configuration
 of *exported* content.
@@ -867,9 +858,16 @@ File System Access
    Default: Yes
 
 ``pref.fs.no_overwrite``
-   Whether to forbid command output redirection to overwrite existing files.
+   Whether to forbid command output redirection to overwrite existing files,
+   excepted may be when appending, see bellow.
 
    Default: Yes
+
+``pref.fs.no_overwrite_strict``
+   Whether to forbid command output redirection to overwrite existing files,
+   even for appending.
+
+   Default: No
 
 
 .. _dtsh-prefs-redir2fs:
