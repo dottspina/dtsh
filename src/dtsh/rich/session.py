@@ -23,7 +23,7 @@ from dtsh.shell import (
     DTShCommandError,
 )
 from dtsh.session import DTShSession
-from dtsh.io import DTShInput, DTShOutput, DTShRedirect, DTShVT, DTShInputFile
+from dtsh.io import DTShInput, DTShOutput, DTShRedirect, DTShVT, DTShInputFile, DTShInputCmds
 
 from dtsh.rich.io import (
     DTShRichVT,
@@ -49,7 +49,7 @@ class DTShRichSession(DTShSession):
         cls,
         dts_path: str,
         binding_dirs: Optional[List[str]],
-        batch: Union[str, Sequence[str]],
+        batch: Union[str, List[str]],
         interactive: bool,
     ) -> DTShSession:
         """Create batch session.
@@ -79,9 +79,11 @@ class DTShRichSession(DTShSession):
                 batch_is = DTShInputFile(batch)
             except DTShInputFile.Error as e:
                 raise DTShError(str(e)) from e
+        elif isinstance(batch, List):
+            # Batch commands from cli arguments.
+            batch_is = DTShInputCmds(batch)
         else:
-            # Batch commands.
-            raise NotImplementedError("create_batch(CMD)")
+            raise NotImplementedError(f"create_batch({repr(type(batch))})")
 
         dt = cls._create_dtmodel(dts_path, binding_dirs)
         vt = DTShBatchRichVT(batch_is, interactive)
