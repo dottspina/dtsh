@@ -195,7 +195,7 @@ The typical DTSh's use case is to open this DTS file generated at build-time, e.
    $ cd zephyr/samples/sensor/bme680
    $ cmake -B build -DBOARD=nrf52840dk_nrf52840
    $ dtsh build/zephyr/zephyr.dts
-   dtsh (0.2.0): A Devicetree Shell
+   dtsh (0.2.1): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -233,7 +233,9 @@ from the CMake cache content in ``CMakeCache.txt``::
 .. tip::
 
    - In this context, no need to pass the DTS file path to DTSh: by default it will try
-     to open the devicetree at ``build/zephyr/zephyr.dts``
+     to open the devicetree at ``build/zephyr/zephyr.dts``;
+     ``dtsh /path/to/project/build/zephyr/zephyr.dts`` would also work,
+     you don't need to call ``dtsh`` from the project's root
    - To open *your* devicetree: ``cd <project> && cmake -B build -DBOARD=<board> && dtsh``,
      or if using West ``cd <project> && west build && dtsh``
 

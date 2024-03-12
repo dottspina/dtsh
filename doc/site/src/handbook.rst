@@ -707,6 +707,83 @@ A logical negation may eventually be applied to the criterion chain with the opt
       --with-compatible * --with-binding * --NOT --OR
 
 
+.. _dtsh-batch:
+
+Batch Mode
+==========
+
+For scripting and automation, DTSh can execute non-interactively:
+
+- a series of commands passed as program arguments: ``dtsh -c CMD1 -c CMD2 ...``
+- commands from a script file: ``dtsh -f FILE``
+
+In either case:
+
+- these batch commands are executed first
+- the ``-i --interactive`` option permits to enter the interactive loop
+  after they have been executed (the default is to exit ``dtsh``)
+
+
+.. _dtsh-batch-cmds:
+
+Batch Commands
+--------------
+
+Providing DTSh command lines as program arguments is appropriate for executing
+a few relatively short commands.
+
+.. tip::
+
+   When using a POSIX shell, the ``-c`` option is handy for defining aliases,
+   e.g.:
+
+   .. code-block:: sh
+
+      # An alias to export the devicetree to HTML,
+      # without leaving the operating system shell.
+      alias dts2html='dtsh -c "tree --format NKiYcd > devicetree.html"'
+
+
+.. _dtsh-batch-script:
+
+Batch Files
+-----------
+
+DTSh scripts are text files containing ``dtsh`` command lines:
+
+- one command per line
+- lines starting with "#" are comments
+
+.. tip::
+
+   Combined with the pager, scripts allow to create simple *presentations*:
+
+   1. a command is executed, and its output is paged
+   2. speaker can talk with the command's output as supporting *slide*
+   3. speaker exits the pager (:kbd:`q`) to advance to the next command, i.e. the next slide
+
+   .. code-block:: sh
+
+      # presentation.dtsh: DTSh sample script
+
+      # Start with the tree of buses and connected devices: speaker will press "q"  when done
+      find --with-bus * --OR --on-bus * --format NYcd -T --pager
+
+      # Let's look at the Flash partitions.
+      #
+      # 1st, the controller: : speaker will press "q"  when done
+      cat &flash_controller -A --pager
+      # Then partitions with addresses and sizes: speaker will press "q"  when done
+      tree &flash_controller --format NrC --pager
+
+      # Lets talk about DTS labels: speaker will press "q"  when done
+      find --with-label * -l --pager
+
+   If the script is run with ``-i``, e.g. ``dtsh -f presentation.dtsh -i``,
+   DTSh will enter the interactive loop after the last command: speaker can then
+   navigate the command history to re-open *slides* while answering questions.
+
+
 .. _dtsh-preferences:
 
 User Preferences
@@ -1657,7 +1734,59 @@ Options
 ``--with-dts-ord EXPR``
    Match ``EXPR`` the node's dependency ordinal, also known as DTS order.
 
-   See :ref:`dtsh-int-search`.
+   .. tip::
+
+      This criterion can be useful for debugging Zephyr build errors mentioning these famous
+      ``__device_dts_ord_`` which sometimes confuse beginners, such as e.g.:
+
+      .. code-block:: none
+
+         from zephyr/drivers/sensor/bme680/bme680.c:14: error: '__device_dts_ord_124'
+         undeclared here (not in a function); did you mean '__device_dts_ord_14'?
+         89 | #define DEVICE_NAME_GET(dev_id) _CONCAT(__device_, dev_id)
+         |                                         ^~~~~~~~~
+
+      Without going into further detail, let us remember that:
+
+      - this dependency ordinal number identifies a node within the devicetree
+      - it's defined as a non-negative integer value such that the value for a node is less
+        than the value for all nodes that depend on it
+
+      Errors like the example above typically tell that there is a device,
+      here the device number 124, whose definition in the devicetree does not
+      *match build-time expectations*.
+
+      Savvy Zephyr users know they can skim through ``devicetree_generated.h``,
+      and put together the relevant information (scattered among more than ten thousand lines of
+      macro definitions for a simple devicetree):
+
+      .. code-block:: none
+
+         #define DT_N_S_soc_S_i2c_40003000_ORD 124
+         #define DT_N_S_soc_S_i2c_40003000_STATUS_disabled 1
+         #define DT_N_S_soc_S_i2c_40003000_S_bme680_76_ORD 125
+         #define DT_N_S_soc_S_i2c_40003000_S_bme680_76_REQUIRES_ORDS 124
+
+      It's then *clear* that the device ``/soc/i2c@40003000/bme680@76`` depends on
+      the I2C bus (``/soc/i2c@40003000``), which is disabled.
+
+      The ``find`` command allows you to reach the same conclusion in the blink of an eye:
+
+      - ``--with-dep-ord 124`` will search for the node with dependency ordinal 124, as it says
+      - ``format --psTD`` will output the node's path and status,
+        then the nodes that depend on it, ending with the nodes it depends on
+
+      .. figure:: img/dts_ord_error.png
+         :align: center
+         :alt: __device_dts_ord_124
+
+         ``find --with-dep-ord 124 format --psTD``
+
+      This example is quite artificial, and ``find`` is no silver bullet.
+      But trying only takes a few seconds and might at least yield some hints.
+
+   See :ref:``dtsh-int-search``.
+
 
 ``--with-irq-number EXPR``
    Match ``EXPR`` with the generated interrupts' numbers.
@@ -2150,7 +2279,7 @@ as current working branch:
 
 .. code-block:: none
 
-   dtsh (0.2.0): A Devicetree Shell
+   dtsh (0.2.1): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -2368,14 +2497,22 @@ Auto-completion for devicetree paths also supports DTS labels:
    i2c1_default    nRF pin controller pin configuration state nodes.
    i2c1_sleep      nRF pin controller pin configuration state nodes.
 
-Auto-completion for devicetree paths may also support property names:
+Auto-completion for *devicetree paths* may also support property names:
 
 .. code-block:: none
 
    /
-   > cat &led0$[TAB][TAB]
-   gpios
-   label    Human readable string describing the LED. It can be used by an…
+   > cat &qspi$[TAB][TAB]
+   compatible                       compatible strings
+   interrupts                       interrupts for device
+   pinctrl-0                        Pin configuration/s for the first state. Content is specific to the…
+   pinctrl-1                        Pin configuration/s for the second state. See pinctrl-0.
+   pinctrl-names                    Names for the provided states. The number of names needs to match the…
+   reg                              register space
+   reg-names                        name of each register space
+   status                           indicates the operational status of a device
+   wakeup-source                    Property to identify that a device can be used as wake up source…
+   zephyr,pm-device-runtime-auto    Automatically configure the device for runtime power management after the…
 
 
 .. _dtsh-autocomp-fs:
