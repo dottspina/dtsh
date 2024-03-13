@@ -83,6 +83,9 @@
 .. _DTSpec 2.2.3:
    https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#path-names
 
+.. _DTSpec 2.2.4.1:
+   https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#property-names
+
 .. _DTSpec 3.3:
    https://devicetree-specification.readthedocs.io/en/latest/chapter3-devicenodes.html#aliases-node
 
