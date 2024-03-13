@@ -13,7 +13,7 @@ DTSh
 ::
 
    $ dtsh build/zephyr/zephyr.dts
-   dtsh (0.2.0): A Devicetree Shell
+   dtsh (0.2.1): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
