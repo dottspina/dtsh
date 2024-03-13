@@ -1732,7 +1732,7 @@ Options
    See :ref:`dtsh-txt-search`.
 
 ``--with-dts-ord EXPR``
-   Match ``EXPR`` the node's dependency ordinal, also known as DTS order.
+   Match ``EXPR`` with the node's dependency ordinal, also known as DTS order.
 
    .. tip::
 
