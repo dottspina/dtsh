@@ -35,7 +35,7 @@ from rich.text import Text
 from rich.tree import Tree
 
 from dtsh.io import DTShOutput
-from dtsh.dts import YAMLFile, YAMLFilesystem
+from dtsh.dts import YAMLFile, YAMLFilesystem, DTSFile
 from dtsh.model import (
     DTPath,
     DTWalkable,
@@ -2434,3 +2434,82 @@ class HeadingsContentWriter:
             out: Where to write.
         """
         self.write(section.title, section.level, section.content, out)
+
+
+class ViewDTSContent(View):
+    """View of DTS content with syntax highlighting."""
+
+    _view: Syntax
+
+    def __init__(self, content: str, theme: Optional[str] = None) -> None:
+        """Initialize view.
+
+        Args:
+            content: DTS content.
+            theme: Syntax highlighting theme.
+              A Pygments theme, e.g.:
+              - dark: "monokai", "dracula", "material"
+              - light: "bw", "sas", "arduino"
+              See also: https://pygments.org/styles/
+              If unset, default to configured preference.
+        """
+        super().__init__()
+        self._view = Syntax(
+            content,
+            lexer="dts",
+            theme=theme or _dtshconf.pref_dts_theme,
+            dedent=True,
+        )
+
+    @property
+    def renderable(self) -> RenderableType:
+        """Overrides View.renderable()."""
+        return self._view
+
+
+class ViewDTSFile(GridLayout):
+    """View for DTS files.
+
+    Simple grid layout:
+    - linked file name
+    - content with syntax highlighting
+    """
+
+    @classmethod
+    def create(cls, path: str) -> Union["ViewDTSFile", Text]:
+        """DTS view factory.
+
+        Args:
+            path: Path to the YAML file.
+
+        Returns:
+            A DTS view,
+            or an error text if the DTS file is unreadable.
+        """
+        fdts = DTSFile(path)
+        if fdts.content:
+            return ViewDTSFile(fdts)
+
+        # No DTS content, show IO error.
+        if isinstance(fdts.lasterr, OSError):
+            return TextUtil.mk_error(f"IO error: {fdts.lasterr.strerror}")
+        return TextUtil.mk_error(f"Unexpected error: {str(fdts.lasterr)}")
+
+    def __init__(self, fdts: DTSFile) -> None:
+        """Initialize view.
+
+        Open DTS file, read content and initialize renderable.
+
+        Args:
+            dts: The DTS file to show.
+        """
+        super().__init__(no_wrap=True)
+
+        txt_file = TextUtil.mk_text(
+            os.path.basename(fdts.path), DTShTheme.STYLE_DTS_FILE
+        )
+        txt_file = TextUtil.link(
+            txt_file, fdts.path, _dtshconf.pref_dts_actionable_type
+        )
+        self.add_row(txt_file)
+        self.add_row(ViewDTSContent(fdts.content))
