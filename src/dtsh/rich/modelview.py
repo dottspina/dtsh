@@ -59,7 +59,7 @@ from dtsh.modelutils import (
     DTNodeSortByBus,
     DTSUtil,
 )
-from dtsh.config import DTShConfig, ActionableType
+from dtsh.config import DTShConfig
 
 from dtsh.rich.tui import View, TableLayout, GridLayout
 from dtsh.rich.text import TextUtil
@@ -2204,33 +2204,23 @@ class ViewYAMLContent(View):
 
     _view: Syntax
 
-    def __init__(
-        self, content: str, theme: str = _dtshconf.pref_yaml_theme
-    ) -> None:
+    def __init__(self, content: str, theme: Optional[str] = None) -> None:
         """Initialize view.
 
         Args:
             content: YAML text content.
             theme: Syntax highlighting theme.
-               For dark Terminal profiles:
-               - "ansi_dark"
-               - "monokai" (default)
-               - "dracula"
-               - "material"
-               For light Terminal profiles:
-               - "ansi"
-               - "bw"
-               - "sas"
-
-               If unset, default to configured preference.
-
-               See also: https://pygments.org/styles/
+              A Pygments theme, e.g.:
+              - dark: "monokai", "dracula", "material"
+              - light: "bw", "sas", "arduino"
+              See also: https://pygments.org/styles/
+              If unset, default to configured preference.
         """
         super().__init__()
         self._view = Syntax(
             content,
             lexer="yaml",
-            theme=theme,
+            theme=theme or _dtshconf.pref_yaml_theme,
             dedent=True,
         )
 
@@ -2240,45 +2230,73 @@ class ViewYAMLContent(View):
         return self._view
 
 
-class ViewYAML(View):
-    """View YAML and included contents.
+class ViewYAMLFile(View):
+    """View for YAML files.
 
-    Recursive view of a YAML file, showing the top-level content
-    and a tree of the included contents.
+    The view is actually polymorphic, depending on whether we'll
+    expand the included YAML files:
+    - no: a simple view of the YAML text with syntax highlighting
+    - yes: a tree view with the included files and their contents
 
-    Fallback to apologies if the YAML file is unreadable or invalid.
     """
 
+    @classmethod
+    def create(
+        cls,
+        path: str,
+        yamlfs: YAMLFilesystem,
+        is_binding: bool,
+        expand_includes: bool,
+    ) -> Union["ViewYAMLFile", Text]:
+        """YAML view factory.
+
+        Args:
+            path: Path to the YAML file.
+            yamlfs: Where to search for included YAML files.
+            is_binding: Whether the YAML file is a node binding.
+            expand_includes: Whether to show included files.
+
+        Returns:
+            A content view or a tree view,
+            or an error text if the YAML file is unreadable or invalid.
+        """
+        fyaml = YAMLFile(path)
+        if fyaml.content:
+            return ViewYAMLFile(
+                fyaml,
+                yamlfs,
+                is_binding=is_binding,
+                expand_includes=expand_includes,
+            )
+
+        # No YAML content, show IO or YAML error.
+        if isinstance(fyaml.lasterr, OSError):
+            return TextUtil.mk_error(f"IO error: {fyaml.lasterr.strerror}")
+        return TextUtil.mk_error(f"YAML error: {str(fyaml.lasterr)}")
+
     _yamlfs: YAMLFilesystem
-    _view: Union[Tree, Text]
+    _view: Tree
 
     def __init__(
         self,
-        yaml: YAMLFile,
+        fyaml: YAMLFile,
         yamlfs: YAMLFilesystem,
         is_binding: bool,
-        expand_includes: bool = _dtshconf.pref_yaml_expand,
+        expand_includes: bool,
     ) -> None:
         """Initialize view.
 
-        The view is immediately renderable after initialization.
+        Open YAML file, read all needed contents and initialize renderable.
 
         Args:
-            yaml: The YAML file to show.
-            yamlfs: Where to search for included YAML files.
-            is_binding: Whether to render the tree's root as a binding.
-            expand_includes: Whether to expand included files.
-              This is the default behavior, but may be overridden in preferences.
+            fyaml: The YAML file to show.
+            yamlfs: Where to search for included files.
+            is_binding: Whether the YAML file is a node binding.
+            expand_includes: Whether to show included files.
         """
         super().__init__()
         self._yamlfs = yamlfs
-
-        if yaml.content:
-            self._view = self._init_tree(yaml, is_binding, expand_includes)
-        else:
-            self._view = TextUtil.mk_apologies(
-                "No YAML specification available."
-            )
+        self._view = self._init_tree(fyaml, is_binding, expand_includes)
 
     @property
     def renderable(self) -> RenderableType:
@@ -2286,11 +2304,11 @@ class ViewYAML(View):
         return self._view
 
     def _init_tree(
-        self, yaml: YAMLFile, is_binding: bool, expand_includes: bool
+        self, fyaml: YAMLFile, is_binding: bool, expand_includes: bool
     ) -> Tree:
         tree = Tree(
             self._mk_anchor(
-                yaml,
+                fyaml,
                 expand_includes=expand_includes,
                 style=DTShTheme.STYLE_YAML_BINDING
                 if is_binding
@@ -2298,19 +2316,23 @@ class ViewYAML(View):
             )
         )
         if expand_includes:
-            for inc_name in yaml.includes:
+            for inc_name in fyaml.includes:
                 self._init_include(inc_name, tree)
         return tree
 
-    def _init_include(self, basename: str, parent: Tree) -> Tree:
-        yaml = self._yamlfs.find_file(basename)
-        if yaml:
+    def _init_include(self, basename: str, parent: Tree) -> None:
+        fyaml = self._yamlfs.find_file(basename)
+        if fyaml:
             yaml_anchor = parent.add(
-                self._mk_anchor(yaml, expand_includes=True)
+                self._mk_anchor(
+                    fyaml,
+                    expand_includes=True,
+                    style=DTShTheme.STYLE_YAML_INCLUDE,
+                )
             )
-            for inc_name in yaml.includes:
+            for inc_name in fyaml.includes:
                 self._init_include(inc_name, yaml_anchor)
-            return yaml_anchor
+            return
 
         # Should not happen: included binding files have already been
         # successfully resolved by edtlib during model initialization.
@@ -2318,20 +2340,22 @@ class ViewYAML(View):
 
     def _mk_anchor(
         self,
-        yaml: YAMLFile,
+        fyaml: YAMLFile,
         expand_includes: bool,
-        style: StyleType = DTShTheme.STYLE_YAML_INCLUDE,
-        linktype: Optional[ActionableType] = None,
+        style: StyleType,
     ) -> RenderableType:
-        linktype = linktype or _dtshconf.pref_yaml_actionable_type
-
-        view_yaml = ViewYAMLContent(yaml.content)
+        view_yaml = ViewYAMLContent(fyaml.content)
         if not expand_includes:
+            # Answer only the YAML content view when we don't show
+            # included files.
             return view_yaml
 
+        # Otherwise, grid layout with file name and content view.
         layout = GridLayout(no_wrap=True)
-        txt_file = TextUtil.mk_text(os.path.basename(yaml.path), style)
-        txt_file = TextUtil.link(txt_file, yaml.path, linktype)
+        txt_file = TextUtil.mk_text(os.path.basename(fyaml.path), style)
+        txt_file = TextUtil.link(
+            txt_file, fyaml.path, _dtshconf.pref_yaml_actionable_type
+        )
         layout.add_row(txt_file)
         layout.add_row(view_yaml)
         return layout
