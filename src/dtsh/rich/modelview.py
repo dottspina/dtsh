@@ -2141,7 +2141,7 @@ class FormNodeBinding(FormLayout):
         if tvs:
             return tvs[0]
         return TextUtil.mk_apologies(
-            "This binding does not define a compatible string."
+            "This binding does not define a compatible string"
         )
 
     def _mk_bus_info(self) -> Text:
@@ -2150,7 +2150,7 @@ class FormNodeBinding(FormLayout):
             return tvs[0]
 
         return TextUtil.mk_apologies(
-            "This binding neither provides nor depends on buses."
+            "This binding neither provides nor depends on buses"
         )
 
     def _mk_child_bindings(self) -> Union[View, Text]:
@@ -2158,45 +2158,41 @@ class FormNodeBinding(FormLayout):
             return ViewNodeChildBindings(self._node)
 
         return TextUtil.mk_apologies(
-            "This binding neither is a child-binding nor has child-bindings."
+            "This binding neither is a child-binding nor has child-bindings"
         )
 
 
 class ViewNodeBinding(GridLayout):
-    """Detailed view of node bindings.
+    """Detailed view of a node's binding.
 
-    Includes form and property specifications table.
+    Grid layout with:
+    - a form with the binding definition (compatible strings, buses,
+      child-bindings)
+    - a table with property specifications
     """
-
-    _txt_nobinding: Optional[Text] = None
 
     def __init__(
         self,
         node: DTNode,
         padding: PaddingDimensions = (0, 1, 0, 1),
-        no_wrap: bool = True,
     ) -> None:
-        super().__init__(padding=padding, no_wrap=no_wrap)
+        """Initialize view.
 
-        if node.binding:
-            self.add_row(FormNodeBinding(node))
+        Args:
+            node: The node to show the binding of.
+              The node MUST have a binding.
+            padding: TRBL padding.
+        """
+        super().__init__(padding=padding, no_wrap=True)
+        if not node.binding:
+            raise ValueError(node)
 
-            dtprops = node.binding.all_dtproperties()
-            if dtprops:
-                self.add_row(None)
-                self.add_row(ViewPropertySpecTable(dtprops))
+        self.add_row(FormNodeBinding(node))
 
-        else:
-            self._txt_nobinding = TextUtil.mk_apologies(
-                "No bindings specification available."
-            )
-
-    @property
-    def renderable(self) -> RenderableType:
-        """Overrides GridLayout.renderable()."""
-        if self._txt_nobinding:
-            return self._txt_nobinding
-        return super().renderable
+        dtprops = node.binding.all_dtproperties()
+        if dtprops:
+            self.add_row(None)
+            self.add_row(ViewPropertySpecTable(dtprops))
 
 
 class ViewYAMLContent(View):
