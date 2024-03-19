@@ -891,9 +891,10 @@ class DTShParamDTPathX(DTShParameter):
 
     - PATH: a DT path, default to the current working branch if empty
     - PROP: a property name, supports basic globbing if ends with "*"
-
-    This parameter is not intended to support path expansion (globbing).
     """
+
+    _parm_path: str
+    _parm_prop: Optional[str]
 
     def __init__(self) -> None:
         super().__init__(
@@ -903,24 +904,25 @@ class DTShParamDTPathX(DTShParameter):
         )
 
     @property
-    def xpath(self) -> Tuple[str, Optional[str]]:
-        """Parameter value interpreted as an extended DT path.
+    def xpath(self) -> str:
+        """The parameter value parsed from the command line,
+        or an empty string."""
+        return self._raw[0] if self._raw else ""
 
-        Returns:
-            The (PATH, PROP) tuple, where:
-             - PATH: the DT path
-             - PROP: possibly empty property name, or None if the extended path
-                     does not contain a "$" separator
-        """
-        if not self._raw:
-            return ("", None)
+    def parsed(self, values: List[str]) -> None:
+        """Overrides DTShParameter.parsed()."""
+        super().parsed(values)
+        self._parm_path, self._parm_prop = self._xparse()
 
-        path = self._raw[0]
-        i_prop = path.rfind("$")
-        if i_prop != -1:
-            return (path[:i_prop], path[i_prop + 1 :])
+    def reset(self) -> None:
+        """Overrides DTShParameter.reset()."""
+        super().reset()
+        self._parm_path = ""
+        self._parm_prop = None
 
-        return (path, None)
+    def is_globexpr(self) -> bool:
+        """Whether the parameter value is a properties globbing expression."""
+        return self._parm_prop is not None and self._parm_prop.endswith("*")
 
     def xsplit(
         self, cmd: DTShCommand, sh: DTSh
@@ -932,38 +934,35 @@ class DTShParamDTPathX(DTShParameter):
             sh: The context shell.
 
         Returns:
-            The (node, properties) tuple, where:
-             - node: the node at PATH
-             - properties: the node properties matching the PROP parameter,
-                 or None if the extended path does not contain a "$" separator
+            A (node, properties) tuple, where:
+            - node: the node at PATH
+            - properties: the node properties matching the PROP parameter
+              (empty if PROP is a globbing expression with no match),
+              or None if no PROP
 
         Raises:
             DTShCommandError: Path split failed (node or property not found).
         """
-        param_path: str
-        param_prop: Optional[str]
-        param_path, param_prop = self.xpath
-
         try:
-            node = sh.node_at(param_path)
+            node = sh.node_at(self._parm_path)
         except DTPathNotFoundError as e:
             raise DTShCommandError(cmd, e.msg) from e
 
-        if param_prop is not None:
+        if self._parm_prop is not None:
             props: List[DTNodeProperty]
 
-            if param_prop.endswith("*"):
+            if self._parm_prop.endswith("*"):
                 props = [
                     prop
                     for prop in node.all_dtproperties()
-                    if prop.name.startswith(param_prop[:-1])
+                    if prop.name.startswith(self._parm_prop[:-1])
                 ]
             else:
-                if node.has_dtproperty(param_prop):
-                    props = [node.dtproperty(param_prop)]
+                if node.has_dtproperty(self._parm_prop):
+                    props = [node.dtproperty(self._parm_prop)]
                 else:
                     raise DTShCommandError(
-                        cmd, f"property not found: '{param_prop}'"
+                        cmd, f"property not found: '{self._parm_prop}'"
                     )
 
             return (node, props)
@@ -976,6 +975,18 @@ class DTShParamDTPathX(DTShParameter):
         Overrides DTShParameter.autocomp().
         """
         return DTShAutocomp.complete_dtpathx(txt, sh)
+
+    def _xparse(self) -> Tuple[str, Optional[str]]:
+        # Parse parameter value as a (PATH, PROP) tuple:
+        # - PATH: the DT path, may be empty
+        # - PROP: None if XPATH is a node path,
+        #   or a possibly empty property name (XPATH = PROP$)
+        #   that client code should interpret as an error
+        i_prop = self.xpath.rfind("$")
+        if i_prop != -1:
+            return (self.xpath[:i_prop], self.xpath[i_prop + 1 :])
+
+        return (self.xpath, None)
 
 
 class DTShParamAlias(DTShParameter):

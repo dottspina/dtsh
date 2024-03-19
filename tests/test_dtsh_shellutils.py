@@ -9,7 +9,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=pointless-statement
 # pylint: disable=too-many-statements
-# pylint: disable=too-many-statements
+# pylint: disable=protected-access
 
 from typing import List, Tuple
 
@@ -1397,16 +1397,28 @@ def test_dtshparam_dtpathx() -> None:
     assert param.brief
     assert "[XPATH]" == param.usage
     # Default value.
-    assert ("", None) == param.xpath
+    assert not param.is_globexpr()
+    assert "" == param.xpath
+    assert ("", None) == param._xparse()
 
     # Parameter's state and multiplicity.
     DTShTests.check_param(param)
 
     # Won't fault, path resolution is deferred to command execution.
     param.parsed(["path"])
-    assert ("path", None) == param.xpath
+    assert not param.is_globexpr()
+    assert "path" == param.xpath
+    assert ("path", None) == param._xparse()
+
     param.parsed(["path$prop"])
-    assert ("path", "prop") == param.xpath
+    assert not param.is_globexpr()
+    assert "path$prop" == param.xpath
+    assert ("path", "prop") == param._xparse()
+
+    param.parsed(["path$prop*"])
+    assert param.is_globexpr()
+    assert "path$prop*" == param.xpath
+    assert ("path", "prop*") == param._xparse()
 
 
 def test_dtshparam_dtpathx_xsplit() -> None:
@@ -1416,13 +1428,16 @@ def test_dtshparam_dtpathx_xsplit() -> None:
 
     param.parsed([""])
     assert (sh.dt.root, None) == param.xsplit(cmd, sh)
+    assert not param.is_globexpr()
 
     param.parsed(["$compatible"])
+    assert not param.is_globexpr()
     assert (sh.dt.root, [sh.dt.root.dtproperty("compatible")]) == param.xsplit(
         cmd, sh
     )
 
     param.parsed(["&nvic$reg"])
+    assert not param.is_globexpr()
     assert (
         sh.node_at("&nvic"),
         [sh.node_at("&nvic").dtproperty("reg")],
@@ -1437,6 +1452,7 @@ def test_dtshparam_dtpathx_xsplit() -> None:
 
     dt_uart0 = sh.node_at("&uart0")
     param.parsed(["&uart0$pinctrl*"])
+    assert param.is_globexpr()
     assert (
         dt_uart0,
         [
@@ -1538,6 +1554,11 @@ def test_dtshparam_chosen_autocomp() -> None:
         state.rlstr for state in param.autocomp("zephyr,bt", sh)
     ]
     # Exact match.
+    assert ["zephyr,bt-mon-uart"] == [
+        state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)
+    ]
+    # No match.
+    assert [] == param.autocomp("Zephyr,", sh)
     assert ["zephyr,bt-mon-uart"] == [
         state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)
     ]
