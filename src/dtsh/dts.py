@@ -872,3 +872,59 @@ class YAMLFile:
                     basename = inc.get("name")
                     if basename:
                         self._includes.append(basename)
+
+
+class DTSFile:
+    """Simple fail-safe wrapper around a DTS file."""
+
+    # Absolute file path.
+    _path: str
+
+    # DTS.
+    _content: Optional[str]
+
+    # If set, we've failed to load the DTS file (IO error).
+    _lasterr: Optional[OSError]
+
+    def __init__(self, path: str) -> None:
+        """Initialize wrapper.
+
+        Open DTS file and read content, no lazy-initialization.
+
+        Args:
+            path: Absolute path to the DTS file.
+              Invalid path or file will produce an empty content.
+        """
+        self._path = path
+        self._lasterr = None
+        self._content = self._init_content()
+
+    @property
+    def path(self) -> str:
+        """Absolute file path."""
+        return self._path
+
+    @property
+    def content(self) -> str:
+        """Text content, or None if we failed to read the DTS file."""
+        return self._content  # type: ignore
+
+    @property
+    def lasterr(self) -> Optional[OSError]:
+        """Last error that happened while loading this DTS file.
+
+        Possible values:
+
+        - None: no error
+        - OSError: IO error
+        """
+        return self._lasterr
+
+    def _init_content(self) -> Optional[str]:
+        try:
+            with open(self._path, mode="r", encoding="utf-8") as f:
+                return f.read().strip()
+        except OSError as e:
+            self._lasterr = e
+        # Empty content on error.
+        return ""
