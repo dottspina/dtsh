@@ -756,7 +756,7 @@ class YAMLFile:
     # If set, we've failed to load the YAML file at some point:
     # - OSError: all kinds of file system errors
     # - YAMLError: invalid YAML content
-    _lasterr: Optional[BaseException]
+    _lasterr: Optional[Union[OSError, yaml.YAMLError]]
 
     def __init__(self, path: str) -> None:
         """Lazy-initialize wrapper.
@@ -802,13 +802,13 @@ class YAMLFile:
         return self._includes  # type: ignore
 
     @property
-    def lasterr(self) -> Optional[BaseException]:
+    def lasterr(self) -> Optional[Union[OSError, yaml.YAMLError]]:
         """Last error that happened while loading this YAML file.
 
         Possible values:
 
         - None: no error
-        - OSError: all kinds of file system errors
+        - OSError: IO errors
         - YAMLError: invalid YAML content
         """
         return self._lasterr
@@ -822,13 +822,11 @@ class YAMLFile:
         # Only one attempt to initialize content.
         self._content = ""
 
-        if self._path:
-            try:
-                with open(self._path, mode="r", encoding="utf-8") as f:
-                    self._content = f.read().strip()
-            except OSError as e:
-                self._lasterr = e
-                print(f"YAML: {e}", file=sys.stderr)
+        try:
+            with open(self._path, mode="r", encoding="utf-8") as f:
+                self._content = f.read().strip()
+        except OSError as e:
+            self._lasterr = e
 
     def _init_model(self) -> None:
         # Actually try to parse the file's content into YAML.
@@ -848,7 +846,6 @@ class YAMLFile:
             self._raw = yaml.load(self._content, Loader=YAMLBindingLoader)
         except yaml.YAMLError as e:
             self._lasterr = e
-            print(f"YAML: {self._path}: {e}", file=sys.stderr)
 
     def _init_includes(self) -> None:
         # Search YAML model for include directives.
