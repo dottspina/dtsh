@@ -144,6 +144,10 @@ def test_dtshconfig_defaults() -> None:
     assert cfg_defaults.pref_yaml_expand
     assert ActionableType.ALT == cfg_defaults.pref_yaml_actionable_type
 
+    # DTS.
+    assert "monokai" == cfg_defaults.pref_dts_theme
+    assert ActionableType.ALT == cfg_defaults.pref_dts_actionable_type
+
     # Forms.
     assert cfg_defaults.pref_form_show_all
     assert ActionableType.LINK == cfg_defaults.pref_form_actionable_type

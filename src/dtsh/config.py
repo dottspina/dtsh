@@ -356,6 +356,16 @@ class DTShConfig:
         return self.get_actionable_type("pref.yaml.actionable_type")
 
     @property
+    def pref_dts_theme(self) -> str:
+        """Theme for DTS syntax highlighting."""
+        return self.getstr("pref.dts.theme")
+
+    @property
+    def pref_dts_actionable_type(self) -> ActionableType:
+        """Actionable type for DTS views."""
+        return self.get_actionable_type("pref.dts.actionable_type")
+
+    @property
     def pref_form_show_all(self) -> bool:
         """Whether to show missing fields in form views."""
         return self.getbool("pref.form.show_all")
