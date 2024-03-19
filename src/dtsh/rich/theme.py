@@ -99,6 +99,7 @@ class DTShTheme:
 
     STYLE_YAML_BINDING = "dtsh.yaml.binding"
     STYLE_YAML_INCLUDE = "dtsh.yaml.include"
+    STYLE_DTS_FILE = "dtsh.dts"
 
     STYLE_FORM_LABEL = "dtsh.form.label"
     STYLE_FORM_DEFAULT = "dtsh.form.default"

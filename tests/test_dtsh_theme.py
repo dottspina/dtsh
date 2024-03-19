@@ -6,6 +6,7 @@
 
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
+# pylint: disable=too-many-statements
 
 
 import os
@@ -103,6 +104,7 @@ def test_dtshtheme_defaults() -> None:
 
     assert theme_defaults.styles[DTShTheme.STYLE_YAML_BINDING]
     assert theme_defaults.styles[DTShTheme.STYLE_YAML_INCLUDE]
+    assert theme_defaults.styles[DTShTheme.STYLE_DTS_FILE]
 
     assert theme_defaults.styles[DTShTheme.STYLE_FORM_LABEL]
     assert theme_defaults.styles[DTShTheme.STYLE_FORM_DEFAULT]
