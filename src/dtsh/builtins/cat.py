@@ -9,14 +9,14 @@ Print node content.
 Unit tests and examples: tests/test_dtsh_builtin_cat.py
 """
 
-from typing import Optional, Sequence, List
+from typing import Sequence, List, Optional
 
 
 from dtsh.dts import YAMLFile
 from dtsh.model import DTNode, DTNodeProperty
 from dtsh.modelutils import DTSUtil
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh, DTShCommand, DTShFlag, DTShUsageError
+from dtsh.shell import DTSh, DTShCommand, DTShFlag, DTShCommandError
 
 from dtsh.shellutils import (
     DTShFlagPager,
@@ -31,7 +31,7 @@ from dtsh.rich.modelview import (
     FormPropertySpec,
     ViewNodeBinding,
     ViewDescription,
-    ViewYAML,
+    ViewYAMLFile,
     HeadingsContentWriter,
 )
 
@@ -40,9 +40,7 @@ _dtshconf: DTShConfig = DTShConfig.getinstance()
 
 
 class DTShFlagAll(DTShFlag):
-    """Flag to concatenate and output all available information
-    about a node a property.
-
+    """Concatenate and output all available information about a node a property.
 
     Ignored:
     - in POSIX-like output mode ("-l" is not set)
@@ -54,21 +52,21 @@ class DTShFlagAll(DTShFlag):
 
 
 class DTShFlagDescription(DTShFlag):
-    """Flag to output node or property full description from binding."""
+    """Output node or property full description from binding."""
 
     BRIEF = "description from bindings"
     SHORTNAME = "D"
 
 
 class DTShFlagBindings(DTShFlag):
-    """Flag to output bindings of a node or property."""
+    """Output bindings of a node or property."""
 
     BRIEF = "bindings or property specification"
     SHORTNAME = "B"
 
 
 class DTShFlagYamlFile(DTShFlag):
-    """Flag to output the YAML view (with extended includes)."""
+    """Output the YAML view of bindings (with extended includes)."""
 
     BRIEF = "YAML view of bindings"
     SHORTNAME = "Y"
@@ -77,15 +75,15 @@ class DTShFlagYamlFile(DTShFlag):
 class DTShBuiltinCat(DTShCommand):
     """Devicetree shell built-in "cat".
 
-    This command can concatenate and output information about a node
-    and its properties.
+    Concatenate and output info about a node and its properties.
 
-    If the user does not explicitly select what to cat with
-    command flags, will output all node property values.
+    If the user does not explicitly select what to cat
+    with command flags, will output all node property values.
 
     Otherwise:
-    - POSIX-like output: "A" is ignores, will output one of "D", "B", or "Y"
-    - rich output: will output selected  "D", "B", and "Y, or all of the if "A"
+    - POSIX-like output: '-A' is ignored, will output one of '-D', '-B', or '-Y'
+    - rich output: will output options among '-DBY', or all if '-A'
+
     """
 
     def __init__(self) -> None:
@@ -107,62 +105,111 @@ class DTShBuiltinCat(DTShCommand):
         """Overrides DTShCommand.execute()."""
         super().execute(argv, sh, out)
 
-        param_dtnode: DTNode
-        param_dtprops: Optional[List[DTNodeProperty]]
-        param_dtnode, param_dtprops = self.with_param(DTShParamDTPathX).xsplit(
-            self, sh
-        )
+        parm_xpath = self.with_param(DTShParamDTPathX)
+        parm_dtnode: DTNode
+        parm_dtprops: Optional[List[DTNodeProperty]]
+        # Command will fail here if the xpath parameter is invalid
+        # (node or property not found).
+        parm_dtnode, parm_dtprops = parm_xpath.xsplit(self, sh)
 
+        # Setup pager after we could fail.
         if self.with_flag(DTShFlagPager):
             out.pager_enter()
 
-        # Option "-A" implies "-l".
-        with_longfmt = self.with_flag(DTShFlagLongList) or self.with_flag(
-            DTShFlagAll
-        )
+        if parm_dtprops is not None:
+            # The command is invoked with either:
+            # - PROP resolved to a single property name
+            # - PROP globbing expression matching zero,
+            #   one or more properties
 
-        if param_dtprops:
-            if with_longfmt:
-                self._cat_dtproperties_rich(param_dtprops, out)
+            if parm_xpath.is_globexpr():
+                # Globbing: we may have zero, one or more matching properties.
+                # Concatenate and output property values.
+                self.cat_dtproperties(parm_dtprops, out)
             else:
-                self._cat_dtproperties_raw(param_dtprops, out)
+                # If not globbing, we have exactly one property name.
+                # Concatenate and output info about this property.
+                self.cat_dtproperty(parm_dtprops[0], out)
+
         else:
-            if with_longfmt:
-                self._cat_dtnode_rich(param_dtnode, out)
-            else:
-                self._cat_dtnode_raw(param_dtnode, out)
+            # The command is invoked for node at PATH.
+            # Concatenate and output info about node.
+            self.cat_dtnode(parm_dtnode, out)
 
         if self.with_flag(DTShFlagPager):
             out.pager_exit()
 
-    def _cat_dtnode_rich(self, node: DTNode, out: DTShOutput) -> None:
-        show_all = self.with_flag(DTShFlagAll)
-        if not any(
-            (
-                show_all,
-                self.with_flag(DTShFlagDescription),
-                self.with_flag(DTShFlagYamlFile),
-                self.with_flag(DTShFlagBindings),
+    def cat_dtnode(self, dtnode: DTNode, out: DTShOutput) -> None:
+        """The command is invoked with a DT node as parameter.
+
+        Args:
+            dtnode: The node to cat information about.
+            out: Where to cat.
+        """
+        if self._with_longfmt():
+            self._out_dtnode_rich(dtnode, out)
+        else:
+            self._out_dtnode_raw(dtnode, out)
+
+    def cat_dtproperty(self, dtprop: DTNodeProperty, out: DTShOutput) -> None:
+        """The command is invoked with a single DT property as parameter.
+
+        Args:
+            dtprop: The property parameter.
+            out: Where to cat.
+        """
+        if self._with_longfmt():
+            self._out_dtproperty_rich(dtprop, out)
+        else:
+            self._out_dtproperty_raw(dtprop, out)
+
+    def cat_dtproperties(
+        self, dtprops: List[DTNodeProperty], out: DTShOutput
+    ) -> None:
+        """The command is invoked with a PROP globbing expression.
+
+        It will output property values.
+
+        Args:
+            dtprops: The possibly empty list of properties
+              matching the PROP globbing expression.
+            out: Where to cat.
+        """
+        # Precondition for both POSIX-like and rich outputs.
+        if self.with_flag(DTShFlagAll) or self._nfmtspecs():
+            raise DTShCommandError(
+                self,
+                "globbing properties, options '-DBYA' not allowed",
             )
-        ):
+
+        # Ignore no match.
+        if dtprops:
+            if self._with_longfmt():
+                self._out_dtproperties_rich(dtprops, out)
+            else:
+                self._out_dtproperties_raw(dtprops, out)
+
+    def _out_dtnode_rich(self, dtnode: DTNode, out: DTShOutput) -> None:
+        show_all = self.with_flag(DTShFlagAll)
+        if not (show_all or self._nfmtspecs()):
             # If the user hasn't explicitly selected what to cat,
-            # just dump all node property values (or does nothing).
-            dtprops = node.all_dtproperties()
+            # just dump all node property values, if any.
+            dtprops = dtnode.all_dtproperties()
             if dtprops:
-                view = ViewPropertyValueTable(node.all_dtproperties())
-                out.write(view)
+                self._out_dtproperties_rich(dtprops, out)
             return
 
-        # Otherwise, start by collecting selected sections.
+        # Otherwise, concatenate and output selected sections.
         sections: List[HeadingsContentWriter.Section] = []
         if show_all or self.with_flag(DTShFlagDescription):
             sections.append(
                 HeadingsContentWriter.Section(
-                    "description", 1, ViewDescription(node.description)
+                    "description", 1, ViewDescription(dtnode.description)
                 )
             )
-        dtprops = node.all_dtproperties()
         if show_all:
+            # Show property values only when '-A' is set.
+            dtprops = dtnode.all_dtproperties()
             sections.append(
                 HeadingsContentWriter.Section(
                     "Properties",
@@ -177,39 +224,34 @@ class DTShBuiltinCat(DTShCommand):
         if show_all or self.with_flag(DTShFlagBindings):
             sections.append(
                 HeadingsContentWriter.Section(
-                    "Bindings", 1, ViewNodeBinding(node)
+                    "Binding",
+                    1,
+                    ViewNodeBinding(dtnode)
+                    if dtnode.binding
+                    else TextUtil.mk_apologies("This node has no binding."),
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
-            yaml = YAMLFile(node.binding_path or "")
-            yamlfs = node.dt.dts.yamlfs
             sections.append(
                 HeadingsContentWriter.Section(
                     "YAML",
                     1,
-                    ViewYAML(yaml, yamlfs, is_binding=True),
+                    ViewYAMLFile.create(
+                        dtnode.binding_path,
+                        dtnode.dt.dts.yamlfs,
+                        is_binding=True,
+                        expand_includes=_dtshconf.pref_yaml_expand,
+                    )
+                    if dtnode.binding_path
+                    else TextUtil.mk_apologies("YAML binding unavailable."),
                 )
             )
+        self._out_rich_sections(sections, out)
 
-        if len(sections) > 1:
-            # If more than one sections, use headings writer.
-            hds_writer = HeadingsContentWriter()
-            for section in sections:
-                hds_writer.write_section(section, out)
-        else:
-            # Otherwise, just write section's content.
-            out.write(sections[0].content)
-
-    def _cat_dtnode_raw(self, node: DTNode, out: DTShOutput) -> None:
-        nflags = sum(
-            [
-                self.with_flag(DTShFlagDescription),
-                self.with_flag(DTShFlagYamlFile),
-                self.with_flag(DTShFlagBindings),
-            ]
-        )
-        if nflags > 1:
-            raise DTShUsageError(
+    def _out_dtnode_raw(self, node: DTNode, out: DTShOutput) -> None:
+        # Precondition for POSIX-like output only.
+        if self._nfmtspecs() > 1:
+            raise DTShCommandError(
                 self, "more than one option among '-DBY' requires '-l'"
             )
 
@@ -224,38 +266,28 @@ class DTShBuiltinCat(DTShCommand):
             if node.binding_path:
                 out.write(node.binding_path)
         else:
-            self._cat_dtproperties_raw(node.all_dtproperties(), out)
+            # By default, dump property values.
+            self._out_dtproperties_raw(node.all_dtproperties(), out)
 
-    def _cat_dtproperties_rich(
+    def _out_dtproperties_rich(
         self, dtprops: List[DTNodeProperty], out: DTShOutput
     ) -> None:
-        if len(dtprops) == 1:
-            # Single property: dump value or selected "DBY".
-            self._cat_dtproperty_rich(dtprops[0], out)
-        elif dtprops:
-            # Multiple properties: dump values in table view.
-            view = ViewPropertyValueTable(dtprops)
-            view.left_indent(1)
-            out.write(view)
+        # Multiple properties: dump values in table view.
+        view = ViewPropertyValueTable(dtprops)
+        view.left_indent(1)
+        out.write(view)
 
-    def _cat_dtproperty_rich(
+    def _out_dtproperty_rich(
         self, dtprop: DTNodeProperty, out: DTShOutput
     ) -> None:
         show_all = self.with_flag(DTShFlagAll)
-        if not any(
-            (
-                show_all,
-                self.with_flag(DTShFlagDescription),
-                self.with_flag(DTShFlagYamlFile),
-                self.with_flag(DTShFlagBindings),
-            )
-        ):
+        if not (show_all or self._nfmtspecs()):
             # If the user hasn't explicitly selected what to cat,
             # just dump property value.
-            view = ViewPropertyValueTable([dtprop])
-            out.write(view)
+            out.write(ViewPropertyValueTable([dtprop]))
             return
 
+        # Otherwise, concatenate and output selected sections.
         sections: List[HeadingsContentWriter.Section] = []
         if show_all or self.with_flag(DTShFlagDescription):
             sections.append(
@@ -272,41 +304,86 @@ class DTShBuiltinCat(DTShCommand):
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
-            yaml = YAMLFile(dtprop.path or "")
-            yamlfs = dtprop.node.dt.dts.yamlfs
             sections.append(
                 HeadingsContentWriter.Section(
                     "YAML",
                     1,
-                    ViewYAML(yaml, yamlfs, is_binding=True),
+                    ViewYAMLFile.create(
+                        dtprop.path,
+                        dtprop.node.dt.dts.yamlfs,
+                        is_binding=(dtprop.path == dtprop.node.binding_path),
+                        expand_includes=_dtshconf.pref_yaml_expand,
+                    )
+                    if dtprop.path
+                    else TextUtil.mk_apologies(
+                        "YAML specification unavailable."
+                    ),
                 )
             )
+        self._out_rich_sections(sections, out)
 
-        if len(sections) > 1:
+    def _out_dtproperties_raw(
+        self, dtprops: List[DTNodeProperty], out: DTShOutput
+    ) -> None:
+        for dtprop in dtprops:
+            strval = DTSUtil.mk_property_value(dtprop)
+            out.write(f"{dtprop.name}: {strval}")
+
+    def _out_dtproperty_raw(
+        self, dtprop: DTNodeProperty, out: DTShOutput
+    ) -> None:
+        # Precondition for POSIX-like output only.
+        if self._nfmtspecs() > 1:
+            raise DTShCommandError(
+                self, "more than one option among '-DBY' requires '-l'"
+            )
+
+        if self.with_flag(DTShFlagDescription):
+            if dtprop.description:
+                out.write(dtprop.description)
+        elif self.with_flag(DTShFlagYamlFile):
+            if dtprop.path:
+                yaml = YAMLFile(dtprop.path)
+                out.write(yaml.content)
+        elif self.with_flag(DTShFlagBindings):
+            if dtprop.path:
+                out.write(dtprop.path)
+        else:
+            # Default to property value.
+            out.write(DTSUtil.mk_property_value(dtprop))
+
+    def _with_longfmt(self) -> bool:
+        # Should we use formatted output ?
+        return (
+            # "-l"
+            self.with_flag(DTShFlagLongList)
+            # "-A" implies "-l"
+            or self.with_flag(DTShFlagAll)
+            # Enforced by preferences.
+            or _dtshconf.pref_always_longfmt
+        )
+
+    def _nfmtspecs(self) -> int:
+        # Number of output format specifier flags, among DTShFlagDescription,
+        # DTShFlagYamlFile and DTShFlagBindings, set on the command line.
+        # Each flag represents a headings in a rich output.
+        # With POSIX-like output, only one is allowed.
+        return sum(
+            [
+                self.with_flag(DTShFlagDescription),
+                self.with_flag(DTShFlagBindings),
+                self.with_flag(DTShFlagYamlFile),
+            ]
+        )
+
+    def _out_rich_sections(
+        self, sections: List[HeadingsContentWriter.Section], out: DTShOutput
+    ) -> None:
+        if len(sections) == 1:
+            # If only on section, just write its content.
+            out.write(sections[0].content)
+        else:
+            # Otherwise, use headings writer.
             hds_writer = HeadingsContentWriter()
             for section in sections:
                 hds_writer.write_section(section, out)
-        else:
-            out.write(sections[0].content)
-
-    def _cat_dtproperties_raw(
-        self, dtprops: List[DTNodeProperty], out: DTShOutput
-    ) -> None:
-        if len(dtprops) == 1:
-            dtprop = dtprops[0]
-            if self.with_flag(DTShFlagDescription):
-                if dtprop.description:
-                    out.write(dtprop.description)
-            elif self.with_flag(DTShFlagYamlFile):
-                if dtprop.path:
-                    yaml = YAMLFile(dtprop.path)
-                    out.write(yaml.content)
-            elif self.with_flag(DTShFlagBindings):
-                if dtprop.path:
-                    out.write(dtprop.path)
-            else:
-                out.write(DTSUtil.mk_property_value(dtprop))
-        else:
-            for dtprop in dtprops:
-                strval = DTSUtil.mk_property_value(dtprop)
-                out.write(f"{dtprop.name}: {strval}")
