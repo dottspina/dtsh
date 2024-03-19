@@ -2218,6 +2218,7 @@ class ViewYAMLContent(View):
             lexer="yaml",
             theme=theme or _dtshconf.pref_yaml_theme,
             dedent=True,
+            padding=(0, 1, 0, 0),
         )
 
     @property
@@ -2459,6 +2460,7 @@ class ViewDTSContent(View):
             lexer="dts",
             theme=theme or _dtshconf.pref_dts_theme,
             dedent=True,
+            padding=(0, 1, 0, 0),
         )
 
     @property
