@@ -223,6 +223,30 @@ class TextUtil:
         return Text(msg, style=DTShTheme.STYLE_APOLOGIES)
 
     @classmethod
+    def mk_error(cls, msg: str) -> Text:
+        """Make an error message.
+
+        Args:
+            msg: The message.
+
+        Returns:
+            A new text view.
+        """
+        return Text(msg, style=DTShTheme.STYLE_ERROR)
+
+    @classmethod
+    def mk_warning(cls, msg: str) -> Text:
+        """Make a warning message.
+
+        Args:
+            msg: The message.
+
+        Returns:
+            A new text view.
+        """
+        return Text(msg, style=DTShTheme.STYLE_WARNING)
+
+    @classmethod
     def join(cls, sep: Union[str, Text], parts: Iterable[Text]) -> Text:
         """Join rich text elements."""
         if isinstance(sep, str):
