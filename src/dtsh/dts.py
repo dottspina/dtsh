@@ -232,6 +232,16 @@ class DTS:
         return None
 
     @property
+    def board_yaml(self) -> Optional[str]:
+        """Board YAML file with metadata.
+
+        Shortcut to "${BOARD_DIR}/${BOARD}.yaml".
+        """
+        if self.board_dir and self.board:
+            return os.path.join(self.board_dir, f"{self.board}.yaml")
+        return None
+
+    @property
     def shield_dirs(self) -> Sequence[str]:
         """Shield directories.
 
