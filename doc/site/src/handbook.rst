@@ -1041,6 +1041,37 @@ Output Redirection
    You can safely override this preference.
 
 
+.. _dtsh-prefs-highlighting:
+
+Syntax Highlighting
+-------------------
+
+``pref.dts.theme``
+   Pygment theme for DTS syntax highlighting.
+
+   E.g.:
+
+   - dark: "monokai", "dracula", "material"
+   - light: "bw", "sas", "arduino"
+
+   See `Pygments styles <Pygments styles_>`_.
+
+   Default: monokai
+
+
+``pref.yaml.theme``
+   Pygments theme for YAML syntax highlighting.
+
+   E.g.:
+
+   - dark: "monokai", "dracula", "material"
+   - light: "bw", "sas", "arduino"
+
+   See `Pygments styles <Pygments styles_>`_.
+
+   Default: monokai
+
+
 .. _dtsh-prefs-lists:
 
 Formatted Lists
@@ -2244,6 +2275,79 @@ Find RAM size:
                   Name    Registers            Description
                   ─────────────────────────────────────────────────────────────
    zephyr,sram -> memory  0x20000000 (256 kB)  Generic on-chip SRAM description
+
+
+.. _dtsh-builtin-board:
+
+board
+=====
+
+**board** Print board information.
+
+Synopsis:
+
+.. code-block:: none
+
+   board [OPTIONS]
+
+.. note::
+
+   Board information is available only when DTSh can find the CMake cache file produced
+   when the DTS was generated::
+
+      build
+      ├── CMakeCache.txt
+      └── zephyr
+          └── zephyr.dts
+
+
+.. _dtsh-board-options:
+
+Options
+-------
+
+``-l``
+   Use a :ref:`long listing format <dtsh-format-output>`.
+
+   Rich *rich* styled output.
+
+``--board-file``
+   Print board file (DTS).
+
+``--pager``
+   Page command output.
+
+   See :ref:`dtsh-pager`.
+
+
+.. _dtsh-board-examples:
+
+Examples
+--------
+
+Board information:
+
+.. code-block:: none
+
+   /
+   > board
+   identifier: bbc_microbit
+   name: BBC Micro:Bit
+   type: mcu
+   arch: arm
+   toolchain:
+     - zephyr
+     - gnuarmemb
+     - xtools
+   ram: 16
+   testing:
+   ignore_tags:
+     - net
+   supported:
+     - ble
+     - i2c
+     - gpio
+     - pwm
 
 
 .. _dtsh-tui:

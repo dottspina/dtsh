@@ -216,3 +216,6 @@
 
 .. _WSL:
    https://learn.microsoft.com/en-us/windows/wsl/
+
+.. _Pygments styles:
+   https://pygments.org/styles/
