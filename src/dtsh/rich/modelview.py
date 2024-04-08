@@ -2459,6 +2459,11 @@ class ViewDTSContent(View):
               If unset, default to configured preference.
         """
         super().__init__()
+
+        # Work-around: Syntax.__rich_measure__() implementation would miscompute
+        # the size of content lines with tab characters.
+        content = content.replace("\t", " " * 4)
+
         self._view = Syntax(
             content,
             lexer="dts",
