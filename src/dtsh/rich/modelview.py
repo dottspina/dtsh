@@ -284,20 +284,22 @@ class DTModelView:
     @classmethod
     def mk_interrupt(cls, irq: DTNodeInterrupt) -> Text:
         """Text view factory for interrupts."""
-        tv_irq = TextUtil.join(
-            ":",
-            (
-                TextUtil.mk_text(
-                    str(irq.number), DTShTheme.STYLE_DT_IRQ_NUMBER
-                ),
+        tv_irq = TextUtil.mk_text(
+            str(irq.number), DTShTheme.STYLE_DT_IRQ_NUMBER
+        )
+
+        if irq.priority is not None:
+            tv_irq = TextUtil.assemble(
+                tv_irq,
+                ":",
                 TextUtil.mk_text(
                     str(irq.priority), DTShTheme.STYLE_DT_IRQ_PRIORITY
                 ),
-            ),
-        )
+            )
+
         if irq.name:
-            tv_irq = TextUtil.join(
-                " ", (tv_irq, TextUtil.mk_text(f"({irq.name})"))
+            tv_irq = TextUtil.assemble(
+                tv_irq, " ", TextUtil.mk_text(f"({irq.name})")
             )
 
         return tv_irq
