@@ -249,6 +249,11 @@ class DTShConfig:
         return self.getbool("pref.list.headers")
 
     @property
+    def pref_list_no_wrap(self) -> bool:
+        """Whether to prevent from cells wrapping in list views."""
+        return self.getbool("pref.list.no_wrap")
+
+    @property
     def pref_list_placeholder(self) -> str:
         """Placeholder for missing values in list views."""
         return self.getstr("pref.list.place_holder")
