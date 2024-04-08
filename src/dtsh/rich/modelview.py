@@ -673,7 +673,7 @@ class ViewNodeList(ViewNodeTable):
         self,
         cols: Sequence[NodeColumnMV],
         sketch: SketchMV,
-        no_wrap: bool = False,
+        no_wrap: Optional[bool] = None,
     ) -> None:
         """Initialize view.
 
@@ -688,7 +688,9 @@ class ViewNodeList(ViewNodeTable):
             sketch,
             padding=(0, 1, 0, 1),
             show_header=_dtshconf.pref_list_headers,
-            no_wrap=no_wrap,
+            no_wrap=no_wrap
+            if no_wrap is not None
+            else _dtshconf.pref_list_no_wrap,
         )
         if self._sketch.layout == SketchMV.Layout.LIST_MULTI:
             # When we allow multiple-line cells, draw lines to distinguish rows.
