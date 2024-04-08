@@ -2389,12 +2389,12 @@ class HeadingsContentWriter:
     # The TAB size in characters.
     _tab: int
 
-    # Whether we've should insert a .
-    _blank: bool
+    # Whether we need to insert a new line before we write a new heading.
+    _newl: bool
 
     def __init__(self, tab: int = 4) -> None:
         self._tab = tab
-        self._blank = True
+        self._newl = False
 
     def write(
         self,
@@ -2411,10 +2411,12 @@ class HeadingsContentWriter:
             content: Renderable content.
             out: Where to write the content.
         """
-        if self._blank:
-            self._blank = False
-        else:
+        if self._newl:
             out.write()
+        else:
+            # Once this heading is written,
+            # we'll need to insert new lines between subsequent ones.
+            self._newl = True
 
         i_left: int = self._tab + (self._tab // 2) * (level - 1)
         if isinstance(content, View):
