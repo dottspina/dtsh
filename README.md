@@ -32,7 +32,7 @@ This branch (`dtsh-next`) mirrors and packages the new code base which serves as
 
 This is the branch that shall be installed, used and commented on: it is now the **default** branch of this repository.
 
-**Latest release**: DTSh [0.2.1](https://github.com/dottspina/dtsh/releases/tag/v0.2.1) ([PyPI](https://pypi.org/project/dtsh/0.2.1/)).
+**Latest release**: DTSh [0.2.2](https://github.com/dottspina/dtsh/releases/tag/v0.2.2) ([PyPI](https://pypi.org/project/dtsh/0.2.2/)).
 
 > [!NOTE]
 > Although this branch *reflects* the state of the PR's [content](https://github.com/dottspina/zephyr/tree/rfc-dtsh), it's not an actual mirror:
@@ -102,7 +102,7 @@ $ west build -b nrf52840dk_nrf52840
 ```
 $ cd zephyr/samples/sensor/bme680
 $ dtsh
-dtsh (0.2.1): A Devicetree Shell
+dtsh (0.2.2): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
