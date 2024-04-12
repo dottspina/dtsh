@@ -200,7 +200,7 @@ class DTShSession:
 
             # NOTE: Be sure to set prompt_sparse in preferences
             # when running batch sessions.
-            if _dtshconf.prompt_sparse:
+            if _dtshconf.prompt_sparse and self._vt.is_tty():
                 self._vt.write()
 
     def close(self, interactive: bool) -> None:
