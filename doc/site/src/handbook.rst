@@ -2383,7 +2383,7 @@ as current working branch:
 
 .. code-block:: none
 
-   dtsh (0.2.1): A Devicetree Shell
+   dtsh (0.2.2): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
