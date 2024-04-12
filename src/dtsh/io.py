@@ -71,6 +71,14 @@ class DTShInput:
         """
         raise EOFError()
 
+    def is_tty(self) -> bool:
+        """Whether the command lines come from a TTY (interactive mode).
+
+        In batch mode, the command lines come from either a file input stream
+        or the CLI arguments.
+        """
+        return True
+
 
 class DTShVT(DTShInput, DTShOutput):
     """Base terminal for devicetree shells.
