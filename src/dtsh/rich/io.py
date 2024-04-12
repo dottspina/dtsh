@@ -114,6 +114,10 @@ class DTShBatchRichVT(DTShRichVT):
         self._batch_is = batch_is
         self._interactive = interactive
 
+    def is_tty(self) -> bool:
+        """Overrides DTShInput.is_tty()."""
+        return self._batch_is is None
+
     def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
         """Overrides DTShVT.readline()."""
         if self._batch_is:
