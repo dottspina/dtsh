@@ -34,7 +34,7 @@ as a new `Zephyr extension to West <Zephyr-West_>`_ (would be ``west dtsh``):
 Source code and documentation for the Proof of Concept and prototype (DTSh 0.1.x) are still
 available at the ``main`` `branch <DTSh-main_>`_ of this repository.
 
-*Latest release*: **0.2.1** `Release Notes <https://github.com/dottspina/dtsh/releases/tag/v0.2.1>`_
+*Latest release*: **0.2.2** `Release Notes <https://github.com/dottspina/dtsh/releases/tag/v0.2.2>`_
 (`PyPI <PyPI-dtsh_>`_)
 
 .. toctree::

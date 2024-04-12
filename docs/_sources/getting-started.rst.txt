@@ -195,7 +195,7 @@ The typical DTSh's use case is to open this DTS file generated at build-time, e.
    $ cd zephyr/samples/sensor/bme680
    $ cmake -B build -DBOARD=nrf52840dk_nrf52840
    $ dtsh build/zephyr/zephyr.dts
-   dtsh (0.2.1): A Devicetree Shell
+   dtsh (0.2.2): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -298,7 +298,7 @@ following command:
 .. code-block:: none
 
    $ dtsh -c "ls -l" -c "cd &i2c0" -i
-   dtsh (0.2.1): A Devicetree Shell
+   dtsh (0.2.2): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    > Name              Labels          Binding
