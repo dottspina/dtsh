@@ -138,6 +138,17 @@ class DTShSession:
             cmdline: Optional[str] = None
             try:
                 cmdline = self._vt.readline(self.mk_prompt())
+            except KeyboardInterrupt:
+                # If SIGINT is signaled (e.g. via 'CTRL-C' or 'kill -SIGINT')
+                # while reading keyboard inputs, Python will in turn raise a
+                # KeyboardInterrupt exception. Most shells respond to it by
+                # just echoing "^C" to the TTY and starting a new prompt, so
+                # this emulates the same behavior.
+                # Pagers usually trap and ignore SIGINT, but as a precaution
+                # we'll close it if one is still active.
+                self._vt.pager_exit()
+                self._vt.write("^C")
+                continue
             except EOFError:
                 # Exit DTSh on EOF.
                 self.close(interactive)
@@ -307,10 +318,6 @@ class DTShSession:
     def _preamble_hook(self) -> None:
         # Hook called when an interactive session starts.
 
-        # Closing with SIGINT when the pager is active breaks the TTY.
-        # As a work-around, we ignore SIGINT in interactive sessions.
-        signal.signal(signal.SIGINT, self._sig_handler)
-
         self._vt.clear()
         for line in self.mk_prologue():
             self._vt.write(line)
@@ -348,10 +355,3 @@ class DTShSession:
                 DTShBuiltinUname(),
             ],
         )
-
-    def _sig_handler(self, signum: int, frame: Optional[FrameType]) -> Any:
-        # closing() the session when the pager is active breaks the TTY.
-        # As a work-around, we ignore SIGINT.
-        del frame  # Unused.
-        if signum == signal.SIGINT:
-            pass
