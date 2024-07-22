@@ -222,13 +222,28 @@ class DTS:
         return board
 
     @property
+    def soc(self) -> Optional[str]:
+        """SoC name.
+
+        Retrieve the SoC name from the board name (HWMv2).
+
+        Unsupported for Zephyr Hardware Model v1.
+        """
+        if self.board:
+            board_soc = self.board.split("/")
+            if len(board_soc) == 2:
+                return board_soc[1]
+        return None
+
+    @property
     def board_file(self) -> Optional[str]:
         """Board DTS file.
 
         Shortcut to "${BOARD_DIR}/${BOARD}.dts".
         """
         if self.board_dir and self.board:
-            return os.path.join(self.board_dir, f"{self.board}.dts")
+            board_sem = DTS._board_sem(self.board)
+            return os.path.join(self.board_dir, f"{board_sem}.dts")
         return None
 
     @property
@@ -238,7 +253,31 @@ class DTS:
         Shortcut to "${BOARD_DIR}/${BOARD}.yaml".
         """
         if self.board_dir and self.board:
-            return os.path.join(self.board_dir, f"{self.board}.yaml")
+            board_sem = DTS._board_sem(self.board)
+            return os.path.join(self.board_dir, f"{board_sem}.yaml")
+        return None
+
+    @property
+    def soc_dir(self) -> Optional[str]:
+        """SoC directory.
+
+        Retrieved from the CMake cache variable SOC_FULL_DIR,
+        which is defined since Zephyr Hardware Model v2.
+
+        Unsupported for Zephyr Hardware Model v1.
+        """
+        return self._cmake.getstr("SOC_FULL_DIR") if self._cmake else None
+
+    @property
+    def soc_yml(self) -> Optional[str]:
+        """SoC definition file.
+
+        Shortcut to "${SOC_FULL_DIR}/soc.yml".
+
+        Unsupported for Zephyr Hardware Model v1.
+        """
+        if self.soc_dir:
+            return os.path.join(self.soc_dir, "soc.yml")
         return None
 
     @property
@@ -415,6 +454,31 @@ class DTS:
         # cast() is required to avoid type hinting error since
         # binding_dirs is first typed as an optional Sequence.
         return cast(List[str], binding_dirs)
+
+    # Starting with version 3.7.0, Zephyr uses new hardware model (HWMv2).
+    #
+    # Roughly speaking, the board naming scheme changes from:
+    #   <board>_<soc>
+    # to:
+    #   <board>/<soc>
+    #
+    # For example, with the Nordic nRF52840 DK:
+    #
+    # HWMv1:
+    # - BOARD: nrf52840dk_nrf52840
+    # - BOARD_DIR: <BOARD_ROOT>/boards/arm/nrf52840dk_nrf52840
+    # - Board files: <BOARD_DIR>/nrf52840dk_nrf52840.{dts,yaml}
+    #
+    # HWMv2:
+    # - BOARD: nrf52840dk/nrf52840
+    # - BOARD_DIR: <BOARD_ROOT>/boards/nordic/nrf52840dk
+    # - Board files: <BOARD_DIR>/nrf52840dk_nrf52840.{dts,yaml}
+    #
+    # This function answers a sem such that <BOARD_DIR>/<SEM>.{dts,yaml}
+    # should point to the board files for both hardware models.
+    @staticmethod
+    def _board_sem(board: str) -> str:
+        return board.replace("/", "_")
 
 
 class YAMLFilesystem:
