@@ -37,10 +37,12 @@ from typing import (
     Dict,
     Iterator,
     Mapping,
+    Tuple,
 )
 
 import os
 import re
+import subprocess
 import sys
 
 import yaml
@@ -375,6 +377,19 @@ class DTS:
                 if not toolchain_dir:
                     toolchain_dir = os.environ.get(var)
         return toolchain_dir
+
+    def get_zephyr_head(self) -> Optional[str]:
+        """Retrieve Zephyr kernel version.
+
+        Returns:
+            Suffixed most recent tag of the ZEPHYR_BASE repository
+            if Git is found in the current environment.
+        """
+        if self.zephyr_base:
+            git = GitUtil(self.zephyr_base)
+            if git.is_available:
+                return git.describe_head()
+        return None
 
     def _init_cmake_cache(self) -> Optional["CMakeCache"]:
         # Is the CMake cache available at ../CMakeCache.txt from the DTS file ?
@@ -1002,3 +1017,67 @@ class DTSFile:
             self._lasterr = e
         # Empty content on error.
         return ""
+
+
+class GitUtil:
+    """Git helper.
+
+    Execute Git commands as sub-processes and get results.
+    """
+
+    # Working directory for Git commands
+    _cwd: str
+
+    # True when:
+    # - the git command is found
+    # - we're inside a Git working tree
+    _enabled: bool
+
+    def __init__(self, cwd: str) -> None:
+        """
+        Args:
+           cwd: Working directory for Git commands.
+        """
+        self._cwd = cwd
+        self._enabled = self._git_check_enabled()
+
+    @property
+    def is_available(self) -> bool:
+        """True when we should be able to execute Git commands."""
+        return self._enabled
+
+    def describe_head(self) -> Optional[str]:
+        """Retrieve repository head (suffixed most recent tag).
+
+        Returns:
+            The output of "git describe --always HEAD",
+            or None if the command failed.
+        """
+        (ret, output) = self._git_exec(["describe", "--always", "HEAD"])
+        if ret == 0:
+            return output
+        return None
+
+    def _git_check_enabled(self) -> bool:
+        (ret, _) = self._git_exec(["rev-parse", "--is-inside-work-tree"])
+        return ret == 0
+
+    # Execute a Git command and answer result as a tuple (return value, output).
+    def _git_exec(self, args: Sequence[str]) -> Tuple[int, str]:
+        git_cmd: Sequence[str] = [
+            "git.exe" if os.name == "nt" else "git",
+            *args,
+        ]
+        try:
+            proc = subprocess.Popen(
+                git_cmd,
+                cwd=self._cwd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            ret = proc.wait()
+            # We know proc.stdout is set.
+            output = proc.stdout.read().decode("utf-8").strip()  # type: ignore
+            return (ret, output)
+        except OSError as e:
+            return (e.errno, e.strerror)
