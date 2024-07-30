@@ -283,6 +283,14 @@ class DTS:
         return None
 
     @property
+    def soc_svd(self) -> Optional[str]:
+        """SoC SVD file.
+
+        Retrieved from the CMake cache (SOC_SVD_FILE).
+        """
+        return self._cmake.getstr("SOC_SVD_FILE") if self._cmake else None
+
+    @property
     def shield_dirs(self) -> Sequence[str]:
         """Shield directories.
 
