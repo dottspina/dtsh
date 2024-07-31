@@ -150,4 +150,4 @@ def test_dtshconfig_defaults() -> None:
 
     # Forms.
     assert cfg_defaults.pref_form_show_all
-    assert ActionableType.LINK == cfg_defaults.pref_form_actionable_type
+    assert ActionableType.ALT == cfg_defaults.pref_form_actionable_type
