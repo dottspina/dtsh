@@ -9,7 +9,8 @@
 project = "DTSh"
 copyright = "2024, Chris Duf"
 author = "Chris Duf"
-release = "0.2.2"
+version = "0.2.3"
+release = "0.2.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
