@@ -2488,6 +2488,20 @@ class HeadingsContentWriter:
         """
         self.write(section.title, section.level, section.content, out)
 
+    def write_sections(
+        self,
+        sections: Sequence["HeadingsContentWriter.Section"],
+        out: DTShOutput,
+    ) -> None:
+        """Write sections.
+
+        Args:
+            sections: What to write.
+            out: Where to write.
+        """
+        for section in sections:
+            self.write_section(section, out)
+
 
 class ViewDTSContent(View):
     """View of DTS content with syntax highlighting."""
