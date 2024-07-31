@@ -26,6 +26,7 @@ from dtsh.config import DTShConfig
 
 from dtsh.rich.shellutils import DTShFlagLongList
 from dtsh.rich.text import TextUtil
+from dtsh.rich.tui import RenderableError
 from dtsh.rich.modelview import (
     ViewPropertyValueTable,
     FormPropertySpec,
@@ -232,20 +233,24 @@ class DTShBuiltinCat(DTShCommand):
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
-            sections.append(
-                HeadingsContentWriter.Section(
-                    "YAML",
-                    1,
-                    ViewYAMLFile.create(
-                        dtnode.binding_path,
-                        dtnode.dt.dts.yamlfs,
-                        is_binding=True,
-                        expand_includes=_dtshconf.pref_yaml_expand,
+            try:
+                sections.append(
+                    HeadingsContentWriter.Section(
+                        "YAML",
+                        1,
+                        ViewYAMLFile.create(
+                            dtnode.binding_path,
+                            dtnode.dt.dts.yamlfs,
+                            is_binding=True,
+                            expand_includes=_dtshconf.pref_yaml_expand,
+                        )
+                        if dtnode.binding_path
+                        else TextUtil.mk_apologies("YAML binding unavailable."),
                     )
-                    if dtnode.binding_path
-                    else TextUtil.mk_apologies("YAML binding unavailable."),
                 )
-            )
+            except RenderableError as e:
+                e.warn_and_forward(self, "failed to open binding file", out)
+
         self._out_rich_sections(sections, out)
 
     def _out_dtnode_raw(self, node: DTNode, out: DTShOutput) -> None:
@@ -304,22 +309,30 @@ class DTShBuiltinCat(DTShCommand):
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
-            sections.append(
-                HeadingsContentWriter.Section(
-                    "YAML",
-                    1,
-                    ViewYAMLFile.create(
-                        dtprop.path,
-                        dtprop.node.dt.dts.yamlfs,
-                        is_binding=(dtprop.path == dtprop.node.binding_path),
-                        expand_includes=_dtshconf.pref_yaml_expand,
+            try:
+                sections.append(
+                    HeadingsContentWriter.Section(
+                        "YAML",
+                        1,
+                        ViewYAMLFile.create(
+                            dtprop.path,
+                            dtprop.node.dt.dts.yamlfs,
+                            is_binding=(
+                                dtprop.path == dtprop.node.binding_path
+                            ),
+                            expand_includes=_dtshconf.pref_yaml_expand,
+                        )
+                        if dtprop.path
+                        else TextUtil.mk_apologies(
+                            "YAML specification unavailable."
+                        ),
                     )
-                    if dtprop.path
-                    else TextUtil.mk_apologies(
-                        "YAML specification unavailable."
-                    ),
                 )
-            )
+            except RenderableError as e:
+                e.warn_and_forward(
+                    self, "failed to open specification file", out
+                )
+
         self._out_rich_sections(sections, out)
 
     def _out_dtproperties_raw(
