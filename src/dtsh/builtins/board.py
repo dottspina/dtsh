@@ -62,6 +62,9 @@ class DTShBuiltinBoard(DTShCommand):
         if self.with_flag(DTShFlagPager):
             out.pager_enter()
 
+        # Show deprecation warning even in pager.
+        self._warn_deprecated(out)
+
         if self.with_flag(DTShFlagLongList) or _dtshconf.pref_always_longfmt:
             if self.with_flag(DTShFlagBoardDTS):
                 self._out_board_dts_rich(sh.dt.dts, out)
@@ -115,3 +118,15 @@ class DTShBuiltinBoard(DTShCommand):
             out.write(YAMLFile(dts.board_yaml).content)
         else:
             out.write("Board file unavailable (YAML).")
+
+    def _warn_deprecated(self, out: DTShOutput) -> None:
+        out.write(
+            TextUtil.assemble(
+                TextUtil.mk_warning("The "),
+                TextUtil.bold(TextUtil.mk_warning("board")),
+                TextUtil.mk_warning(" builtin is deprecated: please use the "),
+                TextUtil.bold(TextUtil.mk_warning("uname")),
+                TextUtil.mk_warning(" command instead."),
+            )
+        )
+        out.write()
