@@ -16,6 +16,10 @@ from rich.padding import PaddingDimensions, Padding
 from rich.table import Table
 from rich.text import Text
 
+from dtsh.io import DTShOutput
+from dtsh.shell import DTShCommand, DTShCommandError
+from dtsh.shellutils import DTShFlagPager
+from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
 
 
@@ -219,3 +223,62 @@ class StatusBar(GridLayout):
         for col in self._grid.columns:
             col.ratio = 1
         self._grid.add_row(text_left, text_center, text_right)
+
+
+class RenderableError(BaseException):
+    """Base for something we can raise and that has a view.
+
+    - allows view factories to prepare a custom fallback detailing
+      an expected condition we couldn't describe with a simple error message
+    - commands are responsible for i) writing the view to the output stream,
+      ii) forward the error as a DTShCommandException with a simple message
+    """
+
+    _grid: GridLayout
+
+    def __init__(self, title: str, label: str, cause: Exception) -> None:
+        """Initialize the error view.
+
+        Args:
+            title: Heading text.
+            label: Error context (e.g. file path)
+            cause: The cause of the rendering error.
+        """
+        strerror = cause.strerror if isinstance(cause, OSError) else str(cause)
+        super().__init__(strerror)
+        self._grid = GridLayout()
+
+        # Title.
+        self._grid.add_row(TextUtil.italic(f"{title}:"))
+        # Body.
+        body = GridLayout()
+        body.add_row(TextUtil.mk_text(f"{label}"))
+        body.add_row(TextUtil.mk_warning(strerror))
+        body.left_indent(2)
+        self._grid.add_row(body)
+
+    @property
+    def view(self) -> View:
+        """The error view."""
+        return self._grid
+
+    def warn_and_forward(
+        self, cmd: DTShCommand, msg: str, out: DTShOutput
+    ) -> None:
+        """Warn user and forward this error.
+
+        Convenience for:
+        - exiting the pager if needed
+        - warning the user with the error view
+        - forwarding (raising) the rendering error as a command error
+
+        Args:
+            cmd: Failed command.
+            msg: Command error message.
+            out: Where to warn user of the rendering error.
+        """
+        if cmd.with_flag(DTShFlagPager):
+            out.pager_exit()
+
+        out.write(self.view)
+        raise DTShCommandError(cmd, msg)
