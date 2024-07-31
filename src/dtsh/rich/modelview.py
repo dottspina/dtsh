@@ -34,6 +34,7 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
+from dtsh.config import ActionableType
 from dtsh.io import DTShOutput
 from dtsh.dts import YAMLFile, YAMLFilesystem, DTSFile
 from dtsh.model import (
@@ -1784,21 +1785,33 @@ class FormLayout(GridLayout):
     """Base view for forms.
 
     A form is a table with "Label: <content>" rows,
-    where <content> may be any of renderable type.
+    where <content> may be any renderable type.
     """
 
+    _placeholder: Union[str, Text]
     _label_style: Optional[StyleType]
+    _link_type: Optional[ActionableType]
 
     def __init__(
-        self, label_style: Optional[StyleType] = DTShTheme.STYLE_FORM_LABEL
+        self,
+        placeholder: Union[str, Text] = "",
+        label_style: Optional[StyleType] = None,
+        link_type: Optional[ActionableType] = None,
     ) -> None:
         """Initialize form.
 
         Args:
-            label_style: Default style to use for the form's lables.
+            placeholder: Placeholder for missing contents.
+              Defaults to an empty string.
+            label_style: Style to use for the form's labels.
+              Defaults to configured preference.
+            link_type: Link type to use for contents.
+              Defaults to configured preference.
         """
         super().__init__(2, padding=(0, 1, 0, 0), no_wrap=False)
-        self._label_style = label_style
+        self._placeholder = placeholder
+        self._label_style = label_style or DTShTheme.STYLE_FORM_LABEL
+        self._link_type = link_type or _dtshconf.pref_form_actionable_type
         self._grid.columns[0].justify = "right"
 
     def add_content(
@@ -1809,10 +1822,33 @@ class FormLayout(GridLayout):
         Args:
             label: The entry's label.
             content: The entry's content as renderable.
-              Empty contents are allowed.
+              Empty contents are allowed and replaced by the form's placeholder.
 
         """
-        self.add_row(self._mk_label(label), content)
+        self.add_row(self._mk_label(label), content or self._placeholder)
+
+    def mk_content(
+        self,
+        text: str,
+        style: Optional[StyleType] = None,
+        uri: Optional[str] = None,
+    ) -> Text:
+        """Make form content (right side).
+
+        Convenience for applying text and link styles.
+
+        Args:
+            text: Text content.
+            style: If set, overrides
+            uri: If set, link text content to this URI.
+
+        Returns:
+            A text view.
+        """
+        tv = TextUtil.mk_text(text, style or DTShTheme.STYLE_FORM_DEFAULT)
+        if uri:
+            tv = TextUtil.link(tv, uri, self._link_type)
+        return tv
 
     def _mk_label(self, label: str) -> Text:
         return TextUtil.assemble(
