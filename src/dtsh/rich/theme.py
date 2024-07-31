@@ -104,6 +104,18 @@ class DTShTheme:
     STYLE_FORM_LABEL = "dtsh.form.label"
     STYLE_FORM_DEFAULT = "dtsh.form.default"
 
+    STYLE_INF_ZEPHYR_BASE = "dtsh.inf.zephyr_base"
+    STYLE_INF_ZEPHYR_KERNEL = "dtsh.inf.kernel"
+    STYLE_INF_DEVICETREE = "dtsh.inf.devicetree"
+    STYLE_INF_TOOLCHAIN = "dtsh.inf.toolchain"
+    STYLE_INF_BINDINGS = "dtsh.inf.bindings"
+    STYLE_INF_VENDORS = "dtsh.inf.vendors"
+    STYLE_INF_APPLICATION = "dtsh.inf.application"
+    STYLE_INF_BOARD = "dtsh.inf.board"
+    STYLE_INF_BOARD_FILE = "dtsh.inf.board_file"
+    STYLE_INF_SOC = "dtsh.inf.soc"
+    STYLE_INF_SOC_SVD = "dtsh.inf.soc_svd"
+
     class Error(BaseException):
         """Error loading styles file."""
 
