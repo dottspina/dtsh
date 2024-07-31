@@ -2217,6 +2217,10 @@ class ViewYAMLContent(View):
               If unset, default to configured preference.
         """
         super().__init__()
+
+        # Work-around: strip file contents that end with empty lines.
+        content = content.strip()
+
         self._view = Syntax(
             content,
             lexer="yaml",
@@ -2467,6 +2471,9 @@ class ViewDTSContent(View):
               If unset, default to configured preference.
         """
         super().__init__()
+
+        # Work-around: strip file contents that end with empty lines.
+        content = content.strip()
 
         # Work-around: Syntax.__rich_measure__() implementation would miscompute
         # the size of content lines with tab characters.
