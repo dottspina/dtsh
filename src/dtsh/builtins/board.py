@@ -21,6 +21,7 @@ from dtsh.config import DTShConfig
 
 from dtsh.rich.shellutils import DTShFlagLongList
 from dtsh.rich.text import TextUtil
+from dtsh.rich.tui import RenderableError
 
 from dtsh.rich.modelview import ViewYAMLFile, ViewDTSFile
 
@@ -77,20 +78,29 @@ class DTShBuiltinBoard(DTShCommand):
 
     def _out_board_dts_rich(self, dts: DTS, out: DTShOutput) -> None:
         if dts.board_file:
-            out.write(ViewDTSFile.create(dts.board_file))
+            try:
+                out.write(ViewDTSFile.create(dts.board_file))
+            except RenderableError as e:
+                e.warn_and_forward(self, "failed to open board file (DTS)", out)
         else:
             out.write(TextUtil.mk_apologies("Board file unavailable (DTS)."))
 
     def _out_board_yaml_rich(self, dts: DTS, out: DTShOutput) -> None:
         if dts.board_yaml:
-            view = ViewYAMLFile.create(
-                dts.board_yaml,
-                dts.yamlfs,
-                # Not really a binding file, but even less an included base YAML.
-                is_binding=True,
-                expand_includes=True,
-            )
-            out.write(view)
+            try:
+                out.write(
+                    ViewYAMLFile.create(
+                        dts.board_yaml,
+                        dts.yamlfs,
+                        # Not really a binding file, but even less an included base YAML.
+                        is_binding=True,
+                        expand_includes=True,
+                    )
+                )
+            except RenderableError as e:
+                e.warn_and_forward(
+                    self, "failed to open board file (YAML)", out
+                )
         else:
             out.write(TextUtil.mk_apologies("Board file unavailable (YAML)."))
 
