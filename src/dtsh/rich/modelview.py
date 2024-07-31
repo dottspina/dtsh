@@ -1884,10 +1884,13 @@ class FormPropertySpec(FormLayout):
         elif spec.dttype == "phandle-array":
             style = DTShTheme.STYLE_DTVALUE_PHANDLE_DATA
         elif spec.dttype == "compound":
-            # We don't know how to represent these
-            # (should not happen in-real-life-Tm).
-            style = DTShTheme.STYLE_APOLOGIES
-        return TextUtil.mk_text(spec.dttype, style)
+            style = DTShTheme.STYLE_DTVALUE_COMPOUND
+
+        tv = TextUtil.mk_text(spec.dttype, style)
+        if spec.deprecated:
+            tv = TextUtil.dim(tv)
+
+        return tv
 
     _spec: DTPropertySpec
 
@@ -2134,6 +2137,8 @@ class ViewPropertySpecTable(TableLayout):
             txt_desc = TextUtil.mk_headline(
                 spec.description, DTShTheme.STYLE_DT_DESCRIPTION
             )
+            if spec.deprecated:
+                TextUtil.dim(txt_desc)
             if spec.path:
                 txt_desc = TextUtil.link(
                     txt_desc, spec.path, _dtshconf.pref_form_actionable_type
