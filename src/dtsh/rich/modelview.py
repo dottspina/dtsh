@@ -61,7 +61,7 @@ from dtsh.modelutils import (
 )
 from dtsh.config import DTShConfig
 
-from dtsh.rich.tui import View, TableLayout, GridLayout
+from dtsh.rich.tui import View, TableLayout, GridLayout, RenderableError
 from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
 
@@ -2248,7 +2248,7 @@ class ViewYAMLFile(View):
         yamlfs: YAMLFilesystem,
         is_binding: bool,
         expand_includes: bool,
-    ) -> Union["ViewYAMLFile", Text]:
+    ) -> View:
         """YAML view factory.
 
         Args:
@@ -2258,22 +2258,28 @@ class ViewYAMLFile(View):
             expand_includes: Whether to show included files.
 
         Returns:
-            A content view or a tree view,
-            or an error text if the YAML file is unreadable or invalid.
+            A content view with syntax highlighting, shown as tree
+            when expand_includes is set.
+
+        Raises:
+            RenderableError: Inaccessible or malformed YAML file.
         """
+        # Lazy initialized.
         fyaml = YAMLFile(path)
-        if fyaml.content:
-            return ViewYAMLFile(
-                fyaml,
-                yamlfs,
-                is_binding=is_binding,
-                expand_includes=expand_includes,
+        # Actually read and parse file content.
+        fyaml.raw  # pylint: disable=pointless-statement
+
+        if fyaml.lasterr:
+            raise RenderableError(
+                "Inaccessible or malformed YAML file", path, fyaml.lasterr
             )
 
-        # No YAML content, show IO or YAML error.
-        if isinstance(fyaml.lasterr, OSError):
-            return TextUtil.mk_error(f"IO error: {fyaml.lasterr.strerror}")
-        return TextUtil.mk_error(f"YAML error: {str(fyaml.lasterr)}")
+        return ViewYAMLFile(
+            fyaml,
+            yamlfs,
+            is_binding=is_binding,
+            expand_includes=expand_includes,
+        )
 
     _yamlfs: YAMLFilesystem
     _view: Tree
@@ -2489,24 +2495,25 @@ class ViewDTSFile(GridLayout):
     """
 
     @classmethod
-    def create(cls, path: str) -> Union["ViewDTSFile", Text]:
+    def create(cls, path: str) -> View:
         """DTS view factory.
 
         Args:
-            path: Path to the YAML file.
+            path: Path to the DTS file.
 
         Returns:
-            A DTS view,
-            or an error text if the DTS file is unreadable.
-        """
-        fdts = DTSFile(path)
-        if fdts.content:
-            return ViewDTSFile(fdts)
+            A content view with syntax highlighting.
 
-        # No DTS content, show IO error.
-        if isinstance(fdts.lasterr, OSError):
-            return TextUtil.mk_error(f"IO error: {fdts.lasterr.strerror}")
-        return TextUtil.mk_error(f"Unexpected error: {str(fdts.lasterr)}")
+        Raises:
+            RenderableError: Inaccessible DTS file.
+        """
+        # Open and read DTS file.
+        fdts = DTSFile(path)
+
+        if fdts.lasterr:
+            raise RenderableError("Inaccessible DTS file", path, fdts.lasterr)
+
+        return ViewDTSFile(fdts)
 
     def __init__(self, fdts: DTSFile) -> None:
         """Initialize view.
