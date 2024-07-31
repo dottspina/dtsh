@@ -96,7 +96,7 @@ class DTShTheme:
     STYLE_DTVALUE_UINT8 = "dtsh.dtvalue.uint8"
     STYLE_DTVALUE_PHANDLE = "dtsh.dtvalue.phandle"
     STYLE_DTVALUE_PHANDLE_DATA = "dtsh.dtvalue.phandle_data"
-
+    STYLE_DTVALUE_COMPOUND = "dtsh.dtvalue.compound"
     STYLE_YAML_BINDING = "dtsh.yaml.binding"
     STYLE_YAML_INCLUDE = "dtsh.yaml.include"
     STYLE_DTS_FILE = "dtsh.dts"
