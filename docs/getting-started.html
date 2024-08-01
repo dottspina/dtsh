@@ -5,7 +5,7 @@
 <meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting Started Guide &mdash; DTSh 0.2.2 documentation</title>
+  <title>Getting Started Guide &mdash; DTSh 0.2.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -13,13 +13,14 @@
       <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
 
   
+    <link rel="shortcut icon" href="_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=000c92bf"></script>
+        <script src="_static/documentation_options.js?v=a47416a6"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -48,6 +49,9 @@
           <a href="index.html" class="icon icon-home">
             DTSh
           </a>
+              <div class="version">
+                0.2.3
+              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -83,6 +87,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="handbook.html">DTSh’s Handbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq-and-tips.html">FAQ &amp; Tips</a></li>
 </ul>
 
         </div>
@@ -255,7 +260,7 @@ in <code class="docutils literal notranslate"><span class="pre">build/zephyr/zep
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ cd zephyr/samples/sensor/bme680
 $ cmake -B build -DBOARD=nrf52840dk_nrf52840
 $ dtsh build/zephyr/zephyr.dts
-dtsh (0.2.2): A Devicetree Shell
+dtsh (0.2.3): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
@@ -285,9 +290,9 @@ or a <a class="reference external" href="https://docs.zephyrproject.org/latest/h
 </ul>
 <p>Here, DTSh retrieves <em>all it needs</em>, and especially where to search for the bindings files,
 from the CMake cache content in <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build/
 ├── CMakeCache.txt
-└── zephyr
+└── zephyr/
     └── zephyr.dts
 </pre></div>
 </div>
@@ -350,7 +355,7 @@ even if not working with Zephyr</p></li>
 to another directory, before entering the interactive loop, you can use the
 following command:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -c &quot;ls -l&quot; -c &quot;cd &amp;i2c0&quot; -i
-dtsh (0.2.2): A Devicetree Shell
+dtsh (0.2.3): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 &gt; Name              Labels          Binding

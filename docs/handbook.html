@@ -5,7 +5,7 @@
 <meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DTSh’s Handbook &mdash; DTSh 0.2.2 documentation</title>
+  <title>DTSh’s Handbook &mdash; DTSh 0.2.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -13,13 +13,14 @@
       <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
 
   
+    <link rel="shortcut icon" href="_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=000c92bf"></script>
+        <script src="_static/documentation_options.js?v=a47416a6"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -34,6 +35,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="FAQ &amp; Tips" href="faq-and-tips.html" />
     <link rel="prev" title="Getting Started Guide" href="getting-started.html" /> 
 </head>
 
@@ -48,6 +50,9 @@
           <a href="index.html" class="icon icon-home">
             DTSh
           </a>
+              <div class="version">
+                0.2.3
+              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -141,6 +146,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#dtsh-board-examples">Examples</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#uname">uname</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-uname-options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dtsh-uname-examples">Examples</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#textual-user-interface">Textual User Interface</a><ul>
@@ -170,6 +180,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="faq-and-tips.html">FAQ &amp; Tips</a></li>
 </ul>
 
         </div>
@@ -200,10 +211,10 @@
 <span id="dtsh-handbook"></span><h1>DTSh’s Handbook<a class="headerlink" href="#dtsh-s-handbook" title="Link to this heading"></a></h1>
 <p>This handbook assumes you’ve already installed DTSh, and know how to open DTS files with <code class="docutils literal notranslate"><span class="pre">dtsh</span></code>.
 If not, please go to the <a class="reference internal" href="getting-started.html#dtsh-getting-started"><span class="std std-ref">Getting Started Guide</span></a>.</p>
-<figure class="align-center" id="id17">
+<figure class="align-center" id="id19">
 <a class="reference internal image-reference" href="_images/buses.png"><img alt="Buses" src="_images/buses.png" style="width: 100%;" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id17" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id19" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <section id="the-shell">
@@ -304,10 +315,10 @@ to the file <code class="docutils literal notranslate"><span class="pre">flash.s
 &gt; ls --format naLrC &amp;flash0/partitions &gt;&gt; flash.svg
 </pre></div>
 </div>
-<figure class="align-center" id="id18">
+<figure class="align-center" id="id20">
 <a class="reference internal image-reference" href="_images/flash.svg"><img alt="flash.svg" src="_images/flash.svg" width="100%" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">flash.svg</span></code></span><a class="headerlink" href="#id18" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">flash.svg</span></code></span><a class="headerlink" href="#id20" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <div class="admonition note">
@@ -381,8 +392,8 @@ each of which appending a <em>column</em> to the formatted output.</p>
  ficr@10000000                  Nordic FICR (Factory Information Configuration Registers)
 </pre></div>
 </div>
-<table class="docutils align-center" id="id19">
-<caption><span class="caption-text">Format string specifiers</span><a class="headerlink" href="#id19" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id21">
+<caption><span class="caption-text">Format string specifiers</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
 <td><p>unit address</p></td>
@@ -532,8 +543,8 @@ when walking through the DTS file.</p>
 <section id="sort-keys">
 <span id="dtsh-sort-keys"></span><h4>Sort Keys<a class="headerlink" href="#sort-keys" title="Link to this heading"></a></h4>
 <p>A sort <em>key</em> identifies an node order relationship.</p>
-<table class="docutils align-center" id="id20">
-<caption><span class="caption-text">Sort keys</span><a class="headerlink" href="#id20" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id22">
+<caption><span class="caption-text">Sort keys</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
 <td><p>sort by unit address</p></td>
@@ -694,8 +705,8 @@ a <em>plain text search</em> happens.</p>
 <p class="admonition-title">Tip</p>
 <p>When the command option <code class="docutils literal notranslate"><span class="pre">-i</span></code> is set, text patterns are assumed case-insensitive.</p>
 </div>
-<table class="docutils align-center" id="id21">
-<caption><span class="caption-text">Text-based criteria</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id23">
+<caption><span class="caption-text">Text-based criteria</span><a class="headerlink" href="#id23" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--also-known-as</span></code></p></td>
 <td><p>match labels or aliases</p></td>
@@ -772,8 +783,8 @@ whose size is greater than 4 kB</p></li>
 </pre></div>
 </div>
 </div>
-<table class="docutils align-center" id="id22">
-<caption><span class="caption-text">Integer-based criteria</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id24">
+<caption><span class="caption-text">Integer-based criteria</span><a class="headerlink" href="#id24" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-dts-ord</span></code></p></td>
 <td><p>match dependency ordinal</p></td>
@@ -1448,10 +1459,10 @@ flash-controller@4001e000    0x4001e000 (4 kB)  nordic,nrf52-flash-controller
 &gt; tree &amp;flash0/partitions --format NRC
 </pre></div>
 </div>
-<figure class="align-center" id="id23">
+<figure class="align-center" id="id25">
 <a class="reference internal image-reference" href="_images/partitions.svg"><img alt="partitions.svg" src="_images/partitions.svg" width="100%" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">&amp;flash0/partitions</span> <span class="pre">--format</span> <span class="pre">NRC</span></code></span><a class="headerlink" href="#id23" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">&amp;flash0/partitions</span> <span class="pre">--format</span> <span class="pre">NRC</span></code></span><a class="headerlink" href="#id25" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
@@ -1675,10 +1686,10 @@ the I2C bus (<code class="docutils literal notranslate"><span class="pre">/soc/i
 <li><p><code class="docutils literal notranslate"><span class="pre">format</span> <span class="pre">--psTD</span></code> will output the node’s path and status,
 then the nodes that depend on it, ending with the nodes it depends on</p></li>
 </ul>
-<figure class="align-center" id="id24">
+<figure class="align-center" id="id26">
 <img alt="__device_dts_ord_124" src="_images/dts_ord_error.png" />
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-dep-ord</span> <span class="pre">124</span> <span class="pre">format</span> <span class="pre">--psTD</span></code></span><a class="headerlink" href="#id24" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-dep-ord</span> <span class="pre">124</span> <span class="pre">format</span> <span class="pre">--psTD</span></code></span><a class="headerlink" href="#id26" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>This example is quite artificial, and <code class="docutils literal notranslate"><span class="pre">find</span></code> is no silver bullet.
@@ -1844,20 +1855,20 @@ see options <code class="docutils literal notranslate"><span class="pre">-D</spa
 will output only the bindings file path.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">-Y</span></code></dt><dd><p>Print YAML view of bindings or property specification.</p>
-<figure class="align-center" id="id25">
+<figure class="align-center" id="id27">
 <img alt="YAML view" src="_images/yaml.png" />
 <figcaption>
-<p><span class="caption-text">YAML view</span><a class="headerlink" href="#id25" title="Link to this image"></a></p>
+<p><span class="caption-text">YAML view</span><a class="headerlink" href="#id27" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>If not using a <em>long listing format</em>,
 will output only the bindings file path.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">-A</span></code></dt><dd><p>Show all info about a node or property.</p>
-<figure class="align-center" id="id26">
+<figure class="align-center" id="id28">
 <img alt="Detailed view" src="_images/catA.png" />
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">&amp;qspi/mx25r6435f&#64;0$quad-enable-requirements</span> <span class="pre">-A</span></code></span><a class="headerlink" href="#id26" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">&amp;qspi/mx25r6435f&#64;0$quad-enable-requirements</span> <span class="pre">-A</span></code></span><a class="headerlink" href="#id28" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </dd>
@@ -2033,6 +2044,11 @@ zephyr,sram -&gt; memory  0x20000000 (256 kB)  Generic on-chip SRAM description
 </section>
 <section id="board">
 <span id="dtsh-builtin-board"></span><h3>board<a class="headerlink" href="#board" title="Link to this heading"></a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <strong>board</strong> builtin is deprecated and will be removed in DTSh 0.2.4.
+Please use the <a class="reference internal" href="#dtsh-builtin-uname"><span class="std std-ref">uname</span></a> command instead.</p>
+</div>
 <p><strong>board</strong> Print board information.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>board [OPTIONS]
@@ -2088,6 +2104,151 @@ supported:
 </div>
 </section>
 </section>
+<section id="uname">
+<span id="dtsh-builtin-uname"></span><h3>uname<a class="headerlink" href="#uname" title="Link to this heading"></a></h3>
+<p><strong>uname</strong> Print system information (kernel, board, SoC).</p>
+<p>Synopsis:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>uname [OPTIONS]
+</pre></div>
+</div>
+<p>By default, print Zephyr kernel and board name:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname
+Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840
+</pre></div>
+</div>
+<section id="dtsh-uname-options">
+<span id="id16"></span><h4>Options<a class="headerlink" href="#dtsh-uname-options" title="Link to this heading"></a></h4>
+<p>Only one option among <code class="docutils literal notranslate"><span class="pre">-moin</span></code> is allowed. The option <code class="docutils literal notranslate"><span class="pre">-a</span></code> is not allowed with one of <code class="docutils literal notranslate"><span class="pre">-moin</span></code>.</p>
+<p>Actual output depends on the <code class="docutils literal notranslate"><span class="pre">-l</span></code> flag (<em>long format</em>).</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <em>long format</em> (<em>rich</em> styled output).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">--machine</span></code></dt><dd><p>Print board name (aka <code class="docutils literal notranslate"><span class="pre">BOARD</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">--operating-system</span></code></dt><dd><p>Print Zephyr kernel information.</p>
+<table class="docutils align-center" id="id29">
+<caption><span class="caption-text">Kernel</span><a class="headerlink" href="#id29" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Default</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;kernel&gt;/&lt;toolchain&gt;</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">Zephyr-RTOS</span> <span class="pre">v3.7.0-275-gccb616c9673</span> <span class="pre">(gnuarmemb)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
+<td><p>Detailed view of the Zephyr environment</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-i</span> <span class="pre">--board</span></code></dt><dd><p>Print board information.</p>
+<table class="docutils align-center" id="id30">
+<caption><span class="caption-text">Board</span><a class="headerlink" href="#id30" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Default</p></td>
+<td><p>board name (aka <code class="docutils literal notranslate"><span class="pre">BOARD</span></code>), e.g. <code class="docutils literal notranslate"><span class="pre">nrf52840dk/nrf52840</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
+<td><p>Detailed view of the board</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">--soc</span></code></dt><dd><p>Print SoC information.</p>
+<table class="docutils align-center" id="id31">
+<caption><span class="caption-text">SoC</span><a class="headerlink" href="#id31" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Default</p></td>
+<td><p>SoC name derived from the board name (HWMv2 only), e.g. <code class="docutils literal notranslate"><span class="pre">nrf52840</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
+<td><p>Detailed view of the SoC</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">--all</span></code></dt><dd><p>Print <em>all</em> information.</p>
+<table class="docutils align-center" id="id32">
+<caption><span class="caption-text"><em>All</em></span><a class="headerlink" href="#id32" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><p>Default</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;kernel&gt;</span> <span class="pre">-</span> <span class="pre">&lt;board&gt;</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">Zephyr-RTOS</span> <span class="pre">v3.7.0-275-gccb616c9673</span> <span class="pre">-</span> <span class="pre">nrf52840dk/nrf52840</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
+<td><p>A view of all available information structured into sections</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
+<p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
+</dd>
+</dl>
+</section>
+<section id="dtsh-uname-examples">
+<span id="id17"></span><h4>Examples<a class="headerlink" href="#dtsh-uname-examples" title="Link to this heading"></a></h4>
+<p>Show detailed <em>operating system</em> information:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname -ol
+  ZEPHYR_BASE: /path/to/workspace/zephyr [^]
+      Release: Zephyr-RTOS v3.7.0-275-gccb616c9673
+    Toolchain: gnuarmemb [^]
+   Devicetree: /path/to/application/build/zephyr/zephyr.dts [^]
+     Bindings: /path/to/external/module/dts/bindings [^]
+               ZEPHYR_BASE/dts/bindings [^]
+ Vendors file: ZEPHYR_BASE/dts/bindings/vendor-prefixes.txt [^]
+  Application: sample-bme68x-iaq [^]
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><code class="docutils literal notranslate"><span class="pre">[^]</span></code> are links to the local file or directory fields are related to:</p>
+<ul class="simple">
+<li><p><em>hoover</em> to <em>reveal</em> the file or directory path</p></li>
+<li><p><em>click</em> to open the file or directory</p></li>
+</ul>
+</div>
+<p>Show detailed board information:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt; uname -il
+     Board: nrf52840dk/nrf52840
+ BOARD_DIR: /path/to/workspace/zephyr/boards/nordic/nrf52840dk [^]
+       DTS: BOARD_DIR/nrf52840dk_nrf52840.dts [^]
+      YAML: nrf52840dk_nrf52840.yaml [^]
+            identifier: nrf52840dk/nrf52840
+            name: nRF52840-DK-NRF52840
+            type: mcu
+            arch: arm
+            ram: 256
+            flash: 1024
+            toolchain:
+              - zephyr
+              - gnuarmemb
+              - xtools
+            supported:
+              - adc
+              - arduino_gpio
+              - arduino_i2c
+              - arduino_serial
+              - arduino_spi
+              - ble
+              - counter
+              - gpio
+              - i2c
+              - i2s
+              - pwm
+              - spi
+              - usb_device
+              - usbd
+              - watchdog
+              - netif:openthread
+            vendor: nordic
+</pre></div>
+</div>
+<p>Browse all available <em>system</em> information (Zephyr kernel, board, SoC):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname -al --pager
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 <section id="textual-user-interface">
 <span id="dtsh-tui"></span><h2>Textual User Interface<a class="headerlink" href="#textual-user-interface" title="Link to this heading"></a></h2>
@@ -2108,11 +2269,11 @@ supported:
 </ul>
 </div>
 <section id="dtsh-prompt">
-<span id="id16"></span><h3>The Prompt<a class="headerlink" href="#dtsh-prompt" title="Link to this heading"></a></h3>
+<span id="id18"></span><h3>The Prompt<a class="headerlink" href="#dtsh-prompt" title="Link to this heading"></a></h3>
 <p>Once its configuration is loaded, and the devicetree model is initialized,
 DTSh will clear the Terminal and start an interactive session with the root node
 as current working branch:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dtsh (0.2.2): A Devicetree Shell
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dtsh (0.2.3): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
@@ -2190,6 +2351,7 @@ find      search branches for nodes
 ls        list branch contents
 pwd       print path of current working branch
 tree      list branch contents in tree-like format
+uname     print system information (kernel, board, SoC)
 </pre></div>
 </div>
 <p>If auto-completion is triggered at the end of the first word in the command line,
@@ -2385,8 +2547,8 @@ besides paging.</p>
 <div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">POSIX</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Windows</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><p>On POSIX-like systems (GNU Linux, macOS) the pager is typically <code class="docutils literal notranslate"><span class="pre">less</span></code>,
 which has simple key bindings, and will preserve formatting, colors and styles.</p>
 <p>Useful key bindings include:</p>
-<table class="docutils align-center" id="id27">
-<caption><span class="caption-text">Pager key bindings (<code class="docutils literal notranslate"><span class="pre">less</span></code>)</span><a class="headerlink" href="#id27" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id33">
+<caption><span class="caption-text">Pager key bindings (<code class="docutils literal notranslate"><span class="pre">less</span></code>)</span><a class="headerlink" href="#id33" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p>Down, Page Down</p></td>
 <td><p>Forward one line, one window</p></td>
@@ -2494,8 +2656,8 @@ with some settings like <em>Use Option as Meta key</em>.</p>
 <p>By default, moving and editing the command line happens in Emacs mode,
 and the keybindings mentioned here are those of GNU Emacs (and Bash, GDB, etc).</p>
 <p>The tables below show the most commonly used ones.</p>
-<table class="docutils align-center" id="id28">
-<caption><span class="caption-text">Moving</span><a class="headerlink" href="#id28" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id34">
+<caption><span class="caption-text">Moving</span><a class="headerlink" href="#id34" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Home</kbd></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">C-a</span></code></p></td>
@@ -2527,8 +2689,8 @@ and the keybindings mentioned here are those of GNU Emacs (and Bash, GDB, etc).<
 </tr>
 </tbody>
 </table>
-<table class="docutils align-center" id="id29">
-<caption><span class="caption-text">Changing text</span><a class="headerlink" href="#id29" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id35">
+<caption><span class="caption-text">Changing text</span><a class="headerlink" href="#id35" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">C-t</span></code></p></td>
 <td><p>Drag the character before the cursor forward over the character at the cursor,
@@ -2575,8 +2737,8 @@ it is possible to use different keybindings: see the <a class="reference externa
 <span id="dtsh-keys-history"></span><h4>Command Line History<a class="headerlink" href="#command-line-history" title="Link to this heading"></a></h4>
 <p>Bellow are the most common keybindings for <em>invoking</em> the command history
 (see <a class="reference external" href="https://www.gnu.org/software/bash/manual/html_node/Commands-For-History.html">Commands For Manipulating The History</a> for a complete list).</p>
-<table class="docutils align-center" id="id30">
-<caption><span class="caption-text">Command History</span><a class="headerlink" href="#id30" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id36">
+<caption><span class="caption-text">Command History</span><a class="headerlink" href="#id36" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><kbd class="kbd docutils literal notranslate">Return</kbd></p></td>
 <td></td>
@@ -2691,6 +2853,7 @@ The INI syntax itself is reminded in <a class="reference internal" href="#dtsh-i
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting Started Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq-and-tips.html" class="btn btn-neutral float-right" title="FAQ &amp; Tips" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

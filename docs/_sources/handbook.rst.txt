@@ -2282,6 +2282,12 @@ Find RAM size:
 board
 =====
 
+.. warning::
+
+   The **board** builtin is deprecated and will be removed in DTSh 0.2.4.
+   Please use the :ref:`uname <dtsh-builtin-uname>` command instead.
+
+
 **board** Print board information.
 
 Synopsis:
@@ -2350,6 +2356,173 @@ Board information:
      - pwm
 
 
+.. _dtsh-builtin-uname:
+
+uname
+=====
+
+**uname** Print system information (kernel, board, SoC).
+
+Synopsis:
+
+.. code-block:: none
+
+   uname [OPTIONS]
+
+By default, print Zephyr kernel and board name:
+
+.. code-block:: none
+
+   /
+   > uname
+   Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840
+
+
+.. _dtsh-uname-options:
+
+Options
+-------
+
+Only one option among ``-moin`` is allowed. The option ``-a`` is not allowed with one of ``-moin``.
+
+Actual output depends on the ``-l`` flag (*long format*).
+
+``-l``
+   Use a *long format* (*rich* styled output).
+
+``-m --machine``
+   Print board name (aka ``BOARD``).
+
+``-o --operating-system``
+   Print Zephyr kernel information.
+
+   .. list-table:: Kernel
+      :widths: auto
+      :align: center
+
+      * - Default
+        - ``<kernel>/<toolchain>``, e.g. ``Zephyr-RTOS v3.7.0-275-gccb616c9673 (gnuarmemb)``
+      * - *Long format* (``-l``)
+        - Detailed view of the Zephyr environment
+
+``-i --board``
+   Print board information.
+
+   .. list-table:: Board
+      :widths: auto
+      :align: center
+
+      * - Default
+        - board name (aka ``BOARD``), e.g. ``nrf52840dk/nrf52840``
+      * - *Long format* (``-l``)
+        - Detailed view of the board
+
+``-n --soc``
+   Print SoC information.
+
+   .. list-table:: SoC
+      :widths: auto
+      :align: center
+
+      * - Default
+        - SoC name derived from the board name (HWMv2 only), e.g. ``nrf52840``
+      * - *Long format* (``-l``)
+        - Detailed view of the SoC
+
+``-a --all``
+   Print *all* information.
+
+   .. list-table:: *All*
+      :widths: auto
+      :align: center
+
+      * - Default
+        - ``<kernel> - <board>``, e.g. ``Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840``
+      * - *Long format* (``-l``)
+        - A view of all available information structured into sections
+
+``--pager``
+   Page command output.
+
+   See :ref:`dtsh-pager`.
+
+
+.. _dtsh-uname-examples:
+
+Examples
+--------
+
+Show detailed *operating system* information:
+
+.. code-block:: none
+
+   /
+   > uname -ol
+     ZEPHYR_BASE: /path/to/workspace/zephyr [^]
+         Release: Zephyr-RTOS v3.7.0-275-gccb616c9673
+       Toolchain: gnuarmemb [^]
+      Devicetree: /path/to/application/build/zephyr/zephyr.dts [^]
+        Bindings: /path/to/external/module/dts/bindings [^]
+                  ZEPHYR_BASE/dts/bindings [^]
+    Vendors file: ZEPHYR_BASE/dts/bindings/vendor-prefixes.txt [^]
+     Application: sample-bme68x-iaq [^]
+
+.. tip::
+
+   ``[^]`` are links to the local file or directory fields are related to:
+
+   - *hoover* to *reveal* the file or directory path
+   - *click* to open the file or directory
+
+
+Show detailed board information:
+
+.. code-block:: none
+
+   > uname -il
+        Board: nrf52840dk/nrf52840
+    BOARD_DIR: /path/to/workspace/zephyr/boards/nordic/nrf52840dk [^]
+          DTS: BOARD_DIR/nrf52840dk_nrf52840.dts [^]
+         YAML: nrf52840dk_nrf52840.yaml [^]
+               identifier: nrf52840dk/nrf52840
+               name: nRF52840-DK-NRF52840
+               type: mcu
+               arch: arm
+               ram: 256
+               flash: 1024
+               toolchain:
+                 - zephyr
+                 - gnuarmemb
+                 - xtools
+               supported:
+                 - adc
+                 - arduino_gpio
+                 - arduino_i2c
+                 - arduino_serial
+                 - arduino_spi
+                 - ble
+                 - counter
+                 - gpio
+                 - i2c
+                 - i2s
+                 - pwm
+                 - spi
+                 - usb_device
+                 - usbd
+                 - watchdog
+                 - netif:openthread
+               vendor: nordic
+
+
+Browse all available *system* information (Zephyr kernel, board, SoC):
+
+.. code-block:: none
+
+   /
+   > uname -al --pager
+
+
+
 .. _dtsh-tui:
 
 Textual User Interface
@@ -2383,7 +2556,7 @@ as current working branch:
 
 .. code-block:: none
 
-   dtsh (0.2.2): A Devicetree Shell
+   dtsh (0.2.3): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -2473,6 +2646,7 @@ built-in commands:
    ls        list branch contents
    pwd       print path of current working branch
    tree      list branch contents in tree-like format
+   uname     print system information (kernel, board, SoC)
 
 If auto-completion is triggered at the end of the first word in the command line,
 only matching commands are proposed:

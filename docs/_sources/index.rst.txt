@@ -43,6 +43,7 @@ available at the ``main`` `branch <DTSh-main_>`_ of this repository.
 
    getting-started
    handbook
+   faq-and-tips
 
 .. include:: bib.rst
 

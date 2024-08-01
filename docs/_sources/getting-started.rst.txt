@@ -195,7 +195,7 @@ The typical DTSh's use case is to open this DTS file generated at build-time, e.
    $ cd zephyr/samples/sensor/bme680
    $ cmake -B build -DBOARD=nrf52840dk_nrf52840
    $ dtsh build/zephyr/zephyr.dts
-   dtsh (0.2.2): A Devicetree Shell
+   dtsh (0.2.3): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -225,9 +225,9 @@ The above example should *always* work:
 Here, DTSh retrieves *all it needs*, and especially where to search for the bindings files,
 from the CMake cache content in ``CMakeCache.txt``::
 
-   build
+   build/
    ├── CMakeCache.txt
-   └── zephyr
+   └── zephyr/
        └── zephyr.dts
 
 .. tip::
@@ -298,7 +298,7 @@ following command:
 .. code-block:: none
 
    $ dtsh -c "ls -l" -c "cd &i2c0" -i
-   dtsh (0.2.2): A Devicetree Shell
+   dtsh (0.2.3): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    > Name              Labels          Binding
