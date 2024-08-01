@@ -31,7 +31,8 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 # html_theme = "alabaster"
 
-# We don't have static files.
-# html_static_path = ["_static"]
+# Static files.
+html_static_path = ["static"]
 
 html_theme = "sphinx_rtd_theme"
+html_favicon = "static/favicon.png"
