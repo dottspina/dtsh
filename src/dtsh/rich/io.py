@@ -97,7 +97,7 @@ class DTShBatchRichVT(DTShRichVT):
     """
 
     # Batch input stream, reset to None on EOF.
-    _batch_is: Optional[DTShInput]
+    _batch_istream: Optional[DTShInput]
 
     # Whether to read from VT after batch.
     _interactive: bool
@@ -111,21 +111,21 @@ class DTShBatchRichVT(DTShRichVT):
               (interactive sessions).
         """
         super().__init__()
-        self._batch_is = batch_is
+        self._batch_istream = batch_is
         self._interactive = interactive
 
     def is_tty(self) -> bool:
         """Overrides DTShInput.is_tty()."""
-        return self._batch_is is None
+        return self._batch_istream is None
 
     def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
         """Overrides DTShVT.readline()."""
-        if self._batch_is:
+        if self._batch_istream:
             try:
-                return self._batch_is.readline(multi_prompt)
+                return self._batch_istream.readline(multi_prompt)
             except EOFError:
                 # Exhausted batch input stream.
-                self._batch_is = None
+                self._batch_istream = None
 
         if not self._interactive:
             # Signal EOF if we don't continue in interactive mode.
