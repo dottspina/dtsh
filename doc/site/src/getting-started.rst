@@ -140,8 +140,6 @@ convenient but avoids installing anything in a development environment you actua
    pip install -U dtsh
 
 
-.. _dtsh-usage:
-
 Usage
 *****
 
@@ -175,8 +173,6 @@ Once installed, the Devicetree Shell is available as the ``dtsh`` command:
 We'll first confirm that the installation went well with a simple but typical usage,
 before tackling a few other scenarios.
 
-
-.. _dtsh-usage-default:
 
 Typical Use
 ===========
@@ -240,8 +236,6 @@ from the CMake cache content in ``CMakeCache.txt``::
      or if using West ``cd <project> && west build && dtsh``
 
 
-.. _dtsh-usage-others:
-
 Other Uses
 ==========
 
@@ -278,8 +272,6 @@ Where:
   even if not working with Zephyr
 - one of these directories shall contain a valid vendors file, e.g. ``dir1/vendor-prefixes.txt``
 
-
-.. _dtsh-usage-batch:
 
 Batch Mode
 ==========
@@ -319,8 +311,6 @@ following command:
    /soc/i2c@40003000
    ❭
 
-
-.. _dtsh-configuration:
 
 Configuration
 *************

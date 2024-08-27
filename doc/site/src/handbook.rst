@@ -3,15 +3,229 @@
 DTSh's Handbook
 ###############
 
-This handbook assumes you've already installed DTSh, and know how to open DTS files with ``dtsh``.
-If not, please go to the :ref:`dtsh-getting-started`.
-
 .. figure:: img/buses.png
   :align: center
   :alt: Buses
   :width: 100%
 
   ``find --on-bus * --OR --with-bus * -T --format NYCd``
+
+
+.. _dtsh-usage:
+
+Usage
+*****
+
+Once installed, the Devicetree Shell is available as the ``dtsh`` command:
+
+.. code-block:: none
+
+   $ dtsh -h
+   usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [-c CMD] [-f FILE] [-i] [DTS]
+
+   shell-like interface with Devicetree
+
+   options:
+     -h, --help            show this help message and exit
+
+   open a DTS file:
+     -b DIR, --bindings DIR
+                           directory to search for binding files
+     DTS                   path to the DTS file
+
+   user files:
+     -u, --user-files      initialize per-user configuration files and exit
+     --preferences FILE    load additional preferences file
+     --theme FILE          load additional styles file
+
+   session control:
+     -c CMD                execute CMD at startup (may be repeated)
+     -f FILE               execute batch commands from FILE at startup
+     -i, --interactive     enter interactive loop after batch commands
+
+.. _dtsh-typical-use:
+
+Typical Use
+===========
+
+Early at build-time, during the `configuration phase <Zephyr-Configuration Phase_>`_,
+Zephyr *assembles* the final `devicetree <DTSpec-The Devicetree_>`_ that will represent
+the system hardware during the actual build phase.
+
+This devicetree is saved in `Devicetree Source Format <DTSpec-DTS_>`_ (DTS)
+in ``build/zephyr/zephyr.dts`` for *debugging* purpose.
+
+The typical DTSh's use case is to open this DTS file generated at build-time, e.g.:
+
+.. code-block:: none
+
+   $ cd zephyr/samples/sensor/bme680
+   $ cmake -B build -DBOARD=nrf52840dk_nrf52840
+   $ dtsh build/zephyr/zephyr.dts
+   dtsh (0.2.3): A Devicetree Shell
+   How to exit: q, or quit, or exit, or press Ctrl-D
+
+   /
+   > ls -l
+    Name              Labels          Binding
+    ───────────────────────────────────────────────────────
+    chosen
+    aliases
+    soc
+    pin-controller    pinctrl         nordic,nrf-pinctrl
+    entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+    sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+    cpus
+    leds                              gpio-leds
+    pwmleds                           pwm-leds
+    buttons                           gpio-keys
+    connector         arduino_header  arduino-header-r3
+    analog-connector  arduino_adc     arduino,uno-adc
+
+The above example should *always* work:
+
+- regardless of the installation method, ``cmake`` being sufficient for the configuration phase
+- regardless of whether ``ZEPHYR_BASE`` is set
+- regardless of whether you target a `supported board <Zephyr-Boards_>`_
+  or a `custom board <Zephyr-Board Porting Guide_>`_
+
+Here, DTSh retrieves *all it needs*, and especially where to search for the bindings files,
+from the CMake cache content in ``CMakeCache.txt``::
+
+   build/
+   ├── CMakeCache.txt
+   └── zephyr/
+       └── zephyr.dts
+
+.. tip::
+
+   - In this context, no need to pass the DTS file path to DTSh: by default it will try
+     to open the devicetree at ``build/zephyr/zephyr.dts``;
+     ``dtsh /path/to/project/build/zephyr/zephyr.dts`` would also work,
+     you don't need to call ``dtsh`` from the project's root
+   - To open *your* devicetree: ``cd <project> && cmake -B build -DBOARD=<board> && dtsh``,
+     or if using West ``cd <project> && west build && dtsh``
+
+
+.. _dtsh-other-uses:
+
+Other Uses
+==========
+
+As we've seen, DTSh first tries to retrieve the bindings Zephyr has used at build-time,
+when the DTS file was generated, from the CMake cache.
+This is the most straight forward way to get a complete and legit bindings search path.
+
+When this fails, DTSh will then try to work out the search path
+Zephyr would use if it were to generate the DTS *now*
+(`Where Bindings Are Located <Zephyr-Where Bindings Are Located_>`_): bindings found in
+``$ZEPHYR_BASE/dts/bindings`` and other *default* directories should still cover
+the most simple use cases (e.g. Zephyr samples).
+
+.. code-block:: none
+
+   $ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
+   $ dtsh /path/to/zephyr.dts
+
+This default behavior does not address all situations, though:
+
+- you may need additional bindings files from a custom location,
+  or explicitly set the ``DTS_ROOT`` CMake variable
+- you're not working with Zephyr
+
+For these use cases, the ``-b --bindings`` option permits to explicitly enumerate all the directories
+to search in:
+
+   $ dtsh --bindings dir1 --bindings dir2 foobar.dts
+
+Where:
+
+- ``dir1`` and ``dir1``, and their sub-directories, shall contain all necessary YAML binding files
+  in Zephyr's `Devicetree Binding Syntax <Zephyr-Binding Syntax_>`_,
+  even if not working with Zephyr
+- one of these directories shall contain a valid vendors file, e.g. ``dir1/vendor-prefixes.txt``
+
+
+.. _dtsh-configuration:
+
+Configuration
+=============
+
+Users can tweak DTSh appearance and behavior by overriding its defaults in configuration files:
+
+- ``dtsh.ini``: to override global preferences (see :ref:`dtsh-preferences`)
+- ``theme.ini``: to override styles and colors (see :ref:`dtsh-themes`)
+
+These (optional) files must be located in a platform-dependent directory,
+e.g. ``~/.config/dtsh`` on GNU/Linux systems.
+
+Running ``dtsh`` with the ``-u --user-files`` option will initialize configuration templates
+in the expected location:
+
+.. code-block:: none
+
+  $ dtsh -u
+  User preferences: ~/.config/dtsh/dtsh.ini
+  User theme: ~/.config/dtsh/theme.ini
+
+.. tip::
+
+   DTSh won't override a user file that already exists: manually remove the file(s),
+   and run the command again.
+
+Additionally:
+
+- the ``--preferences FILE`` option permits to specify an additional preferences file to load
+- the ``--theme FILE`` option permits to specify an additional theme file to load
+
+
+.. _dtsh-ini-format:
+
+Configuration Format
+--------------------
+
+Configuration files are simple INI files that contain key-value pairs.
+
+Values support *interpolation* with the ``${key}`` (preferences) or ``%(key)s`` (themes) syntax:
+
+.. code-block:: none
+
+   # Define a key.
+   wchar.ellipsis = \u2026
+
+   # Reference it with interpolation.
+   et_caetera = Et caetera${wchar.ellipsis}
+
+   # Use $$ to escape the dollar sign.
+   dollar = This is the dollar sign: $$
+
+Values are typed:
+
+String
+   Strings may contain Unicode characters as literals
+   or 4-digit hexadecimal code points.
+
+   It's necessary to double-quote strings only when:
+
+   - the string value actually ends with spaces
+   - the string value contains the double quote character
+
+   Leading and trailing double quotes are always striped.
+
+Boolean
+   Valid values (case-insensitive):
+
+   - True: ``1``, ``yes``, ``true``, and ``on``
+   - False: ``0``, ``no``, ``false``, and ``off``
+
+Integer
+   Integers in base-10, base-2 (prefix ``0b``), base-8 (prefix ``0o``),
+   and base-16 (prefix ``Ox``) are supported.
+
+   Prefixes are case insensitive.
+
+Float
+  Decimal (e.g. ``0.1``) and scientific (e.g. ``1e-1``) notations are supported.
 
 
 .. _dtsh-shell:
@@ -804,56 +1018,7 @@ Preferences are loaded in that order:
 3. if an additional preferences file is specified with the West command option ``--preferences``,
    it's eventually loaded, overriding previous values with the options it contains
 
-See also :ref:`dtsh-configuration` in the Getting Started Guide.
-
-
-.. _dtsh-ini-format:
-
-Configuration Format
---------------------
-
-DTSh is configured with simple INI files that contain key-value pairs.
-
-Values support *interpolation* with the ``${key}`` syntax:
-
-.. code-block:: none
-
-   # Define a key.
-   wchar.ellipsis = \u2026
-
-   # Reference it with interpolation.
-   et_caetera = Et caetera${wchar.ellipsis}
-
-   # Use $$ to escape the dollar sign.
-   dollar = This is the dollar sign: $$
-
-Values are typed:
-
-String
-   Strings may contain Unicode characters as literals
-   or 4-digit hexadecimal code points.
-
-   It's necessary to double-quote strings only when:
-
-   - the string value actually ends with spaces
-   - the string value contains the double quote character
-
-   Leading and trailing double quotes are always striped.
-
-Boolean
-   Valid values (case-insensitive):
-
-   - True: ``1``, ``yes``, ``true``, and ``on``
-   - False: ``0``, ``no``, ``false``, and ``off``
-
-Integer
-   Integers in base-10, base-2 (prefix ``0b``), base-8 (prefix ``0o``),
-   and base-16 (prefix ``Ox``) are supported.
-
-   Prefixes are case insensitive.
-
-Float
-  Decimal (e.g. ``0.1``) and scientific (e.g. ``1e-1``) notations are supported.
+See also :ref:`dtsh-configuration`.
 
 
 .. _dtsh-prefs-misc:
@@ -3185,7 +3350,7 @@ Styles are loaded in that order:
    it's eventually loaded, overriding previous styles
 
 Initialize a theme template with ``dtsh -u`` if not already done
-(see :ref:`dtsh-configuration` in the Getting Started Guide).
+(see :ref:`dtsh-configuration`).
 
 Comments in the template file should be sufficient to understand how to write styles,
 and identify which style applies to which type of information.
