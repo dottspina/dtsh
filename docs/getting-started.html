@@ -221,7 +221,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </s
 </section>
 </section>
 <section id="usage">
-<span id="dtsh-usage"></span><h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
 <p>Once installed, the Devicetree Shell is available as the <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> command:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -h
 usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [-c CMD] [-f FILE] [-i] [DTS]
@@ -250,7 +250,7 @@ session control:
 <p>We’ll first confirm that the installation went well with a simple but typical usage,
 before tackling a few other scenarios.</p>
 <section id="typical-use">
-<span id="dtsh-usage-default"></span><h3>Typical Use<a class="headerlink" href="#typical-use" title="Link to this heading"></a></h3>
+<h3>Typical Use<a class="headerlink" href="#typical-use" title="Link to this heading"></a></h3>
 <p>Early at build-time, during the <a class="reference external" href="https://docs.zephyrproject.org/latest/build/cmake/index.html#configuration-phase">configuration phase</a>,
 Zephyr <em>assembles</em> the final <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html">devicetree</a> that will represent
 the system hardware during the actual build phase.</p>
@@ -309,7 +309,7 @@ or if using West <code class="docutils literal notranslate"><span class="pre">cd
 </div>
 </section>
 <section id="other-uses">
-<span id="dtsh-usage-others"></span><h3>Other Uses<a class="headerlink" href="#other-uses" title="Link to this heading"></a></h3>
+<h3>Other Uses<a class="headerlink" href="#other-uses" title="Link to this heading"></a></h3>
 <p>As we’ve seen, DTSh first tries to retrieve the bindings Zephyr has used at build-time,
 when the DTS file was generated, from the CMake cache.
 This is the most straight forward way to get a complete and legit bindings search path.</p>
@@ -342,7 +342,7 @@ even if not working with Zephyr</p></li>
 </ul>
 </section>
 <section id="batch-mode">
-<span id="dtsh-usage-batch"></span><h3>Batch Mode<a class="headerlink" href="#batch-mode" title="Link to this heading"></a></h3>
+<h3>Batch Mode<a class="headerlink" href="#batch-mode" title="Link to this heading"></a></h3>
 <p>For scripting and automation, DTSh can also be used non-interactively by passing:</p>
 <blockquote>
 <div><ul class="simple">
@@ -380,7 +380,7 @@ analog-connector  arduino_adc     arduino,uno-adc
 </section>
 </section>
 <section id="configuration">
-<span id="dtsh-configuration"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
 <p>Users can tweak DTSh appearance and behavior by overriding its defaults in configuration files:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">dtsh.ini</span></code>: to override global preferences (see <a class="reference internal" href="handbook.html#dtsh-preferences"><span class="std std-ref">User Preferences</span></a>)</p></li>

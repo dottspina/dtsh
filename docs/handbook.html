@@ -65,6 +65,15 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">DTSh’s Handbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#typical-use">Typical Use</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-uses">Other Uses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-format">Configuration Format</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#the-shell">The Shell</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#hierarchical-file-system-metaphor">Hierarchical File System Metaphor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-command-line">The Command Line</a><ul>
@@ -95,7 +104,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#user-preferences">User Preferences</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#configuration-format">Configuration Format</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#general-preferences">General Preferences</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#the-prompt">The Prompt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#file-system-access">File System Access</a></li>
@@ -209,14 +217,198 @@
              
   <section id="dtsh-s-handbook">
 <span id="dtsh-handbook"></span><h1>DTSh’s Handbook<a class="headerlink" href="#dtsh-s-handbook" title="Link to this heading"></a></h1>
-<p>This handbook assumes you’ve already installed DTSh, and know how to open DTS files with <code class="docutils literal notranslate"><span class="pre">dtsh</span></code>.
-If not, please go to the <a class="reference internal" href="getting-started.html#dtsh-getting-started"><span class="std std-ref">Getting Started Guide</span></a>.</p>
 <figure class="align-center" id="id19">
 <a class="reference internal image-reference" href="_images/buses.png"><img alt="Buses" src="_images/buses.png" style="width: 100%;" /></a>
 <figcaption>
 <p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id19" title="Link to this image"></a></p>
 </figcaption>
 </figure>
+<section id="usage">
+<span id="dtsh-usage"></span><h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Once installed, the Devicetree Shell is available as the <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -h
+usage: dtsh [-h] [-b DIR] [-u] [--preferences FILE] [--theme FILE] [-c CMD] [-f FILE] [-i] [DTS]
+
+shell-like interface with Devicetree
+
+options:
+  -h, --help            show this help message and exit
+
+open a DTS file:
+  -b DIR, --bindings DIR
+                        directory to search for binding files
+  DTS                   path to the DTS file
+
+user files:
+  -u, --user-files      initialize per-user configuration files and exit
+  --preferences FILE    load additional preferences file
+  --theme FILE          load additional styles file
+
+session control:
+  -c CMD                execute CMD at startup (may be repeated)
+  -f FILE               execute batch commands from FILE at startup
+  -i, --interactive     enter interactive loop after batch commands
+</pre></div>
+</div>
+<section id="typical-use">
+<span id="dtsh-typical-use"></span><h3>Typical Use<a class="headerlink" href="#typical-use" title="Link to this heading"></a></h3>
+<p>Early at build-time, during the <a class="reference external" href="https://docs.zephyrproject.org/latest/build/cmake/index.html#configuration-phase">configuration phase</a>,
+Zephyr <em>assembles</em> the final <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html">devicetree</a> that will represent
+the system hardware during the actual build phase.</p>
+<p>This devicetree is saved in <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html">Devicetree Source Format</a> (DTS)
+in <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code> for <em>debugging</em> purpose.</p>
+<p>The typical DTSh’s use case is to open this DTS file generated at build-time, e.g.:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ cd zephyr/samples/sensor/bme680
+$ cmake -B build -DBOARD=nrf52840dk_nrf52840
+$ dtsh build/zephyr/zephyr.dts
+dtsh (0.2.3): A Devicetree Shell
+How to exit: q, or quit, or exit, or press Ctrl-D
+
+/
+&gt; ls -l
+ Name              Labels          Binding
+ ───────────────────────────────────────────────────────
+ chosen
+ aliases
+ soc
+ pin-controller    pinctrl         nordic,nrf-pinctrl
+ entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+ sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+ cpus
+ leds                              gpio-leds
+ pwmleds                           pwm-leds
+ buttons                           gpio-keys
+ connector         arduino_header  arduino-header-r3
+ analog-connector  arduino_adc     arduino,uno-adc
+</pre></div>
+</div>
+<p>The above example should <em>always</em> work:</p>
+<ul class="simple">
+<li><p>regardless of the installation method, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> being sufficient for the configuration phase</p></li>
+<li><p>regardless of whether <code class="docutils literal notranslate"><span class="pre">ZEPHYR_BASE</span></code> is set</p></li>
+<li><p>regardless of whether you target a <a class="reference external" href="https://docs.zephyrproject.org/latest/boards/index.html">supported board</a>
+or a <a class="reference external" href="https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#board-porting-guide">custom board</a></p></li>
+</ul>
+<p>Here, DTSh retrieves <em>all it needs</em>, and especially where to search for the bindings files,
+from the CMake cache content in <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build/
+├── CMakeCache.txt
+└── zephyr/
+    └── zephyr.dts
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul class="simple">
+<li><p>In this context, no need to pass the DTS file path to DTSh: by default it will try
+to open the devicetree at <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code>;
+<code class="docutils literal notranslate"><span class="pre">dtsh</span> <span class="pre">/path/to/project/build/zephyr/zephyr.dts</span></code> would also work,
+you don’t need to call <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> from the project’s root</p></li>
+<li><p>To open <em>your</em> devicetree: <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">&lt;project&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">cmake</span> <span class="pre">-B</span> <span class="pre">build</span> <span class="pre">-DBOARD=&lt;board&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">dtsh</span></code>,
+or if using West <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">&lt;project&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">west</span> <span class="pre">build</span> <span class="pre">&amp;&amp;</span> <span class="pre">dtsh</span></code></p></li>
+</ul>
+</div>
+</section>
+<section id="other-uses">
+<span id="dtsh-other-uses"></span><h3>Other Uses<a class="headerlink" href="#other-uses" title="Link to this heading"></a></h3>
+<p>As we’ve seen, DTSh first tries to retrieve the bindings Zephyr has used at build-time,
+when the DTS file was generated, from the CMake cache.
+This is the most straight forward way to get a complete and legit bindings search path.</p>
+<p>When this fails, DTSh will then try to work out the search path
+Zephyr would use if it were to generate the DTS <em>now</em>
+(<a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-intro.html#where-bindings-are-located">Where Bindings Are Located</a>): bindings found in
+<code class="docutils literal notranslate"><span class="pre">$ZEPHYR_BASE/dts/bindings</span></code> and other <em>default</em> directories should still cover
+the most simple use cases (e.g. Zephyr samples).</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ export ZEPHYR_BASE=/path/to/zephyrproject/zephyr
+$ dtsh /path/to/zephyr.dts
+</pre></div>
+</div>
+<p>This default behavior does not address all situations, though:</p>
+<ul class="simple">
+<li><p>you may need additional bindings files from a custom location,
+or explicitly set the <code class="docutils literal notranslate"><span class="pre">DTS_ROOT</span></code> CMake variable</p></li>
+<li><p>you’re not working with Zephyr</p></li>
+</ul>
+<p>For these use cases, the <code class="docutils literal notranslate"><span class="pre">-b</span> <span class="pre">--bindings</span></code> option permits to explicitly enumerate all the directories
+to search in:</p>
+<blockquote>
+<div><p>$ dtsh –bindings dir1 –bindings dir2 foobar.dts</p>
+</div></blockquote>
+<p>Where:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dir1</span></code> and <code class="docutils literal notranslate"><span class="pre">dir1</span></code>, and their sub-directories, shall contain all necessary YAML binding files
+in Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-syntax.html">Devicetree Binding Syntax</a>,
+even if not working with Zephyr</p></li>
+<li><p>one of these directories shall contain a valid vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
+</ul>
+</section>
+<section id="configuration">
+<span id="dtsh-configuration"></span><h3>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h3>
+<p>Users can tweak DTSh appearance and behavior by overriding its defaults in configuration files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dtsh.ini</span></code>: to override global preferences (see <a class="reference internal" href="#dtsh-preferences"><span class="std std-ref">User Preferences</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">theme.ini</span></code>: to override styles and colors (see <a class="reference internal" href="#dtsh-themes"><span class="std std-ref">User Themes</span></a>)</p></li>
+</ul>
+<p>These (optional) files must be located in a platform-dependent directory,
+e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/dtsh</span></code> on GNU/Linux systems.</p>
+<p>Running <code class="docutils literal notranslate"><span class="pre">dtsh</span></code> with the <code class="docutils literal notranslate"><span class="pre">-u</span> <span class="pre">--user-files</span></code> option will initialize configuration templates
+in the expected location:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -u
+User preferences: ~/.config/dtsh/dtsh.ini
+User theme: ~/.config/dtsh/theme.ini
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>DTSh won’t override a user file that already exists: manually remove the file(s),
+and run the command again.</p>
+</div>
+<p>Additionally:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">--preferences</span> <span class="pre">FILE</span></code> option permits to specify an additional preferences file to load</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">--theme</span> <span class="pre">FILE</span></code> option permits to specify an additional theme file to load</p></li>
+</ul>
+<section id="configuration-format">
+<span id="dtsh-ini-format"></span><h4>Configuration Format<a class="headerlink" href="#configuration-format" title="Link to this heading"></a></h4>
+<p>Configuration files are simple INI files that contain key-value pairs.</p>
+<p>Values support <em>interpolation</em> with the <code class="docutils literal notranslate"><span class="pre">${key}</span></code> (preferences) or <code class="docutils literal notranslate"><span class="pre">%(key)s</span></code> (themes) syntax:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># Define a key.
+wchar.ellipsis = \u2026
+
+# Reference it with interpolation.
+et_caetera = Et caetera${wchar.ellipsis}
+
+# Use $$ to escape the dollar sign.
+dollar = This is the dollar sign: $$
+</pre></div>
+</div>
+<p>Values are typed:</p>
+<dl>
+<dt>String</dt><dd><p>Strings may contain Unicode characters as literals
+or 4-digit hexadecimal code points.</p>
+<p>It’s necessary to double-quote strings only when:</p>
+<ul class="simple">
+<li><p>the string value actually ends with spaces</p></li>
+<li><p>the string value contains the double quote character</p></li>
+</ul>
+<p>Leading and trailing double quotes are always striped.</p>
+</dd>
+<dt>Boolean</dt><dd><p>Valid values (case-insensitive):</p>
+<ul class="simple">
+<li><p>True: <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>, <code class="docutils literal notranslate"><span class="pre">true</span></code>, and <code class="docutils literal notranslate"><span class="pre">on</span></code></p></li>
+<li><p>False: <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">no</span></code>, <code class="docutils literal notranslate"><span class="pre">false</span></code>, and <code class="docutils literal notranslate"><span class="pre">off</span></code></p></li>
+</ul>
+</dd>
+<dt>Integer</dt><dd><p>Integers in base-10, base-2 (prefix <code class="docutils literal notranslate"><span class="pre">0b</span></code>), base-8 (prefix <code class="docutils literal notranslate"><span class="pre">0o</span></code>),
+and base-16 (prefix <code class="docutils literal notranslate"><span class="pre">Ox</span></code>) are supported.</p>
+<p>Prefixes are case insensitive.</p>
+</dd>
+<dt>Float</dt><dd><p>Decimal (e.g. <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) and scientific (e.g. <code class="docutils literal notranslate"><span class="pre">1e-1</span></code>) notations are supported.</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
 <section id="the-shell">
 <span id="dtsh-shell"></span><h2>The Shell<a class="headerlink" href="#the-shell" title="Link to this heading"></a></h2>
 <p>DTSh is a command line interface for <em>navigating</em>, <em>visualizing</em> and <em>searching</em> a devicetree
@@ -933,46 +1125,7 @@ it’s loaded, overriding the default values with the options it contains</p></l
 <li><p>if an additional preferences file is specified with the West command option <code class="docutils literal notranslate"><span class="pre">--preferences</span></code>,
 it’s eventually loaded, overriding previous values with the options it contains</p></li>
 </ol>
-<p>See also <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a> in the Getting Started Guide.</p>
-<section id="configuration-format">
-<span id="dtsh-ini-format"></span><h4>Configuration Format<a class="headerlink" href="#configuration-format" title="Link to this heading"></a></h4>
-<p>DTSh is configured with simple INI files that contain key-value pairs.</p>
-<p>Values support <em>interpolation</em> with the <code class="docutils literal notranslate"><span class="pre">${key}</span></code> syntax:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># Define a key.
-wchar.ellipsis = \u2026
-
-# Reference it with interpolation.
-et_caetera = Et caetera${wchar.ellipsis}
-
-# Use $$ to escape the dollar sign.
-dollar = This is the dollar sign: $$
-</pre></div>
-</div>
-<p>Values are typed:</p>
-<dl>
-<dt>String</dt><dd><p>Strings may contain Unicode characters as literals
-or 4-digit hexadecimal code points.</p>
-<p>It’s necessary to double-quote strings only when:</p>
-<ul class="simple">
-<li><p>the string value actually ends with spaces</p></li>
-<li><p>the string value contains the double quote character</p></li>
-</ul>
-<p>Leading and trailing double quotes are always striped.</p>
-</dd>
-<dt>Boolean</dt><dd><p>Valid values (case-insensitive):</p>
-<ul class="simple">
-<li><p>True: <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>, <code class="docutils literal notranslate"><span class="pre">true</span></code>, and <code class="docutils literal notranslate"><span class="pre">on</span></code></p></li>
-<li><p>False: <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">no</span></code>, <code class="docutils literal notranslate"><span class="pre">false</span></code>, and <code class="docutils literal notranslate"><span class="pre">off</span></code></p></li>
-</ul>
-</dd>
-<dt>Integer</dt><dd><p>Integers in base-10, base-2 (prefix <code class="docutils literal notranslate"><span class="pre">0b</span></code>), base-8 (prefix <code class="docutils literal notranslate"><span class="pre">0o</span></code>),
-and base-16 (prefix <code class="docutils literal notranslate"><span class="pre">Ox</span></code>) are supported.</p>
-<p>Prefixes are case insensitive.</p>
-</dd>
-<dt>Float</dt><dd><p>Decimal (e.g. <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) and scientific (e.g. <code class="docutils literal notranslate"><span class="pre">1e-1</span></code>) notations are supported.</p>
-</dd>
-</dl>
-</section>
+<p>See also <a class="reference internal" href="#dtsh-configuration"><span class="std std-ref">Configuration</span></a>.</p>
 <section id="general-preferences">
 <span id="dtsh-prefs-misc"></span><h4>General Preferences<a class="headerlink" href="#general-preferences" title="Link to this heading"></a></h4>
 <dl>
@@ -2529,7 +2682,7 @@ for more keyboard shortcuts.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">history</span></code> file is located in the DTSh application data directory for the current user
-(see <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a>).</p>
+(see <a class="reference internal" href="#dtsh-configuration"><span class="std std-ref">Configuration</span></a>).</p>
 <p>It’s a simple text file you may edit or remove.</p>
 </div>
 </section>
@@ -2839,7 +2992,7 @@ it’s loaded, overriding the default styles</p></li>
 it’s eventually loaded, overriding previous styles</p></li>
 </ol>
 <p>Initialize a theme template with <code class="docutils literal notranslate"><span class="pre">dtsh</span> <span class="pre">-u</span></code> if not already done
-(see <a class="reference internal" href="getting-started.html#dtsh-configuration"><span class="std std-ref">Configuration</span></a> in the Getting Started Guide).</p>
+(see <a class="reference internal" href="#dtsh-configuration"><span class="std std-ref">Configuration</span></a>).</p>
 <p>Comments in the template file should be sufficient to understand how to write styles,
 and identify which style applies to which type of information.
 The INI syntax itself is reminded in <a class="reference internal" href="#dtsh-ini-format"><span class="std std-ref">Configuration Format</span></a>.</p>
