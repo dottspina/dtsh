@@ -387,16 +387,21 @@ class DTS:
         return toolchain_dir
 
     def get_zephyr_head(self) -> Optional[str]:
-        """Retrieve Zephyr kernel version.
+        """Retrieve Zephyr repository HEAD version.
 
         Returns:
-            Suffixed most recent tag of the ZEPHYR_BASE repository
-            if Git is found in the current environment.
+            A version string with at least the short commit hash,
+            and a tag name if HEAD is tagged.
+            Depends on the git command availability.
         """
         if self.zephyr_base:
             git = GitUtil(self.zephyr_base)
             if git.is_available:
-                return git.describe_head()
+                head_short = git.head_get_short()
+                head_tag = git.head_get_tag()
+                if head_tag:
+                    return f"{head_tag} ({head_short})"
+                return head_short
         return None
 
     def _init_cmake_cache(self) -> Optional["CMakeCache"]:
@@ -1054,14 +1059,16 @@ class GitUtil:
         """True when we should be able to execute Git commands."""
         return self._enabled
 
-    def describe_head(self) -> Optional[str]:
-        """Retrieve repository head (suffixed most recent tag).
+    def head_get_tag(self) -> Optional[str]:
+        """Get the tag of the repository HEAD, if any."""
+        (ret, output) = self._git_exec(["describe", "--exact-match", "--tags"])
+        if ret == 0:
+            return output
+        return None
 
-        Returns:
-            The output of "git describe --always HEAD",
-            or None if the command failed.
-        """
-        (ret, output) = self._git_exec(["describe", "--always", "HEAD"])
+    def head_get_short(self) -> Optional[str]:
+        """Get the short commit hash of the repository HEAD."""
+        (ret, output) = self._git_exec(["rev-parse", "--short", "HEAD"])
         if ret == 0:
             return output
         return None
