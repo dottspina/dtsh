@@ -106,6 +106,7 @@ def test_dtshautocomp_complete_dtshopt() -> None:
     state_h = RlStateDTShOption("-h", DTShFlagHelp())
     state_help = RlStateDTShOption("--help", DTShFlagHelp())
     state_r = RlStateDTShOption("-r", DTShFlagReverse())
+    state_r_help = RlStateDTShOption("-rh", DTShFlagHelp())
     state_pager = RlStateDTShOption("--pager", DTShFlagPager())
     state_depth = RlStateDTShOption("--fixed-depth", DTShArgFixedDepth())
     state_mock = RlStateDTShOption("--mockarg", MockDTShArg())
@@ -130,8 +131,13 @@ def test_dtshautocomp_complete_dtshopt() -> None:
     # Should start with "-".
     assert not DTShAutocomp.complete_dtshopt("", cmd)
 
+    # Will propose option the "-h" option,
+    # appended to the "-r" completion state, giving "-rh".
+    assert [state_r_help] == DTShAutocomp.complete_dtshopt("-r", cmd)
+    # No short option remaining.
+    assert not DTShAutocomp.complete_dtshopt("-rh", cmd)
+
     # Unique matches are not hidden.
-    assert [state_r] == DTShAutocomp.complete_dtshopt("-r", cmd)
     assert [state_pager] == DTShAutocomp.complete_dtshopt("--pager", cmd)
 
 

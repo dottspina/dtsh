@@ -366,10 +366,25 @@ class DTShAutocomp:
                     )
                 )
             else:
-                # Unique match, assuming the completion scope is "-<shortname>".
-                opt = cmd.option(cs_txt)
-                if opt:
-                    states.append(RlStateDTShOption(f"-{opt.shortname}", opt))
+                # User input is like "-ld", "ld" options are then already set.
+                already_set = cs_txt[1:]
+                # Propose all options with a short name that are not already set
+                # within the completion scope.
+                states.extend(
+                    sorted(
+                        [
+                            RlStateDTShOption(
+                                f"-{already_set}{opt.shortname}", opt
+                            )
+                            for opt in cmd.options
+                            if opt.shortname
+                            and opt.shortname not in already_set
+                        ],
+                        key=lambda x: "-"
+                        if x.rlstr == "-h"
+                        else x.rlstr.lower(),
+                    )
+                )
 
         return states
 
