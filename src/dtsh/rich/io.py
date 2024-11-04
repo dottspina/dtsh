@@ -13,6 +13,7 @@ Rich I/O streams implementations are based on the rich.console module.
 
 from typing import Any, IO, List, Mapping, Optional, Sequence
 
+from io import StringIO
 import os
 
 from rich.console import Console, PagerContext
@@ -133,11 +134,48 @@ class DTShBatchRichVT(DTShRichVT):
         return super().readline(multi_prompt)
 
 
-class DTShOutputFileText(DTShOutput):
+class DTShOutputFile(DTShOutput):
+    """Base output stream for redirecting commands output.
+
+    Provides a Console object initialized for supporting this use case:
+    - set initial width to the configured maximum
+    - record what would otherwise be printed to the TTY
+    - capture TTY output so that it's not also echoed to the TTY
+    """
+
+    # Records/captures outputs.
+    _console: Console
+
+    def __init__(self) -> None:
+        """Initialize console for commands output redirection."""
+        self._console = Console(
+            highlight=False,
+            theme=Theme(_theme.styles),
+            record=True,
+            # Set the console's width to the configured maximum,
+            # sub-classes will strip the rich segments on flush().
+            width=_dtshconf.pref_redir2_maxwidth,
+            # Capture output: we don't want to echo the output to the TTY
+            # when redirecting to files.
+            file=StringIO(),
+        )
+
+    def write(self, *args: Any, **kwargs: Any) -> None:
+        """Capture and record outputs.
+
+        Overrides DTShOutput.write().
+
+        Args:
+            *args: Positional arguments, Console.print() semantic.
+            **kwargs: Keyword arguments, Console.print() semantic.
+        """
+        self._console.print(*args, **kwargs)
+
+
+class DTShOutputFileText(DTShOutputFile):
     """Text output file for commands output redirection."""
 
     _out: IO[str]
-    _console: Console
 
     def __init__(self, path: str, append: bool) -> None:
         """Initialize output file.
@@ -149,9 +187,9 @@ class DTShOutputFileText(DTShOutput):
         Raises:
              DTShRedirect.Error: Invalid path or permission errors.
         """
+        super().__init__()
         try:
-            # We can't use a context manager here, we just want to open
-            # the file for later subsequent writes.
+            # Early initialize output stream rather than handling that on flush.
             self._out = open(  # pylint: disable=consider-using-with
                 path,
                 "a" if append else "w",
@@ -162,27 +200,6 @@ class DTShOutputFileText(DTShOutput):
                 self._out.write(os.linesep)
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
-
-        self._console = Console(
-            highlight=False,
-            theme=Theme(_theme.styles),
-            record=True,
-            # Set the console's width to the configured maximum,
-            # we'll strip the rich segments on flush.
-            width=_dtshconf.pref_redir2_maxwidth,
-        )
-
-    def write(self, *args: Any, **kwargs: Any) -> None:
-        """Capture command's output.
-
-        Overrides DTShOutput.write().
-
-        Args:
-            *args: Positional arguments, Console.print() semantic.
-            **kwargs: Keyword arguments, Console.print() semantic.
-        """
-        with self._console.capture():
-            self._console.print(*args, **kwargs)
 
     def flush(self) -> None:
         """Format (HTML) the captured output and write it
@@ -199,12 +216,11 @@ class DTShOutputFileText(DTShOutput):
         self._out.close()
 
 
-class DTShOutputFileHtml(DTShOutput):
+class DTShOutputFileHtml(DTShOutputFile):
     """HTML output file for commands output redirection."""
 
     _out: IO[str]
     _append: bool
-    _console: Console
 
     def __init__(self, path: str, append: bool) -> None:
         """Initialize output file.
@@ -216,6 +232,7 @@ class DTShOutputFileHtml(DTShOutput):
         Raises:
              DTShRedirect.Error: Invalid path or permission errors.
         """
+        super().__init__()
         try:
             self._append = append
             self._out = open(  # pylint: disable=consider-using-with
@@ -226,31 +243,10 @@ class DTShOutputFileHtml(DTShOutput):
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
 
-        self._console = Console(
-            highlight=False,
-            theme=Theme(_theme.styles),
-            record=True,
-            # Set the console's width to the configured maximum,
-            # we'll post-process the generated HTML document on flush.
-            width=_dtshconf.pref_redir2_maxwidth,
-        )
-
         if self._append:
-            # Write a blank line to the captured output
+            # Insert a blank line into the recorded output
             # as a commands separator when we append.
             self.write()
-
-    def write(self, *args: Any, **kwargs: Any) -> None:
-        """Capture command's output.
-
-        Overrides DTShOutput.write().
-
-        Args:
-            *args: Positional arguments, Console.print() semantic.
-            **kwargs: Keyword arguments, Console.print() semantic.
-        """
-        with self._console.capture():
-            self._console.print(*args, **kwargs)
 
     def flush(self) -> None:
         """Format (HTML) the captured output and write it
@@ -316,12 +312,11 @@ class DTShOutputFileHtml(DTShOutput):
         self._out.seek(offset, os.SEEK_SET)
 
 
-class DTShOutputFileSVG(DTShOutput):
+class DTShOutputFileSVG(DTShOutputFile):
     """SVG output file for commands output redirection."""
 
     _out: IO[str]
     _append: bool
-    _console: Console
 
     _maxwidth: int
     _width: int
@@ -336,6 +331,7 @@ class DTShOutputFileSVG(DTShOutput):
         Raises:
              DTShRedirect.Error: Invalid path or permission errors.
         """
+        super().__init__()
         try:
             self._append = append
             self._out = open(  # pylint: disable=consider-using-with
@@ -353,22 +349,13 @@ class DTShOutputFileSVG(DTShOutput):
         # cropping, up to the configured maximum.
         self._width = 0
 
-        self._console = Console(
-            highlight=False,
-            theme=Theme(_theme.styles),
-            record=True,
-            # Set the console's width to the configured maximum,
-            # we'll shrink it on flush.
-            width=self._maxwidth,
-        )
-
         if self._append:
-            # Write a blank line to the captured output
+            # Insert a blank line into the recorded output
             # as a commands separator when we append.
             self.write()
 
     def write(self, *args: Any, **kwargs: Any) -> None:
-        """Capture command's output.
+        """Record/capture output.
 
         Overrides DTShOutput.write().
 
@@ -376,7 +363,10 @@ class DTShOutputFileSVG(DTShOutput):
             *args: Positional arguments, Console.print() semantic.
             **kwargs: Keyword arguments, Console.print() semantic.
         """
-        # Update required width.
+        # Write output to console using the maximum width.
+        super().write(*args, **kwargs)
+
+        # Update actually required width.
         for arg in args:
             if (
                 isinstance(arg, str)
@@ -392,9 +382,6 @@ class DTShOutputFileSVG(DTShOutput):
                     measure.maximum > self._maxwidth
                 ):
                     self._width = measure.maximum
-
-        with self._console.capture():
-            self._console.print(*args, **kwargs)
 
     def flush(self) -> None:
         """Format (SVG) the captured output and write it
