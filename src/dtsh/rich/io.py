@@ -510,7 +510,7 @@ body {{
 
 <body>
 
-    <pre style="font-family:|font_family|, monospace"><code>{code}</code></pre>
+    <pre style="font-family:|font_family|, monospace"><code style="font-family:inherit">{code}</code></pre>
 
 </body>
 
