@@ -132,11 +132,16 @@ def test_dtshconfig_defaults() -> None:
 
     # HTML.
     assert "html" == cfg_defaults.pref_html_theme
-    assert "Courier New" == cfg_defaults.pref_html_font_family
+    assert (
+        "'Source Code Pro','DejaVu Sans Mono','Courrier New'"
+        == cfg_defaults.pref_html_font_family
+    )
 
     # SVG.
     assert "svg" == cfg_defaults.pref_svg_theme
-    assert "Courier New" == cfg_defaults.pref_svg_font_family
+    assert (
+        "'DejaVu Sans Mono','Courier New'" == cfg_defaults.pref_svg_font_family
+    )
     assert 0.6 == cfg_defaults.pref_svg_font_ratio
 
     # YAML.

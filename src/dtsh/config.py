@@ -19,7 +19,7 @@ Unit tests and examples: tests/test_dtsh_config.py
 """
 
 
-from typing import Optional
+from typing import List, Optional
 
 import configparser
 import codecs
@@ -69,6 +69,25 @@ class DTShConfig:
     def getinstance(cls) -> "DTShConfig":
         """Access the preferences configuration instance."""
         return _dtshconf
+
+    @staticmethod
+    def nz_font_family(pref_font_family: str) -> str:
+        """Normalize font family preference.
+
+        Normalize the preference string to a valid value we can insert
+        in a CSS "font-family:" style specification.
+        """
+        preferred_fonts = [
+            font.strip().replace('"', "'")
+            for font in pref_font_family.split(",")
+        ]
+        css_font_family: List[str] = []
+        for family in preferred_fonts:
+            if (" " in family) and not family.startswith("'"):
+                css_font_family.append(f"'{family}'")
+            else:
+                css_font_family.append(family)
+        return ",".join(css_font_family)
 
     # RE for ASCII escape sequences that may appear in Python strings.
     # See:
@@ -328,7 +347,7 @@ class DTShConfig:
     @property
     def pref_svg_font_family(self) -> str:
         """Font family for command output redirection to SVG."""
-        return self.getstr("pref.svg.font_family")
+        return DTShConfig.nz_font_family(self.getstr("pref.svg.font_family"))
 
     @property
     def pref_svg_font_ratio(self) -> float:
@@ -343,7 +362,7 @@ class DTShConfig:
     @property
     def pref_html_font_family(self) -> str:
         """Font family for command output redirection to HTML."""
-        return self.getstr("pref.html.font_family")
+        return DTShConfig.nz_font_family(self.getstr("pref.html.font_family"))
 
     @property
     def pref_yaml_theme(self) -> str:
