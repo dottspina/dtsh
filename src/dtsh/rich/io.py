@@ -248,6 +248,22 @@ class DTShOutputFileHtml(DTShOutputFile):
             # as a commands separator when we append.
             self.write()
 
+    def _mk_html_format(self) -> str:
+        font_family = _dtshconf.pref_html_font_family
+        if font_family:
+            font_family = f"{font_family},monospace"
+        else:
+            font_family = "monospace"
+        html_fmt = DTSH_HTML_META_FORMAT.replace("|font_family|", font_family)
+
+        html_fmt = html_fmt.replace(
+            # "medium" is the default (absolute) size.
+            "|font_size|",
+            _dtshconf.pref_html_font_size or "medium",
+        )
+
+        return html_fmt
+
     def flush(self) -> None:
         """Format (HTML) the captured output and write it
         to the redirection file.
@@ -259,9 +275,7 @@ class DTShOutputFileHtml(DTShOutputFile):
             _dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME
         )
 
-        html_fmt = DTSH_HTML_FORMAT.replace(
-            "|font_family|", _dtshconf.pref_html_font_family
-        )
+        html_fmt = self._mk_html_format()
 
         html = self._console.export_html(
             theme=theme,
@@ -492,7 +506,7 @@ class DTShOutputFileSVG(DTShOutputFile):
         print(file=self._out)
 
 
-DTSH_HTML_FORMAT = """\
+DTSH_HTML_META_FORMAT = """\
 <!DOCTYPE html>
 <html>
 
@@ -510,7 +524,7 @@ body {{
 
 <body>
 
-    <pre style="font-family:|font_family|, monospace"><code style="font-family:inherit">{code}</code></pre>
+    <pre style="font-family:|font_family|; font-size:|font_size|"><code style="font-family:inherit">{code}</code></pre>
 
 </body>
 
