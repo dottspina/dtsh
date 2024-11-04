@@ -365,6 +365,11 @@ class DTShConfig:
         return DTShConfig.nz_font_family(self.getstr("pref.html.font_family"))
 
     @property
+    def pref_html_font_size(self) -> str:
+        """Font size for command output redirection to HTML."""
+        return self.getstr("pref.html.font_size")
+
+    @property
     def pref_yaml_theme(self) -> str:
         """Theme for YAML syntax highlighting."""
         return self.getstr("pref.yaml.theme")
