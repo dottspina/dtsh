@@ -131,11 +131,17 @@ class DTModelView:
 
         if branch_names:
             if branch_names[0] == "/":
-                branch = "/" + "/".join(branch_names[1:])
+                branch = DTPath.abspath("/".join(branch_names[1:]))
             else:
                 branch = "/".join(branch_names)
+
+            # Note: if branch_names was ["/"], we got "/" as absolute
+            # branch path.
+            if not branch.endswith("/"):
+                branch += "/"
+
             tv_branch = TextUtil.mk_text(
-                f"{branch}/", DTShTheme.STYLE_DT_PATH_BRANCH
+                f"{branch}", DTShTheme.STYLE_DT_PATH_BRANCH
             )
         else:
             tv_branch = None
