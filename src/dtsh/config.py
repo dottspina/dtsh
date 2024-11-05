@@ -355,6 +355,16 @@ class DTShConfig:
         return self.getfloat("pref.svg.font_ratio")
 
     @property
+    def pref_svg_title(self) -> str:
+        """Title for command output redirection to SVG."""
+        return self.getstr("pref.svg.title")
+
+    @property
+    def pref_svg_decorations(self) -> bool:
+        """Whether to decorate SVG output with macOS-like buttons."""
+        return self.getbool("pref.svg.decorations")
+
+    @property
     def pref_html_theme(self) -> str:
         """CSS theme for command output redirection to HTML."""
         return self.getstr("pref.html.theme")

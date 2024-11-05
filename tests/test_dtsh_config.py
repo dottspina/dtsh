@@ -140,9 +140,10 @@ def test_dtshconfig_defaults() -> None:
     # SVG.
     assert "svg" == cfg_defaults.pref_svg_theme
     assert (
-        "'DejaVu Sans Mono','Courier New'" == cfg_defaults.pref_svg_font_family
+        "'Fira Code','DejaVu Sans Mono','Courrier New'"
+        == cfg_defaults.pref_svg_font_family
     )
-    assert 0.6 == cfg_defaults.pref_svg_font_ratio
+    assert 0.61 == cfg_defaults.pref_svg_font_ratio
 
     # YAML.
     assert "monokai" == cfg_defaults.pref_yaml_theme
