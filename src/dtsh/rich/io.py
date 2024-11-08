@@ -32,7 +32,7 @@ from dtsh.config import DTShConfig
 from dtsh.io import DTShVT, DTShInput, DTShOutput, DTShRedirect
 
 from dtsh.rich.theme import DTShTheme
-from dtsh.rich.svg import SVGContentsFmt, SVGContents
+from dtsh.rich.svg import SVGDocument
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 _theme: DTShTheme = DTShTheme.getinstance()
@@ -412,98 +412,39 @@ class DTShOutputFileSVG(DTShOutputFile):
         # unnecessarily wide.
         self._console.width = self._width
 
-        # Get captured command output as SVG contents lines.
-        contents: List[str] = self._console.export_svg(
+        # Get captured command output as SVG.
+        svg_capture: SVGDocument = SVGDocument.capture(
+            self._console,
+            font_family=_dtshconf.pref_svg_font_family,
+            font_ratio=_dtshconf.pref_svg_font_ratio,
             theme=theme,
-            title="",
-            code_format=SVGContentsFmt.get_format(
-                _dtshconf.pref_svg_font_family
-            ),
-            font_aspect_ratio=_dtshconf.pref_svg_font_ratio,
-        ).splitlines()
+            title=_dtshconf.pref_svg_title,
+            show_gcircles=_dtshconf.pref_svg_decorations,
+        )
 
-        svg: SVGContents
-        try:
-            if self._append:
-                svg = self._svg_append(contents)
-            else:
-                svg = self._svg_create(contents)
+        svg_doc: SVGDocument
+        if self._append:
+            # Load the SVG content we're appending to.
+            svg_doc = SVGDocument(
+                self._out.read().splitlines(),
+                len(_dtshconf.pref_svg_title) > 0,
+                _dtshconf.pref_svg_decorations,
+            )
+            self._out.seek(0, os.SEEK_SET)
+            # Append the last command output capture.
+            svg_doc.append(svg_capture)
+        else:
+            svg_doc = svg_capture
 
-        except SVGContentsFmt.Error as e:
-            raise DTShRedirect.Error(str(e)) from e
+        for line in svg_doc.content:
+            print(line, file=self._out)
 
-        self._svg_write(svg)
+        if self._append:
+            # Append mode, cleanup once we're done.
+            offset: int = self._out.tell()
+            self._out.truncate(offset)
+
         self._out.close()
-
-    def _svg_create(self, contents: List[str]) -> SVGContents:
-        svg: SVGContents = SVGContents(contents)
-        svg.top_padding_correction()
-        return svg
-
-    def _svg_append(self, contents: List[str]) -> SVGContents:
-        svgnew: SVGContents = SVGContents(contents)
-        svgnew.top_padding_correction()
-
-        svg: SVGContents = self._svg_read()
-        svg.append(svgnew)
-        return svg
-
-    def _svg_read(self) -> SVGContents:
-        contents: List[str] = self._out.read().splitlines()
-        self._out.seek(0, os.SEEK_SET)
-
-        # Padding correction was already done.
-        svg = SVGContents(contents)
-        return svg
-
-    def _svg_write(self, svg: SVGContents) -> None:
-        self._svg_write_prolog()
-        self._svg_writeln()
-
-        self._svg_write_styles(svg)
-        self._svg_writeln()
-
-        self._svg_write_defs(svg)
-        self._svg_writeln()
-
-        self._svg_write_chrome(svg)
-        self._svg_writeln()
-
-        self._svg_write_gterms(svg)
-        self._svg_write_epilog()
-
-    def _svg_write_prolog(self) -> None:
-        print(SVGContentsFmt.PROLOG, file=self._out)
-
-    def _svg_write_styles(self, svg: SVGContents) -> None:
-        print(SVGContentsFmt.CSS_STYLES_BEGIN, file=self._out)
-        for line in svg.styles:
-            print(line, file=self._out)
-        print(SVGContentsFmt.CSS_STYLES_END, file=self._out)
-
-    def _svg_write_defs(self, svg: SVGContents) -> None:
-        print(SVGContentsFmt.SVG_DEFS_BEGIN, file=self._out)
-        for line in svg.defs:
-            print(line, file=self._out)
-        print(SVGContentsFmt.SVG_DEFS_END, file=self._out)
-
-    def _svg_write_chrome(self, svg: SVGContents) -> None:
-        print(SVGContentsFmt.MARK_CHROME, file=self._out)
-        print(svg.rect, file=self._out)
-
-    def _svg_write_gterms(self, svg: SVGContents) -> None:
-        for gterm in svg.gterms:
-            print(SVGContentsFmt.MARK_GTERM_BEGIN, file=self._out)
-            for line in gterm.contents:
-                print(line, file=self._out)
-            print(SVGContentsFmt.MARK_GTERM_END, file=self._out)
-            self._svg_writeln()
-
-    def _svg_write_epilog(self) -> None:
-        print(SVGContentsFmt.EPILOG, file=self._out)
-
-    def _svg_writeln(self) -> None:
-        print(file=self._out)
 
 
 DTSH_HTML_META_FORMAT = """\
@@ -530,6 +471,63 @@ body {{
 
 </html>
 """
+
+# See also: rich._export_format.CONSOLE_SVG_FORMAT
+DTSH_SVG_META_FORMAT = """\
+<svg class="rich-terminal" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+    <!-- Generated with Rich https://www.textualize.io -->
+    <style>
+
+    @font-face {{
+        font-family: "Fira Code";
+        src: local("FiraCode-Regular"),
+                url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Regular.woff2") format("woff2"),
+                url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Regular.woff") format("woff");
+        font-style: normal;
+        font-weight: 400;
+    }}
+    @font-face {{
+        font-family: "Fira Code";
+        src: local("FiraCode-Bold"),
+                url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Bold.woff2") format("woff2"),
+                url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Bold.woff") format("woff");
+        font-style: bold;
+        font-weight: 700;
+    }}
+
+    .{unique_id}-matrix {{
+        font-family: |font_family|;
+        font-size: {char_height}px;
+        line-height: {line_height}px;
+        font-variant-east-asian: full-width;
+    }}
+
+    .{unique_id}-title {{
+        font-size: 18px;
+        font-weight: bold;
+        font-family: arial;
+    }}
+
+    {styles}
+    </style>
+
+    <defs>
+    <clipPath id="{unique_id}-clip-terminal">
+      <rect x="0" y="0" width="{terminal_width}" height="{terminal_height}" />
+    </clipPath>
+    {lines}
+    </defs>
+
+    {chrome}
+    <g transform="translate({terminal_x}, {terminal_y})" clip-path="url(#{unique_id}-clip-terminal)">
+    {backgrounds}
+    <g class="{unique_id}-matrix">
+    {matrix}
+    </g>
+    </g>
+</svg>
+"""
+
 
 DTSH_EXPORT_THEMES: Mapping[str, TerminalTheme] = {
     "svg": SVG_EXPORT_THEME,
