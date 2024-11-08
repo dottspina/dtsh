@@ -233,8 +233,12 @@ class DTShOutputFileHtml(DTShOutputFile):
              DTShRedirect.Error: Invalid path or permission errors.
         """
         super().__init__()
+        self._append = append
+
+        # Early initialize the redirection stream and fail now on
+        # OS errors: we won't run a DTSh command whose result no one
+        # will ever see.
         try:
-            self._append = append
             self._out = open(  # pylint: disable=consider-using-with
                 path,
                 "r+" if append else "w",
@@ -242,11 +246,6 @@ class DTShOutputFileHtml(DTShOutputFile):
             )
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
-
-        if self._append:
-            # Insert a blank line into the recorded output
-            # as a commands separator when we append.
-            self.write()
 
     def _mk_html_format(self) -> str:
         font_family = _dtshconf.pref_html_font_family
@@ -270,7 +269,12 @@ class DTShOutputFileHtml(DTShOutputFile):
 
         Overrides DTShOutput.flush().
         """
-        # Text and bakcround colors.
+        if self._append:
+            # When appending to an existing content (output file),
+            # insert a blank line before the last command output.
+            self.write()
+
+        # Text and background colors.
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME
         )
@@ -346,8 +350,12 @@ class DTShOutputFileSVG(DTShOutputFile):
              DTShRedirect.Error: Invalid path or permission errors.
         """
         super().__init__()
+        self._append = append
+
+        # Early initialize the redirection stream and fail now on
+        # OS errors: we won't run a DTSh command whose result no one
+        # will ever see.
         try:
-            self._append = append
             self._out = open(  # pylint: disable=consider-using-with
                 path,
                 "r+" if append else "w",
@@ -363,11 +371,6 @@ class DTShOutputFileSVG(DTShOutputFile):
         # cropping, up to the configured maximum.
         self._width = 0
 
-        if self._append:
-            # Insert a blank line into the recorded output
-            # as a commands separator when we append.
-            self.write()
-
     def write(self, *args: Any, **kwargs: Any) -> None:
         """Record/capture output.
 
@@ -377,6 +380,16 @@ class DTShOutputFileSVG(DTShOutputFile):
             *args: Positional arguments, Console.print() semantic.
             **kwargs: Keyword arguments, Console.print() semantic.
         """
+        if self._append and not self._width:
+            # When appending to an existing content (output file),
+            # insert a blank line before we start to atually
+            # capture the last command output.
+            #
+            # NOTE: we can't do that on flush, it will be too late,
+            # the capture starts right bellow (that's how we can compute
+            # the actual width of the command output).
+            super().write()
+
         # Write output to console using the maximum width.
         super().write(*args, **kwargs)
 
@@ -403,7 +416,7 @@ class DTShOutputFileSVG(DTShOutputFile):
 
         Overrides DTShOutput.flush().
         """
-        # Text and bakcround colors.
+        # Text and background colors.
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_svg_theme, DEFAULT_TERMINAL_THEME
         )
