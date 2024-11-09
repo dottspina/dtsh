@@ -222,6 +222,11 @@ class DTShOutputFileHtml(DTShOutputFile):
     _out: IO[str]
     _append: bool
 
+    # True until we call write() to actually capture something.
+    # If flush() is called before that, e.g. because the DTSh command failed,
+    # it will abort early.
+    _pending: bool = True
+
     def __init__(self, path: str, append: bool) -> None:
         """Initialize output file.
 
@@ -263,12 +268,31 @@ class DTShOutputFileHtml(DTShOutputFile):
 
         return html_fmt
 
+    def write(self, *args: Any, **kwargs: Any) -> None:
+        """Capture and record outputs.
+
+        Overrides DTShOutputFile.write().
+
+        Args:
+            *args: Positional arguments, Console.print() semantic.
+            **kwargs: Keyword arguments, Console.print() semantic.
+        """
+        super().write(*args, **kwargs)
+        # Capture is ongoing.
+        self._pending = False
+
     def flush(self) -> None:
         """Format (HTML) the captured output and write it
         to the redirection file.
 
         Overrides DTShOutput.flush().
         """
+        if self._pending:
+            # Calling write() without argument or with empty rich objects
+            # would append an unwanted blank line.
+            self._out.close()
+            return
+
         if self._append:
             # When appending to an existing content (output file),
             # insert a blank line before the last command output.
@@ -416,6 +440,12 @@ class DTShOutputFileSVG(DTShOutputFile):
 
         Overrides DTShOutput.flush().
         """
+        if not self._width:
+            # Calling write() without argument or with empty rich objects
+            # would append an unwanted blank line.
+            self._out.close()
+            return
+
         # Text and background colors.
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_svg_theme, DEFAULT_TERMINAL_THEME
