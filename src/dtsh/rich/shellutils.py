@@ -69,6 +69,15 @@ class DTShFlagLongList(DTShFlag):
     BRIEF = "use a long listing format"
     SHORTNAME = "l"
 
+    @property
+    def isset(self) -> bool:
+        """Whether this flag has been set when parsing the command string
+        or enforced by user preferences.
+
+        Overrides DTShOption.isset().
+        """
+        return super().isset or _dtshconf.pref_always_longfmt
+
 
 class DTShNodeFmt:
     """Node output format.
@@ -246,8 +255,7 @@ class DTShCommandLongFmt(DTShCommand):
     def has_longfmt(self) -> bool:
         """Whether formatted output is disabled by an option or preference."""
         return (
-            _dtshconf.pref_always_longfmt
-            or self.with_flag(DTShFlagLongList)
+            self.with_flag(DTShFlagLongList)
             or self.with_arg(DTShArgLongFmt).isset
         )
 
