@@ -365,6 +365,13 @@ class DTShConfig:
         return self.getbool("pref.svg.decorations")
 
     @property
+    def pref_svg_compact(self) -> bool:
+        """Compact output does not separate successive captured commands
+        by a blank line.
+        """
+        return self.getbool("pref.svg.compact")
+
+    @property
     def pref_html_theme(self) -> str:
         """CSS theme for command output redirection to HTML."""
         return self.getstr("pref.html.theme")
@@ -378,6 +385,13 @@ class DTShConfig:
     def pref_html_font_size(self) -> str:
         """Font size for command output redirection to HTML."""
         return self.getstr("pref.html.font_size")
+
+    @property
+    def pref_html_compact(self) -> bool:
+        """Compact output does not separate successive captured commands
+        by a blank line.
+        """
+        return self.getbool("pref.html.compact")
 
     @property
     def pref_yaml_theme(self) -> str:
