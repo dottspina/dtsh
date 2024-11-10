@@ -277,9 +277,20 @@ class DTShOutputFileHtml(DTShOutputFile):
             *args: Positional arguments, Console.print() semantic.
             **kwargs: Keyword arguments, Console.print() semantic.
         """
+        if self._pending:
+            if self._append:
+                # When appending to an existing content (output file),
+                # insert a blank line before we start to actually
+                # capture the last command output.
+                #
+                # NOTE: we can't do that on flush, it will be too late,
+                # the capture starts right bellow.
+                if not _dtshconf.pref_html_compact:
+                    super().write()
+            # Capture is ongoing.
+            self._pending = False
+
         super().write(*args, **kwargs)
-        # Capture is ongoing.
-        self._pending = False
 
     def flush(self) -> None:
         """Format (HTML) the captured output and write it
@@ -292,11 +303,6 @@ class DTShOutputFileHtml(DTShOutputFile):
             # would append an unwanted blank line.
             self._out.close()
             return
-
-        if self._append:
-            # When appending to an existing content (output file),
-            # insert a blank line before the last command output.
-            self.write()
 
         # Text and background colors.
         theme = DTSH_EXPORT_THEMES.get(
@@ -412,7 +418,8 @@ class DTShOutputFileSVG(DTShOutputFile):
             # NOTE: we can't do that on flush, it will be too late,
             # the capture starts right bellow (that's how we can compute
             # the actual width of the command output).
-            super().write()
+            if not _dtshconf.pref_svg_compact:
+                super().write()
 
         # Write output to console using the maximum width.
         super().write(*args, **kwargs)
