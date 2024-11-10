@@ -11,12 +11,17 @@ Unit tests and examples: tests/test_dtsh_builtin_cat.py
 
 from typing import Sequence, List, Optional
 
-
-from dtsh.dts import YAMLFile
+from dtsh.utils import YAMLFile
 from dtsh.model import DTNode, DTNodeProperty
 from dtsh.modelutils import DTSUtil
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh, DTShCommand, DTShFlag, DTShCommandError
+from dtsh.shell import (
+    DTSh,
+    DTShCommand,
+    DTShFlag,
+    DTShCommandError,
+    DTShUsageError,
+)
 
 from dtsh.shellutils import (
     DTShFlagPager,
@@ -26,18 +31,28 @@ from dtsh.config import DTShConfig
 
 from dtsh.rich.shellutils import DTShFlagLongList
 from dtsh.rich.text import TextUtil
-from dtsh.rich.tui import RenderableError
+from dtsh.rich.theme import DTShTheme
+from dtsh.rich.tui import HeadingsContentWriter, RenderableError
 from dtsh.rich.modelview import (
     ViewPropertyValueTable,
     FormPropertySpec,
     ViewNodeBinding,
     ViewDescription,
     ViewYAMLFile,
-    HeadingsContentWriter,
 )
 
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
+
+
+class CatFlagCompactYAML(DTShFlag):
+    """Whether to hide the content of included YAML files.
+
+    Only available when '-l' and 'A' or 'Y'.
+    """
+
+    BRIEF = "hide content of included YAML files"
+    LONGNAME = "compact-yaml"
 
 
 class DTShFlagAll(DTShFlag):
@@ -97,10 +112,26 @@ class DTShBuiltinCat(DTShCommand):
                 DTShFlagBindings(),
                 DTShFlagAll(),
                 DTShFlagLongList(),
+                CatFlagCompactYAML(),
                 DTShFlagPager(),
             ],
             DTShParamDTPathX(),
         )
+
+    def parse_argv(self, argv: Sequence[str]) -> None:
+        """Overrides DTShCommand.parse_argv()."""
+        super().parse_argv(argv)
+        if self.with_flag(CatFlagCompactYAML):
+            if not self.with_flag(DTShFlagLongList):
+                raise DTShUsageError(
+                    self, "option '--compact-yaml' requires '-l'"
+                )
+            if not (
+                self.with_flag(DTShFlagYamlFile) or self.with_flag(DTShFlagAll)
+            ):
+                raise DTShUsageError(
+                    self, "option '--compact-yaml' requires '-Y' or '-A"
+                )
 
     def execute(self, argv: Sequence[str], sh: DTSh, out: DTShOutput) -> None:
         """Overrides DTShCommand.execute()."""
@@ -205,7 +236,7 @@ class DTShBuiltinCat(DTShCommand):
         if show_all or self.with_flag(DTShFlagDescription):
             sections.append(
                 HeadingsContentWriter.Section(
-                    "description", 1, ViewDescription(dtnode.description)
+                    "description", ViewDescription(dtnode.description)
                 )
             )
         if show_all:
@@ -214,11 +245,12 @@ class DTShBuiltinCat(DTShCommand):
             sections.append(
                 HeadingsContentWriter.Section(
                     "Properties",
-                    1,
-                    ViewPropertyValueTable(dtprops)
-                    if dtprops
-                    else TextUtil.mk_apologies(
-                        "This node does not set any property."
+                    (
+                        ViewPropertyValueTable(dtprops)
+                        if dtprops
+                        else TextUtil.mk_apologies(
+                            "This node does not set any property."
+                        )
                     ),
                 )
             )
@@ -226,10 +258,11 @@ class DTShBuiltinCat(DTShCommand):
             sections.append(
                 HeadingsContentWriter.Section(
                     "Binding",
-                    1,
-                    ViewNodeBinding(dtnode)
-                    if dtnode.binding
-                    else TextUtil.mk_apologies("This node has no binding."),
+                    (
+                        ViewNodeBinding(dtnode)
+                        if dtnode.binding
+                        else TextUtil.mk_apologies("This node has no binding.")
+                    ),
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
@@ -237,15 +270,18 @@ class DTShBuiltinCat(DTShCommand):
                 sections.append(
                     HeadingsContentWriter.Section(
                         "YAML",
-                        1,
-                        ViewYAMLFile.create(
-                            dtnode.binding_path,
-                            dtnode.dt.dts.yamlfs,
-                            is_binding=True,
-                            expand_includes=_dtshconf.pref_yaml_expand,
-                        )
-                        if dtnode.binding_path
-                        else TextUtil.mk_apologies("YAML binding unavailable."),
+                        (
+                            ViewYAMLFile.create(
+                                dtnode.binding_path,
+                                dtnode.dt.dts.yamlfs,
+                                style=DTShTheme.STYLE_YAML_BINDING,
+                                compact=self.with_flag(CatFlagCompactYAML),
+                            )
+                            if dtnode.binding_path
+                            else TextUtil.mk_apologies(
+                                "YAML binding unavailable."
+                            )
+                        ),
                     )
                 )
             except RenderableError as e:
@@ -297,34 +333,36 @@ class DTShBuiltinCat(DTShCommand):
         if show_all or self.with_flag(DTShFlagDescription):
             sections.append(
                 HeadingsContentWriter.Section(
-                    "description", 1, ViewDescription(dtprop.description)
+                    "description", ViewDescription(dtprop.description)
                 )
             )
         if show_all or self.with_flag(DTShFlagBindings):
             sections.append(
                 HeadingsContentWriter.Section(
                     "specification",
-                    1,
                     FormPropertySpec(dtprop.dtspec),
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
+            if dtprop.path == dtprop.node.binding_path:
+                style = DTShTheme.STYLE_YAML_BINDING
+            else:
+                style = DTShTheme.STYLE_YAML_INCLUDE
             try:
                 sections.append(
                     HeadingsContentWriter.Section(
                         "YAML",
-                        1,
-                        ViewYAMLFile.create(
-                            dtprop.path,
-                            dtprop.node.dt.dts.yamlfs,
-                            is_binding=(
-                                dtprop.path == dtprop.node.binding_path
-                            ),
-                            expand_includes=_dtshconf.pref_yaml_expand,
-                        )
-                        if dtprop.path
-                        else TextUtil.mk_apologies(
-                            "YAML specification unavailable."
+                        (
+                            ViewYAMLFile.create(
+                                dtprop.path,
+                                dtprop.node.dt.dts.yamlfs,
+                                style=style,
+                                compact=self.with_flag(CatFlagCompactYAML),
+                            )
+                            if dtprop.path
+                            else TextUtil.mk_apologies(
+                                "YAML specification unavailable."
+                            )
                         ),
                     )
                 )
