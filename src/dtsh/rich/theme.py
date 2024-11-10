@@ -46,6 +46,7 @@ class DTShTheme:
 
     STYLE_FS_FILE = "dtsh.fs.file"
     STYLE_FS_DIR = "dtsh.fs.dir"
+    STYLE_FS_NOT_FOUND = "dtsh.fs.notfound"
 
     STYLE_LINK_LOCAL = "dtsh.link.local"
     STYLE_LINK_WWW = "dtsh.link.www"
@@ -97,6 +98,8 @@ class DTShTheme:
     STYLE_DTVALUE_PHANDLE = "dtsh.dtvalue.phandle"
     STYLE_DTVALUE_PHANDLE_DATA = "dtsh.dtvalue.phandle_data"
     STYLE_DTVALUE_COMPOUND = "dtsh.dtvalue.compound"
+
+    STYLE_YAML_FILE = "dtsh.yaml.file"
     STYLE_YAML_BINDING = "dtsh.yaml.binding"
     STYLE_YAML_INCLUDE = "dtsh.yaml.include"
     STYLE_DTS_FILE = "dtsh.dts"
@@ -105,16 +108,49 @@ class DTShTheme:
     STYLE_FORM_DEFAULT = "dtsh.form.default"
 
     STYLE_INF_ZEPHYR_BASE = "dtsh.inf.zephyr_base"
-    STYLE_INF_ZEPHYR_KERNEL = "dtsh.inf.kernel"
+    STYLE_INF_KERNEL_VERSION = "dtsh.inf.kernel_version"
     STYLE_INF_DEVICETREE = "dtsh.inf.devicetree"
-    STYLE_INF_TOOLCHAIN = "dtsh.inf.toolchain"
     STYLE_INF_BINDINGS = "dtsh.inf.bindings"
-    STYLE_INF_VENDORS = "dtsh.inf.vendors"
-    STYLE_INF_APPLICATION = "dtsh.inf.application"
+    STYLE_INF_VENDORS_FILE = "dtsh.inf.vendors"
+
+    STYLE_INF_APP_BIN_DIR = "dtsh.inf.app_bin_dir"
+    STYLE_INF_APP_SRC_DIR = "dtsh.inf.app_src_dir"
+    STYLE_INF_APP_CONF_FILE = "dtsh.inf.app_conf_file"
+    STYLE_INF_FW_NAME = "dtsh.inf.fw_name"
+    STYLE_INF_FW_VERSION = "dtsh.inf.fw_version"
+
+    STYLE_INF_TOOLCHAIN = "dtsh.inf.toolchain"
+    STYLE_INF_ZEPHYR_SDK = "dtsh.inf.toolchain_zephyr"
+    STYLE_INF_TOOLCHAIN_DIR = "dtsh.inf.toolchain_dir"
+    STYLE_INF_TOOLCHAIN_NAME = "dtsh.inf.toolchain_name"
+    STYLE_INF_TOOLCHAIN_RELEASE = "dtsh.inf.toolchain_release"
+
+    STYLE_INF_HWM1 = "dtsh.inf.hwm1"
+    STYLE_INF_HWM2 = "dtsh.inf.hwm2"
+
     STYLE_INF_BOARD = "dtsh.inf.board"
-    STYLE_INF_BOARD_FILE = "dtsh.inf.board_file"
-    STYLE_INF_SOC = "dtsh.inf.soc"
+    STYLE_INF_BOARD_DIR = "dtsh.inf.board_dir"
+    STYLE_INF_BOARD_DTS = "dtsh.inf.board_dts"
+    STYLE_INF_BOARD_SHIELD = "dtsh.inf.board_shield"
+
+    STYLE_INF_BOARD_METADATA = "dtsh.inf.board_metadata"
+    STYLE_INF_BOARD_FULL_NAME = "dtsh.inf.board_fullname"
+    STYLE_INF_BOARD_REVISION = "dtsh.inf.board_revision"
+
+    STYLE_INF_BOARD_QUALIFIERS = "dtsh.inf.board_qualifiers"
+    STYLE_INF_BOARD_NAME = "dtsh.inf.board_name"
+    STYLE_INF_BOARD_SOC = "dtsh.inf.board_soc"
+    STYLE_INF_BOARD_CPUS = "dtsh.inf.board_cpus"
+    STYLE_INF_BOARD_VARIANT = "dtsh.inf.board_variant"
+
+    STYLE_INF_RUNNER_METADATA = "dtsh.inf.runner_metadata"
+    STYLE_INF_RUNNER_NAME = "dtsh.inf.runner_name"
+    STYLE_INF_RUNNER_ARCH = "dtsh.inf.board_arch"
+    STYLE_INF_RUNNER_TYPE = "dtsh.inf.board_typr"
+
     STYLE_INF_SOC_SVD = "dtsh.inf.soc_svd"
+    STYLE_INF_SOC_DIR = "dtsh.inf.soc_dir"
+    STYLE_INF_SOC_METADATA = "dtsh.inf.soc_metadata"
 
     class Error(BaseException):
         """Error loading styles file."""
