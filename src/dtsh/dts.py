@@ -1,7 +1,5 @@
 # Copyright (c) 2023 Christophe Dufaza <chris@openmarl.org>
 #
-# Copyright (c) 2018 Open Source Foundries Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 """Devicetree source definition.
@@ -14,8 +12,6 @@ A devicetree is fully defined by:
 
 This module may rely on cached CMake variables to locate
 the binding files the DTS file was actually generated with.
-The herein CMake cache reader implementation is adapted from
-the zcmake.py module in zephyr/scripts/west_commands.
 
 This module eventually introduces a YAML file system API
 that should cover the devicetree shell needs:
@@ -28,27 +24,12 @@ Unit tests and examples: tests/test_dtsh_dts.py
 """
 
 
-from typing import (
-    cast,
-    Optional,
-    Union,
-    List,
-    Sequence,
-    Dict,
-    Iterator,
-    Mapping,
-    Tuple,
-)
+from typing import cast, Optional, List, Sequence, Dict, Mapping
 
 import os
-import re
-import subprocess
-import sys
 
-import yaml
 
-# Custom PyYAML loader with support for the legacy '!include syntax.
-from devicetree.edtlib import _BindingLoader as YAMLBindingLoader
+from dtsh.utils import CMakeCache, GitUtil, YAMLFile
 
 
 class DTS:
@@ -256,7 +237,25 @@ class DTS:
         """
         if self.board_dir and self.board:
             board_sem = DTS._board_sem(self.board)
-            return os.path.join(self.board_dir, f"{board_sem}.yaml")
+            path = os.path.join(self.board_dir, f"{board_sem}.yaml")
+            if not os.path.isfile(path):
+                # May be HWv2 board name with a unique SoC.
+                board_soc = DTS._board_noqualifiers(self.board)
+                path = os.path.join(self.board_dir, f"{board_soc}.yaml")
+            if os.path.isfile(path):
+                return path
+        return None
+
+    @property
+    def board2_yaml(self) -> Optional[str]:
+        """Board YAML file with metadata (HWv2).
+
+        Shortcut to "${BOARD_DIR}/board.yml".
+        """
+        if self.board_dir:
+            path = os.path.join(self.board_dir, "board.yml")
+            if os.path.isfile(path):
+                return path
         return None
 
     @property
@@ -508,6 +507,11 @@ class DTS:
     def _board_sem(board: str) -> str:
         return board.replace("/", "_")
 
+    # Remove SoC from board names HWv2 when there's only one variant.
+    @staticmethod
+    def _board_noqualifiers(board: str) -> str:
+        return board.split("/")[0]
+
 
 class YAMLFilesystem:
     """Find YAML files within a fixed search path (set of directories).
@@ -569,413 +573,6 @@ class YAMLFilesystem:
         return YAMLFile(path) if path else None
 
 
-class CMakeCache:
-    """CMake cache reader.
-
-    Adapted from zcmake.CMakeCache.
-    """
-
-    _entries: Dict[str, "CMakeCacheEntry"]
-
-    @classmethod
-    def open(cls, path: str) -> Optional["CMakeCache"]:
-        """Open a CMake cache file for reading.
-
-        Args:
-            path: Path to the CMake cache file (CMakeCache.txt) to open.
-
-        Returns:
-            The CMakeCache content.
-        """
-        try:
-            return CMakeCache(path)
-        except OSError as e:
-            print(f"CMakeCache file error: {e}", file=sys.stderr)
-        except ValueError as e:
-            print(f"CMakeCache content error: {e}", file=sys.stderr)
-        return None
-
-    def __init__(self, path: str) -> None:
-        """Open a CMake cache file.
-
-        Args:
-            path: Path to the CMake cache file (CMakeCache.txt) to open.
-
-        Raises:
-            OSError: CMakeCache file error.
-            ValueError: CMakeCache content error.
-        """
-        with open(path, "r", encoding="utf-8") as cache:
-            entries = [
-                CMakeCacheEntry.from_line(line, line_no)
-                for line_no, line in enumerate(cache)
-            ]
-        self._entries = {entry.name: entry for entry in entries if entry}
-
-    def get(self, name: str) -> Optional["CMakeCacheEntry.ValueType"]:
-        """Access a cache entry by name.
-
-        Arg:
-            name: Cache entry name.
-
-        Returns:
-            The raw cache entry value, or None if not set.
-        """
-        if name in self._entries:
-            return self._entries[name].value
-        return None
-
-    def getbool(self, name: str) -> bool:
-        """Access a cache entry as boolean.
-
-        Arg:
-            name: Cache entry name.
-
-        Returns:
-            True if the entry is of type boolean and set ("ON", "YES", etc),
-            false otherwise.
-        """
-        val = self.get(name)
-        # May not be Pythonic, but is consistent with type hinting.
-        return val is True
-
-    def getstr(self, name: str) -> Optional[str]:
-        """Access a cache entry as string.
-
-        Arg:
-            name: Cache entry name.
-
-        Returns:
-            A string value if the entry exists and is actually of type string,
-            None otherwise.
-        """
-        val = self.get(name)
-        if val and isinstance(val, str):
-            return val
-        return None
-
-    def getstrs(self, name: str) -> List[str]:
-        """Access a cache entry as a list of strings.
-
-        Arg:
-            name: Cache entry name.
-
-        Returns:
-            A list of string values if the entry exists and is either of type
-            string or of type list of strings, an empty list otherwise.
-        """
-        val = self.get(name)
-        if val and isinstance(val, str):
-            return [val]
-        if isinstance(val, list):
-            # Assuming list of string.
-            return val
-        return []
-
-    def __contains__(self, name: str) -> bool:
-        """Map protocol."""
-        return name in self._entries
-
-    def __getitem__(self, name: str) -> "CMakeCacheEntry.ValueType":
-        """Map protocol."""
-        return self._entries[name].value
-
-    def __iter__(self) -> Iterator[str]:
-        """Iterate on the CMake cache entries."""
-        return iter(self._entries.keys())
-
-    def __len__(self) -> int:
-        """Number of entries in this CMake cache."""
-        return len(self._entries)
-
-
-class CMakeCacheEntry:
-    """CMake cache entry.
-
-    This class understands the type system in a CMakeCache.txt, and
-    converts the following cache types to Python types:
-
-        Cache Type    Python type
-        ----------    -------------------------------------------
-        FILEPATH      str
-        PATH          str
-        STRING        str OR list of str (if ';' is in the value)
-        BOOL          bool
-        INTERNAL      str OR list of str (if ';' is in the value)
-        STATIC        str OR list of str (if ';' is in the value)
-        UNINITIALIZED str OR list of str (if ';' is in the value)
-        ----------    -------------------------------------------
-
-    Adapted from zcmake.CMakeCacheEntry.
-    """
-
-    # Regular expression for a cache entry.
-    #
-    # CMake variable names can include escape characters, allowing a
-    # wider set of names than is easy to match with a regular
-    # expression. To be permissive here, use a non-greedy match up to
-    # the first colon (':'). This breaks if the variable name has a
-    # colon inside, but it's good enough.
-    CACHE_ENTRY = re.compile(
-        r"""(?P<name>.*?)
-         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL|STATIC|UNINITIALIZED)
-         =(?P<value>.*)
-        """,
-        re.X,
-    )
-
-    ValueType = Union[str, List[str], bool]
-
-    _name: str
-    _value: "CMakeCacheEntry.ValueType"
-
-    @classmethod
-    def from_line(cls, line: str, line_no: int) -> Optional["CMakeCacheEntry"]:
-        """Create an entry from a cache line.
-
-        Args:
-            line: The cache line content.
-            line_no: The cache file line number (used for error reporting).
-
-        Returns:
-            A cache entry or `None` if the line was a comment, empty,
-            or malformed.
-
-        Raises:
-            ValueError: Failed conversion to bool.
-        """
-        # Comments can only occur at the beginning of a line.
-        # (The value of an entry could contain a comment character).
-        if line.startswith("//") or line.startswith("#"):
-            return None
-
-        # Whitespace-only lines do not contain cache entries.
-        if not line.strip():
-            return None
-
-        m = cls.CACHE_ENTRY.match(line)
-        if not m:
-            return None
-
-        name, type_, value = (m.group(g) for g in ("name", "type", "value"))
-        if type_ == "BOOL":
-            try:
-                value = cls._to_bool(value)
-            except ValueError as exc:
-                args = exc.args + (f"on line {line_no}: {line}",)
-                raise ValueError(args) from exc
-        elif type_ in {"STRING", "INTERNAL", "STATIC", "UNINITIALIZED"}:
-            # If the value is a CMake list (i.e. is a string which
-            # contains a ';'), convert to a Python list.
-            if ";" in value:
-                value = value.split(";")
-
-        return CMakeCacheEntry(name, value)
-
-    @classmethod
-    def _to_bool(cls, val: str) -> bool:
-        # Convert a CMake BOOL string into a Python bool.
-        #
-        #   "True if the constant is 1, ON, YES, TRUE, Y, or a
-        #   non-zero number. False if the constant is 0, OFF, NO,
-        #   FALSE, N, IGNORE, NOTFOUND, the empty string, or ends in
-        #   the suffix -NOTFOUND. Named boolean constants are
-        #   case-insensitive. If the argument is not one of these
-        #   constants, it is treated as a variable."
-        #
-        # https://cmake.org/cmake/help/v3.0/command/if.html
-        val = val.upper()
-        if val in ("ON", "YES", "TRUE", "Y"):
-            return True
-        if val in ("OFF", "NO", "FALSE", "N", "IGNORE", "NOTFOUND", ""):
-            return False
-        if val.endswith("-NOTFOUND"):
-            return False
-        try:
-            v = int(val)
-            return v != 0
-        except ValueError as e:
-            raise ValueError(f"not a bool: {val}") from e
-
-    def __init__(self, name: str, value: "CMakeCacheEntry.ValueType") -> None:
-        """Initialize a new cache entry.
-
-        Args:
-            name: Entry name.
-            value: Entry value.
-        """
-        self._name = name
-        self._value = value
-
-    @property
-    def name(self) -> str:
-        """Cache entry name."""
-        return self._name
-
-    @property
-    def value(self) -> "CMakeCacheEntry.ValueType":
-        """Cache entry raw value."""
-        return self._value
-
-    def __repr__(self) -> str:
-        return f"{self._name}: {self._value}"
-
-
-class YAMLFile:
-    """Cheap wrapper around a YAML file.
-
-    Rationale: simple API to access a YAML file's text content
-    and its "include: " element, if any.
-
-    We'll use this API for known valid binding files.
-    At this point, the DT model initialization has already red all involved
-    YAML bindings, ant it's very unlikely that reading or parsing the file
-    again will fail:
-
-    - this API won't fault: if an I/O or YAML error occurs, the content()
-      and raw() properties will just answer empty values
-    - the lasterr() property represents the last error, if any
-
-    This API is lazy-initialized:
-
-    - the file is opened and red when content() is first accessed
-    - the file is parsed into YAML when raw() or includes() is first accessed
-
-    """
-
-    # Absolute file path.
-    _path: str
-
-    # Lazy-initialized file content.
-    _content: Optional[str]
-
-    # Lazy-initialized YAML model.
-    _raw: Optional[Dict[str, object]]
-
-    # Lazy-initialized YAML "include: ".
-    _includes: Optional[List[str]]
-
-    # If set, we've failed to load the YAML file at some point:
-    # - OSError: all kinds of file system errors
-    # - YAMLError: invalid YAML content
-    _lasterr: Optional[Union[OSError, yaml.YAMLError]]
-
-    def __init__(self, path: str) -> None:
-        """Lazy-initialize wrapper.
-
-        Args:
-            path: Absolute path to the YAML file.
-              Invalid path or file will produce an empty content.
-        """
-        self._path = path
-        self._lasterr = None
-        # Lazy-initialized.
-        self._content = None
-        self._raw = None
-        self._includes = None
-
-    @property
-    def path(self) -> str:
-        """Absolute file path."""
-        return self._path
-
-    @property
-    def content(self) -> str:
-        """Text content."""
-        # Will Initialize an empty content if we can't read the YAML file.
-        self._init_content()
-        return self._content  # type: ignore
-
-    @property
-    def raw(self) -> Dict[str, object]:
-        """YAML model.
-
-        If empty, see lasterr().
-        """
-        # Will Initialize an empty model if the YAML file's content
-        # is unavailable or invalid.
-        self._init_model()
-        return self._raw  # type: ignore
-
-    @property
-    def includes(self) -> Sequence[str]:
-        """Names of included YAML files."""
-        self._init_includes()
-        return self._includes  # type: ignore
-
-    @property
-    def lasterr(self) -> Optional[Union[OSError, yaml.YAMLError]]:
-        """Last error that happened while loading this YAML file.
-
-        Possible values:
-
-        - None: no error
-        - OSError: IO errors
-        - YAMLError: invalid YAML content
-        """
-        return self._lasterr
-
-    def _init_content(self) -> None:
-        # Actually try top open the YAML file and read its content.
-        # Set lasterr accordingly.
-
-        if self._content is not None:
-            return
-        # Only one attempt to initialize content.
-        self._content = ""
-
-        try:
-            with open(self._path, mode="r", encoding="utf-8") as f:
-                self._content = f.read().strip()
-        except OSError as e:
-            self._lasterr = e
-
-    def _init_model(self) -> None:
-        # Actually try to parse the file's content into YAML.
-        # Set lasterr accordingly.
-
-        if self._raw is not None:
-            return
-        # Only one attempt to initialize YAML model.
-        self._raw = {}
-
-        # Depends on file's content.
-        self._init_content()
-        if not self._content:
-            return
-
-        try:
-            self._raw = yaml.load(self._content, Loader=YAMLBindingLoader)
-        except yaml.YAMLError as e:
-            self._lasterr = e
-
-    def _init_includes(self) -> None:
-        # Search YAML model for include directives.
-
-        if self._includes is not None:
-            return
-        # Only one attempt to initialize includes.
-        self._includes = []
-
-        # Depends on YAML model.
-        self._init_model()
-        if not self._raw:
-            return
-
-        # See edtlib.Binding._merge_includes()
-        yaml_inc = self._raw.get("include")
-        if isinstance(yaml_inc, str):
-            self._includes.append(yaml_inc)
-        elif isinstance(yaml_inc, list):
-            for inc in yaml_inc:
-                if isinstance(inc, str):
-                    self._includes.append(inc)
-                elif isinstance(inc, dict):
-                    basename = inc.get("name")
-                    if basename:
-                        self._includes.append(basename)
-
-
 class DTSFile:
     """Simple fail-safe wrapper around a DTS file."""
 
@@ -1030,69 +627,3 @@ class DTSFile:
             self._lasterr = e
         # Empty content on error.
         return ""
-
-
-class GitUtil:
-    """Git helper.
-
-    Execute Git commands as sub-processes and get results.
-    """
-
-    # Working directory for Git commands
-    _cwd: str
-
-    # True when:
-    # - the git command is found
-    # - we're inside a Git working tree
-    _enabled: bool
-
-    def __init__(self, cwd: str) -> None:
-        """
-        Args:
-           cwd: Working directory for Git commands.
-        """
-        self._cwd = cwd
-        self._enabled = self._git_check_enabled()
-
-    @property
-    def is_available(self) -> bool:
-        """True when we should be able to execute Git commands."""
-        return self._enabled
-
-    def head_get_tag(self) -> Optional[str]:
-        """Get the tag of the repository HEAD, if any."""
-        (ret, output) = self._git_exec(["describe", "--exact-match", "--tags"])
-        if ret == 0:
-            return output
-        return None
-
-    def head_get_short(self) -> Optional[str]:
-        """Get the short commit hash of the repository HEAD."""
-        (ret, output) = self._git_exec(["rev-parse", "--short", "HEAD"])
-        if ret == 0:
-            return output
-        return None
-
-    def _git_check_enabled(self) -> bool:
-        (ret, _) = self._git_exec(["rev-parse", "--is-inside-work-tree"])
-        return ret == 0
-
-    # Execute a Git command and answer result as a tuple (return value, output).
-    def _git_exec(self, args: Sequence[str]) -> Tuple[int, str]:
-        git_cmd: Sequence[str] = [
-            "git.exe" if os.name == "nt" else "git",
-            *args,
-        ]
-        try:
-            proc = subprocess.Popen(
-                git_cmd,
-                cwd=self._cwd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-            ret = proc.wait()
-            # We know proc.stdout is set.
-            output = proc.stdout.read().decode("utf-8").strip()  # type: ignore
-            return (ret, output)
-        except OSError as e:
-            return (e.errno, e.strerror)
