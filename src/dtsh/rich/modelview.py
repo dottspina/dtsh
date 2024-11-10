@@ -2299,6 +2299,7 @@ class ViewYAMLFile(View):
         yamlfs: YAMLFilesystem,
         is_binding: bool,
         expand_includes: bool,
+        compact: bool = False,
     ) -> View:
         """YAML view factory.
 
@@ -2307,6 +2308,7 @@ class ViewYAMLFile(View):
             yamlfs: Where to search for included YAML files.
             is_binding: Whether the YAML file is a node binding.
             expand_includes: Whether to show included files.
+            compact: If true, show only YAM file names, not their content.
 
         Returns:
             A content view with syntax highlighting, shown as tree
@@ -2330,10 +2332,12 @@ class ViewYAMLFile(View):
             yamlfs,
             is_binding=is_binding,
             expand_includes=expand_includes,
+            compact=compact,
         )
 
     _yamlfs: YAMLFilesystem
     _view: Tree
+    _compact: bool
 
     def __init__(
         self,
@@ -2341,6 +2345,7 @@ class ViewYAMLFile(View):
         yamlfs: YAMLFilesystem,
         is_binding: bool,
         expand_includes: bool,
+        compact: bool = False,
     ) -> None:
         """Initialize view.
 
@@ -2351,9 +2356,11 @@ class ViewYAMLFile(View):
             yamlfs: Where to search for included files.
             is_binding: Whether the YAML file is a node binding.
             expand_includes: Whether to show included files.
+            compact: If true, show only YAM file names, not their content.
         """
         super().__init__()
         self._yamlfs = yamlfs
+        self._compact = compact
         self._view = self._init_tree(fyaml, is_binding, expand_includes)
 
     @property
@@ -2367,7 +2374,6 @@ class ViewYAMLFile(View):
         tree = Tree(
             self._mk_anchor(
                 fyaml,
-                expand_includes=expand_includes,
                 style=DTShTheme.STYLE_YAML_BINDING
                 if is_binding
                 else DTShTheme.STYLE_YAML_INCLUDE,
@@ -2384,7 +2390,6 @@ class ViewYAMLFile(View):
             yaml_anchor = parent.add(
                 self._mk_anchor(
                     fyaml,
-                    expand_includes=True,
                     style=DTShTheme.STYLE_YAML_INCLUDE,
                 )
             )
@@ -2399,23 +2404,19 @@ class ViewYAMLFile(View):
     def _mk_anchor(
         self,
         fyaml: YAMLFile,
-        expand_includes: bool,
         style: StyleType,
     ) -> RenderableType:
-        view_yaml = ViewYAMLContent(fyaml.content)
-        if not expand_includes:
-            # Answer only the YAML content view when we don't show
-            # included files.
-            return view_yaml
-
-        # Otherwise, grid layout with file name and content view.
         layout = GridLayout(no_wrap=True)
         txt_file = TextUtil.mk_text(os.path.basename(fyaml.path), style)
         txt_file = TextUtil.link(
             txt_file, fyaml.path, _dtshconf.pref_yaml_actionable_type
         )
         layout.add_row(txt_file)
-        layout.add_row(view_yaml)
+
+        if not self._compact:
+            # Append YAML content ony if not compact view.
+            view_yaml = ViewYAMLContent(fyaml.content)
+            layout.add_row(view_yaml)
         return layout
 
 
