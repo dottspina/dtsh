@@ -5,7 +5,7 @@ genboard_svg() {
 	board="$1"
 	board_dir="$2"
 
-	svg_dir="$board_dir/doc/img"
+	svg_dir=doc/img
 	mkdir -p "$svg_dir"
 
 	board_svg="$svg_dir/board.svg"
@@ -31,7 +31,7 @@ genboard_html() {
 	board="$1"
 	board_dir="$2"
 
-	html_dir="$board_dir/doc"
+	html_dir=doc
 	mkdir -p "$html_dir"
 
 	board_html="$html_dir/board.html"
@@ -44,7 +44,7 @@ genboard_html() {
 # Would be nice to be able to build a covenient list with something
 # like:
 # 	west boards -f '{name_v2} {dir}' >/tmp/boards.txt
-# Mmay be based on name/qualifiers.
+# May be based on name/qualifiers.
 echo "native_sim boards/native/native_sim" >/tmp/boards.txt
 {
 	echo "nrf52840dk/nrf52840 boards/nordic/nrf52840dk"
@@ -53,15 +53,27 @@ echo "native_sim boards/native/native_sim" >/tmp/boards.txt
 	echo "mt8195_adsp/mt8195_adsp boards/mediatek/mt8195_adsp"
 	echo "intel_socfpga_agilex5_socdk/agilex5 boards/intel/socfpga/agilex5_socdk"
 	echo "esp32s3_devkitm/esp32s3/procpu boards/espressif/esp32s3_devkitm"
-	echo "esp32s3_devkitm/esp32s3/appcpu boards/espressif/esp32s3_devkitm"
 	echo "qemu_cortex_m3/ti_lm3s6965 boards/qemu/cortex_m3"
+
+	# Can't distinguish variants (e.g. finding the qualifiers in
+	# some CMake cache variable).
+	# Would overwrite the board above.
+	# echo "native_sim/native/64 boards/native/native_sim"
+	# echo "esp32s3_devkitm/esp32s3/appcpu boards/espressif/esp32s3_devkitm"
+
 } >>/tmp/boards.txt
+
+old_wd="$PWD"
 
 cat /tmp/boards.txt | tr -d '\r' |
 	while read -r board_name board_dir; do
 		echo "==== $board_name $board_dir ===="
+		mkdir -p "$board_dir"
+		cd "$board_dir" || return
 		west build -p -b "$board_name" "$ZEPHYR_BASE/samples/hello_world"
 
 		genboard_svg "$board" "$board_dir"
 		genboard_html "$board" "$board_dir"
+
+		cd "$old_wd" || return
 	done
