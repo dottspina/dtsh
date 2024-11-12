@@ -48,7 +48,8 @@ import sys
 
 from devicetree import edtlib
 
-from dtsh.dts import DTS, YAMLFile
+from dtsh.utils import YAMLFile
+from dtsh.dts import DTS
 
 
 class DTPath:
@@ -443,7 +444,8 @@ class DTBinding:
     @property
     def path(self) -> str:
         """Absolute path to the YAML file defining the binding."""
-        return self._yaml.path
+        # We known this path is not None.
+        return self._edtbinding.path or ""
 
     @property
     def compatible(self) -> Optional[str]:
