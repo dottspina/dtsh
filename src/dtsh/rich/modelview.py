@@ -4,9 +4,7 @@
 
 """Devicetree model to views.
 
-Stateless factories of base Devicetree model elements.
-
-Context-aware views of DT nodes.
+Stateless view factories of base Devicetree model elements.
 """
 
 from typing import (
@@ -23,8 +21,11 @@ from typing import (
     Tuple,
 )
 
+from pathlib import Path
+
 import enum
 import os
+import yaml
 
 from rich import box
 from rich.console import RenderableType
@@ -34,9 +35,9 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
-from dtsh.config import ActionableType
-from dtsh.io import DTShOutput
-from dtsh.dts import YAMLFile, YAMLFilesystem, DTSFile
+from dtsh.config import DTShConfig, ActionableType
+from dtsh.dts import DTSFile, YAMLFilesystem
+from dtsh.utils import YAMLFile
 from dtsh.model import (
     DTPath,
     DTWalkable,
@@ -60,7 +61,6 @@ from dtsh.modelutils import (
     DTNodeSortByBus,
     DTSUtil,
 )
-from dtsh.config import DTShConfig
 
 from dtsh.rich.tui import (
     View,
@@ -2179,14 +2179,22 @@ class ViewNodeBinding(GridLayout):
 class ViewYAMLContent(View):
     """View of YAML content with syntax highlighting."""
 
-    _view: Syntax
+    _view: Union[GridLayout, Syntax]
 
-    def __init__(self, content: str, theme: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        content: str,
+        /,
+        *,
+        titlebar: Optional[Text] = None,
+        lexer_theme: Optional[str] = None,
+    ) -> None:
         """Initialize view.
 
         Args:
             content: YAML text content.
-            theme: Syntax highlighting theme.
+            titlebar: Optional title.
+            lexer_theme: Syntax highlighting theme.
               A Pygments theme, e.g.:
               - dark: "monokai", "dracula", "material"
               - light: "bw", "sas", "arduino"
@@ -2197,14 +2205,18 @@ class ViewYAMLContent(View):
 
         # Work-around: strip file contents that end with empty lines.
         content = content.strip()
-
-        self._view = Syntax(
+        view_content = Syntax(
             content,
             lexer="yaml",
-            theme=theme or _dtshconf.pref_yaml_theme,
+            theme=lexer_theme or _dtshconf.pref_yaml_theme,
             dedent=True,
             padding=(0, 1, 0, 0),
         )
+
+        if titlebar:
+            self._view = GridLayout().add_row(titlebar).add_row(view_content)
+        else:
+            self._view = view_content
 
     @property
     def renderable(self) -> RenderableType:
@@ -2215,67 +2227,68 @@ class ViewYAMLContent(View):
 class ViewYAMLFile(View):
     """View for YAML files.
 
-    The view is actually polymorphic, depending on whether we'll
-    expand the included YAML files:
-    - no: a simple view of the YAML text with syntax highlighting
-    - yes: a tree view with the included files and their contents
-
+    The view is actually polymorphic, depending on whether
+    we'll show the YAML content and expand the included files.
     """
 
     @classmethod
     def create(
         cls,
-        path: str,
-        yamlfs: YAMLFilesystem,
-        is_binding: bool,
-        expand_includes: bool,
-        compact: bool = False,
-    ) -> View:
-        """YAML view factory.
+        path: Path,
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = True,
+        flabel: Optional[str] = None,
+        style: Optional[StyleType] = None,
+        yamlfs: Optional[YAMLFilesystem] = None,
+        linktype: Optional[ActionableType] = None,
+    ) -> "ViewYAMLFile":
+        """Create a YAML file view.
 
         Args:
-            path: Path to the YAML file.
-            yamlfs: Where to search for included YAML files.
-            is_binding: Whether the YAML file is a node binding.
-            expand_includes: Whether to show included files.
-            compact: If true, show only YAM file names, not their content.
+            path: The YAML file path.
+            compact: If true, show only YAML pathnames, not their content.
+            expand_included: Whether to expand included files.
+            flabel: Replacement label for the pathname.
+            style: Style for the pathname.
+            yamlfs: Where to search for included files.
+            linktype: How to represent actionable text.
 
         Returns:
-            A content view with syntax highlighting, shown as tree
-            when expand_includes is set.
-
-        Raises:
-            RenderableError: Inaccessible or malformed YAML file.
+            A YAML file view.
         """
-        # Lazy initialized.
-        fyaml = YAMLFile(path)
-        # Actually read and parse file content.
-        fyaml.raw  # pylint: disable=pointless-statement
-
-        if fyaml.lasterr:
-            raise RenderableError(
-                "Inaccessible or malformed YAML file", path, fyaml.lasterr
-            )
-
-        return ViewYAMLFile(
-            fyaml,
-            yamlfs,
-            is_binding=is_binding,
-            expand_includes=expand_includes,
+        return cls(
+            YAMLFile(path),
             compact=compact,
+            expand_included=expand_included,
+            flabel=flabel,
+            style=style,
+            yamlfs=yamlfs,
+            linktype=linktype,
         )
 
-    _yamlfs: YAMLFilesystem
-    _view: Tree
     _compact: bool
+    _fyaml: YAMLFile
+    _style: StyleType
+    _linktype: ActionableType
+
+    _view: RenderableType
+
+    # Early initialized expanding included files.
+    _yaml_includes: Dict[str, YAMLFile] = {}
 
     def __init__(
         self,
         fyaml: YAMLFile,
-        yamlfs: YAMLFilesystem,
-        is_binding: bool,
-        expand_includes: bool,
-        compact: bool = False,
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = True,
+        flabel: Optional[str] = None,
+        style: Optional[StyleType] = None,
+        yamlfs: Optional[YAMLFilesystem] = None,
+        linktype: Optional[ActionableType] = None,
     ) -> None:
         """Initialize view.
 
@@ -2283,71 +2296,151 @@ class ViewYAMLFile(View):
 
         Args:
             fyaml: The YAML file to show.
+            compact: If true, show only YAML pathnames, not their content.
+            expand_included: Whether to expand included files.
+            flabel: Replacement label for the pathname.
+            style: Style for the pathname.
             yamlfs: Where to search for included files.
-            is_binding: Whether the YAML file is a node binding.
-            expand_includes: Whether to show included files.
-            compact: If true, show only YAM file names, not their content.
+            linktype: How to represent actionable text.
         """
         super().__init__()
-        self._yamlfs = yamlfs
+        self._fyaml = fyaml
         self._compact = compact
-        self._view = self._init_tree(fyaml, is_binding, expand_includes)
+        self._style = style or DTShTheme.STYLE_YAML_FILE
+        self._linktype = linktype or _dtshconf.pref_actionable_type
+        self._view = self._init_view(flabel, yamlfs, expand_included)
 
     @property
     def renderable(self) -> RenderableType:
         """Overrides View.renderable()."""
         return self._view
 
-    def _init_tree(
-        self, fyaml: YAMLFile, is_binding: bool, expand_includes: bool
+    def _init_view(
+        self,
+        flabel: Optional[str],
+        yamlfs: Optional[YAMLFilesystem],
+        expand_included: bool,
+    ) -> RenderableType:
+        # Force lazy initialization.
+        lasterr: Optional[Union[OSError, yaml.YAMLError]] = None
+        self._fyaml.content  # pylint: disable=pointless-statement
+        lasterr = self._fyaml.lasterr
+        if not lasterr and expand_included:
+            if yamlfs:
+                # We'll need included files, init them now.
+                lasterr = self._init_included(self._fyaml, yamlfs)
+        if lasterr:
+            return self._init_error_view(lasterr, flabel)
+
+        if self._compact:
+            return self._init_view_pathname(flabel)
+        return self._init_view_tree(expand_included, flabel)
+
+    def _init_view_tree(
+        self, expand_included: bool, flabel: Optional[str]
     ) -> Tree:
-        tree = Tree(
-            self._mk_anchor(
-                fyaml,
-                style=DTShTheme.STYLE_YAML_BINDING
-                if is_binding
-                else DTShTheme.STYLE_YAML_INCLUDE,
-            )
-        )
-        if expand_includes:
-            for inc_name in fyaml.includes:
-                self._init_include(inc_name, tree)
+        tree = Tree(self._mk_anchor(self._fyaml, flabel=flabel))
+        if expand_included:
+            for inc_name in self._fyaml.includes:
+                self._tree_add_included(inc_name, tree)
         return tree
 
-    def _init_include(self, basename: str, parent: Tree) -> None:
-        fyaml = self._yamlfs.find_file(basename)
-        if fyaml:
-            yaml_anchor = parent.add(
-                self._mk_anchor(
-                    fyaml,
-                    style=DTShTheme.STYLE_YAML_INCLUDE,
-                )
-            )
-            for inc_name in fyaml.includes:
-                self._init_include(inc_name, yaml_anchor)
-            return
+    def _init_view_pathname(self, flabel: Optional[str]) -> Text:
+        return TextUtil.mk_pathname(
+            self._fyaml.path,
+            flabel=flabel,
+            style=self._style,
+            linktype=self._linktype,
+        )
 
-        # Should not happen: included binding files have already been
-        # successfully resolved by edtlib during model initialization.
-        raise ValueError(basename)
+    def _tree_add_included(self, basename: str, parent: Tree) -> None:
+        # Included files have already been successfully initialized.
+        fyaml: YAMLFile = self._yaml_includes[basename]
+        yaml_anchor = parent.add(self._mk_anchor(fyaml))
+        for inc_name in fyaml.includes:
+            self._tree_add_included(inc_name, yaml_anchor)
 
     def _mk_anchor(
-        self,
-        fyaml: YAMLFile,
-        style: StyleType,
+        self, fyaml: YAMLFile, /, *, flabel: Optional[str] = None
     ) -> RenderableType:
         layout = GridLayout(no_wrap=True)
-        txt_file = TextUtil.mk_text(os.path.basename(fyaml.path), style)
-        txt_file = TextUtil.link(
-            txt_file, fyaml.path, _dtshconf.pref_yaml_actionable_type
+        # Anchor file text.
+        layout.add_row(
+            TextUtil.mk_pathname(
+                fyaml.path,
+                flabel=flabel,
+                style=self._style,
+                linktype=self._linktype,
+            )
         )
-        layout.add_row(txt_file)
-
         if not self._compact:
-            # Append YAML content ony if not compact view.
-            view_yaml = ViewYAMLContent(fyaml.content)
+            # Append YAML content only if not compact view.
+            view_yaml = ViewYAMLContent(self._fyaml.content)
             layout.add_row(view_yaml)
         return layout
+
+    def _init_included(
+        self,
+        fyaml: YAMLFile,
+        yamlfs: YAMLFilesystem,
+    ) -> Optional[Union[OSError, yaml.YAMLError]]:
+        inc_names = fyaml.includes
+        if fyaml.lasterr:
+            return fyaml.lasterr
+
+        lasterr: Optional[Union[OSError, yaml.YAMLError]] = None
+        for inc_name in inc_names:
+            inc_file = yamlfs.find_file(inc_name)
+            if not inc_file:
+                # Joining main code path,
+                # YAMLFile.lasterr() will be FileNotFound.
+                inc_file = YAMLFile(inc_name)
+
+            lasterr = self._init_included(inc_file, yamlfs)
+            if lasterr:
+                return lasterr
+            self._yaml_includes[inc_name] = inc_file
+
+        return None
+
+    def _init_error_view(
+        self, lasterr: Union[OSError, yaml.YAMLError], flabel: Optional[str]
+    ) -> RenderableType:
+        err_style: StyleType
+        if isinstance(lasterr, FileNotFoundError):
+            err_style = self._style
+        else:
+            err_style = DTShTheme.STYLE_ERROR
+
+        txt_fyaml: Text = TextUtil.mk_pathname(
+            self._fyaml.path,
+            flabel=flabel,
+            style=err_style,
+            linktype=self._linktype,
+        )
+        if self._compact:
+            return txt_fyaml
+
+        grid = GridLayout()
+        grid.add_row(txt_fyaml)
+        if isinstance(lasterr, OSError):
+            style: StyleType
+            if isinstance(lasterr, FileNotFoundError):
+                style = DTShTheme.STYLE_WARNING
+            else:
+                style = DTShTheme.STYLE_ERROR
+            grid.add_row(
+                TextUtil.mk_text(
+                    f"{self._fyaml.path}: {lasterr.strerror}", style
+                )
+            )
+        elif isinstance(lasterr, yaml.YAMLError):
+            for err_line in str(lasterr).splitlines():
+                if err_line:
+                    grid.add_row(
+                        TextUtil.mk_text(err_line, DTShTheme.STYLE_ERROR)
+                    )
+        return grid
 
 
 class ViewDTSContent(View):
