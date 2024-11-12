@@ -13,12 +13,15 @@ from typing import Optional, Union, Sequence
 import rich.box
 from rich.console import RenderableType
 from rich.padding import PaddingDimensions, Padding
+from rich.style import StyleType
 from rich.table import Table
 from rich.text import Text
 
+from dtsh.config import DTShConfig, ActionableType
 from dtsh.io import DTShOutput
 from dtsh.shell import DTShCommand, DTShCommandError
 from dtsh.shellutils import DTShFlagPager
+
 from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
 
@@ -145,6 +148,7 @@ class TableLayout(View):
         self,
         headers: Sequence[str],
         /,
+        *,
         padding: PaddingDimensions = 0,
         show_header: bool = True,
         no_wrap: bool = True,
@@ -223,6 +227,158 @@ class StatusBar(GridLayout):
         for col in self._grid.columns:
             col.ratio = 1
         self._grid.add_row(text_left, text_center, text_right)
+
+
+class FormLayout(GridLayout):
+    """Base view for forms.
+
+    A form is a table with "Label: <content>" rows,
+    where <content> may be any renderable type.
+    """
+
+    _placeholder: Optional[Union[str, Text]]
+    _style: Optional[StyleType]
+    _linktype: ActionableType
+
+    def __init__(
+        self,
+        /,
+        *,
+        placeholder: Optional[Union[str, Text]] = None,
+        style: Optional[StyleType] = None,
+    ) -> None:
+        """Initialize form.
+
+        Args:
+            placeholder: Placeholder for missing contents.
+            style: Style to use for the form's labels.
+              Defaults to configured preference.
+            linktype: Link type to use for contents.
+              Defaults to configured preference.
+        """
+        super().__init__(2, padding=(0, 1, 0, 0), no_wrap=False)
+        self._placeholder = placeholder
+        self._style = style or DTShTheme.STYLE_FORM_LABEL
+        self._linktype = DTShConfig.getinstance().pref_form_actionable_type
+        self._grid.columns[0].justify = "right"
+
+    def add_content(
+        self, label: str, content: Optional[Union[View, RenderableType]]
+    ) -> None:
+        """Add en entry to this form.
+
+        Args:
+            label: The entry's label.
+            content: The entry's content as renderable.
+              Empty contents are allowed and replaced by the form's placeholder.
+
+        """
+        self.add_row(
+            self._mk_label(label),
+            # Empty strings allow to override the placeholder.
+            content if content is not None else self._placeholder,
+        )
+
+    def _mk_label(self, label: str) -> Text:
+        return TextUtil.assemble(
+            TextUtil.mk_text(label, self._style),
+            TextUtil.mk_text(":"),
+        )
+
+
+class HeadingsContentWriter:
+    """Helper for views with headings an contents.
+
+    This permits to write contents one-by-one instead of building
+    a single complete view before we print something to the console.
+    """
+
+    ContentType = Union[RenderableType, View]
+
+    class Section:
+        """Contents."""
+
+        title: str
+        level: int
+        content: "HeadingsContentWriter.ContentType"
+
+        def __init__(
+            self,
+            title: str,
+            content: "HeadingsContentWriter.ContentType",
+            level: int = 1,
+        ) -> None:
+            self.title = title
+            self.level = level
+            self.content = content
+
+    # The TAB size in characters.
+    _tab: int
+
+    # Whether we need to insert a new line before we write a new heading.
+    _newl: bool
+
+    def __init__(self, tab: int = 4) -> None:
+        self._tab = tab
+        self._newl = False
+
+    def write(
+        self,
+        title: str,
+        level: int,
+        content: "HeadingsContentWriter.ContentType",
+        out: DTShOutput,
+    ) -> None:
+        """Write content.
+
+        Args:
+            title: Content's title.
+            level: Headings level.
+            content: Renderable content.
+            out: Where to write the content.
+        """
+        if self._newl:
+            out.write()
+        else:
+            # Once this heading is written,
+            # we'll need to insert new lines between subsequent ones.
+            self._newl = True
+
+        i_left: int = self._tab + (self._tab // 2) * (level - 1)
+        if isinstance(content, View):
+            content.left_indent(i_left)
+        else:
+            content = Padding(content, (0, 0, 0, i_left))
+
+        out.write(TextUtil.bold(title.upper()))
+        out.write(content)
+
+    def write_section(
+        self,
+        section: "HeadingsContentWriter.Section",
+        out: DTShOutput,
+    ) -> None:
+        """Write section.
+
+        Args:
+            section: What to write.
+            out: Where to write.
+        """
+        self.write(section.title, section.level, section.content, out)
+
+    def write_sections(
+        self,
+        sections: Sequence["HeadingsContentWriter.Section"],
+        out: DTShOutput,
+    ) -> None:
+        """Write sections.
+
+        Args:
+            sections: What to write.
+            out: Where to write.
+        """
+        for section in sections:
+            self.write_section(section, out)
 
 
 class RenderableError(BaseException):
