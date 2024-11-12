@@ -38,9 +38,9 @@ class TextUtil:
         """Text view factory.
 
         Args:
-            content:
-            style:
-            justify:
+            content: Text content.
+            style: Style or style name.
+            justify: Justify method.
 
         Returns:
             A new text view.
@@ -245,6 +245,43 @@ class TextUtil:
             A new text view.
         """
         return Text(msg, style=DTShTheme.STYLE_WARNING)
+
+    @classmethod
+    def mk_pathname(
+        cls,
+        path: pathlib.Path,
+        /,
+        *,
+        flabel: Optional[str] = None,
+        style: Optional[Union[str, Style]] = None,
+        linktype: Optional[ActionableType] = None,
+    ) -> Text:
+        """Make a file or directory text view.
+
+        Args:
+            path: File or directory or path.
+            flabel: Replacement label for the file or directory path.
+            style: Style or style name.
+            linktype: How to represent actionable text.
+
+        Returns:
+            A new text view.
+        """
+        linktype = linktype or _dtshconf.pref_actionable_type
+        style = style or DTShTheme.STYLE_FS_FILE
+        if flabel:
+            name = flabel
+        else:
+            name = str(path.absolute())
+
+        fs_found = path.exists()
+        txt = cls.mk_text(
+            name, style=style if fs_found else DTShTheme.STYLE_FS_NOT_FOUND
+        )
+        if fs_found:
+            txt = cls.link(txt, path.absolute().as_uri(), linktype)
+
+        return txt
 
     @classmethod
     def join(cls, sep: Union[str, Text], parts: Iterable[Text]) -> Text:
