@@ -25,8 +25,6 @@ def test_dts_init() -> None:
     with DTShTests.mock_env(
         {
             "ZEPHYR_BASE": None,
-            "ZEPHYR_SDK_INSTALL_DIR": None,
-            "ZEPHYR_TOOLCHAIN_VARIANT": None,
         }
     ):
         with DTShTests.from_res():
@@ -37,60 +35,44 @@ def test_dts_init() -> None:
             # (aka build/zephyr/zephyr.dts file layout).
             app_bin_dir = os.path.dirname(os.path.dirname(dts.path))
             assert app_bin_dir == dts.app_binary_dir
-            # Derived from the app. bin. directory.
-            app_src_dir = os.path.dirname(app_bin_dir)
-            assert app_src_dir == dts.app_source_dir
 
-            # Unset in mock environment.
-            assert dts.zephyr_sdk_dir is None
-            assert dts.toolchain_variant is None
-            assert dts.toolchain_dir is None
-
-            # Possibly set only when a CMake cache is available.
-            assert dts.board_dir is None
-            assert dts.board is None
-            assert [] == dts.shield_dirs
-            assert dts.fw_name is None
-            assert dts.fw_version is None
+            assert not dts.app_source_dir
+            assert not dts.toolchain
+            assert not dts.board
+            assert not dts.fw_name
+            assert not dts.fw_version
 
             # Default minimal bindings search path:
-            # - derived from app src dir, always exists
-            expect_dirs = [os.path.join(app_src_dir, "dts", "bindings")]
             # - though cleared in environment, ZEPHYR_BASE may be derived
             # from __file__ when distributed with Zephyr
             if dts.zephyr_base:
-                expect_dirs.append(
-                    os.path.join(dts.zephyr_base, "dts", "bindings")
-                )
+                expect_dirs = [os.path.join(dts.zephyr_base, "dts", "bindings")]
+            else:
+                expect_dirs = []
             assert expect_dirs == dts.bindings_search_path
 
 
 def test_dts_init_from_os_env() -> None:
     # Use case:
     # - CMake cache: not available
-    # - OS environment: ZEPHYR_BASE, ZEPHYR_TOOLCHAIN_VARIANT
+    # - OS environment: ZEPHYR_BASE
     tmpenv = {
         "ZEPHYR_BASE": "dummy",
-        "ZEPHYR_SDK_INSTALL_DIR": None,
-        "ZEPHYR_TOOLCHAIN_VARIANT": "dummy",
     }
-    with DTShTests.mock_env(tmpenv):
+    with DTShTests.mock_env(tmpenv):  # type: ignore
         with DTShTests.from_res():
             dts = DTS("zephyr.dts")
 
             # Parent of the directory that contains the DTS file.
             app_bin_dir = os.path.dirname(os.path.dirname(dts.path))
             assert app_bin_dir == dts.app_binary_dir
-            # Derived from the app. bin. directory.
-            app_src_dir = os.path.dirname(app_bin_dir)
-            assert app_src_dir == dts.app_source_dir
 
             # Possibly set only when a CMake cache is available.
-            assert dts.board_dir is None
-            assert dts.board is None
-            assert [] == dts.shield_dirs
-            assert dts.fw_name is None
-            assert dts.fw_version is None
+            assert not dts.app_source_dir
+            assert not dts.toolchain
+            assert not dts.board
+            assert not dts.fw_name
+            assert not dts.fw_version
 
             # Retrieved from mock environment.
             assert dts.zephyr_base
@@ -101,14 +83,8 @@ def test_dts_init_from_os_env() -> None:
                 )
                 == dts.vendors_file
             )
-            assert tmpenv["ZEPHYR_TOOLCHAIN_VARIANT"] == dts.toolchain_variant
-            assert dts.zephyr_sdk_dir is None
-            # Environment variable dummy_TOOLCHAIN_PATH does not exist.
-            assert dts.toolchain_dir is None
-
             # Default minimal bindings search path.
             expect_dirs = [
-                os.path.join(app_src_dir, "dts", "bindings"),
                 os.path.join(dts.zephyr_base, "dts", "bindings"),
             ]
             assert expect_dirs == dts.bindings_search_path
@@ -121,8 +97,6 @@ def test_dts_init_from_cmake_zephyr() -> None:
     with DTShTests.mock_env(
         {
             "ZEPHYR_BASE": None,
-            "ZEPHYR_SDK_INSTALL_DIR": None,
-            "ZEPHYR_TOOLCHAIN_VARIANT": None,
         }
     ):
         dts = DTS(
@@ -148,23 +122,24 @@ def test_dts_init_from_cmake_zephyr() -> None:
             )
             == dts.app_source_dir
         )
-        assert (
-            os.path.join(
-                DTShTests.ANON_ZEPHYR_BASE,
-                "boards",
-                "arm",
-                "nrf52840dk_nrf52840",
-            )
-            == dts.board_dir
-        )
-        assert DTShTests.BOARD == dts.board
-        assert [] == dts.shield_dirs
+
+        assert dts.board
+        assert not dts.board.shield
+        assert DTShTests.BOARD == dts.board.target
+        assert os.path.join(
+            DTShTests.ANON_ZEPHYR_BASE,
+            "boards",
+            "arm",
+            "nrf52840dk_nrf52840",
+        ) == str(dts.board.board_dir)
+
         assert "bme680" == dts.fw_name
         assert DTShTests.ZEPHYR_VERSION == dts.fw_version
-        assert os.path.join(DTShTests.ANON_ZEPHYR_BASE) == dts.zephyr_base
-        assert DTShTests.ANON_ZEPHYR_SDK == dts.zephyr_sdk_dir
-        assert "zephyr" == dts.toolchain_variant
-        assert DTShTests.ANON_ZEPHYR_SDK == dts.toolchain_dir
+        assert DTShTests.ANON_ZEPHYR_BASE == dts.zephyr_base
+
+        assert dts.toolchain
+        assert "zephyr" == dts.toolchain.variant
+        assert DTShTests.ANON_ZEPHYR_SDK == str(dts.toolchain.path)
 
 
 def test_dts_init_from_cmake_gnuarm() -> None:
@@ -174,8 +149,6 @@ def test_dts_init_from_cmake_gnuarm() -> None:
     with DTShTests.mock_env(
         {
             "ZEPHYR_BASE": None,
-            "ZEPHYR_SDK_INSTALL_DIR": None,
-            "ZEPHYR_TOOLCHAIN_VARIANT": None,
         }
     ):
         dts = DTS(
@@ -201,23 +174,25 @@ def test_dts_init_from_cmake_gnuarm() -> None:
             )
             == dts.app_source_dir
         )
-        assert (
-            os.path.join(
-                DTShTests.ANON_ZEPHYR_BASE,
-                "boards",
-                "arm",
-                "nrf52840dk_nrf52840",
-            )
-            == dts.board_dir
-        )
-        assert DTShTests.BOARD == dts.board
-        assert [] == dts.shield_dirs
+
+        assert dts.board
+        assert os.path.join(
+            DTShTests.ANON_ZEPHYR_BASE,
+            "boards",
+            "arm",
+            "nrf52840dk_nrf52840",
+        ) == str(dts.board.board_dir)
+
+        assert DTShTests.BOARD == dts.board.target
+        assert not dts.board.shield
+
         assert "bme680" == dts.fw_name
         assert DTShTests.ZEPHYR_VERSION == dts.fw_version
         assert DTShTests.ANON_ZEPHYR_BASE == dts.zephyr_base
-        assert dts.zephyr_sdk_dir is None
-        assert "gnuarmemb" == dts.toolchain_variant
-        assert DTShTests.ANON_GNUARMEMB == dts.toolchain_dir
+
+        assert dts.toolchain
+        assert "gnuarmemb" == dts.toolchain.variant
+        assert DTShTests.ANON_GNUARMEMB == str(dts.toolchain.path)
 
 
 def test_yamlfs_find_path() -> None:
@@ -246,7 +221,9 @@ def test_yamlfs_find_file() -> None:
 
     fyaml = yamlfs.find_file("i2c-device.yaml")
     assert fyaml
-    assert DTShTests.get_resource_path("yaml", "i2c-device.yaml") == fyaml.path
+    assert DTShTests.get_resource_path("yaml", "i2c-device.yaml") == str(
+        fyaml.path.absolute()
+    )
 
     # Opening a non existing file should not fault.
     assert yamlfs.find_file("notafile") is None
@@ -285,8 +262,8 @@ def test_dtshdts_yamlfs_find_file() -> None:
 
     yaml = dts.yamlfs.find_file("sensor-device.yaml")
     assert yaml
-    assert (
-        DTShTests.get_resource_path("yaml", "sensor-device.yaml") == yaml.path
+    assert DTShTests.get_resource_path("yaml", "sensor-device.yaml") == str(
+        yaml.path.absolute()
     )
 
 

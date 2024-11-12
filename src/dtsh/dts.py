@@ -5,17 +5,12 @@
 """Devicetree source definition.
 
 A devicetree is fully defined by:
-
 - a DTS file in Devicetree source format (DTSpec 6)
 - all of the YAML binding files the DTS recursively depends on
 - the Devicetree Specification
 
-This module may rely on cached CMake variables to locate
-the binding files the DTS file was actually generated with.
-
-This module eventually introduces a YAML file system API
+This module also introduces a YAML file system API
 that should cover the devicetree shell needs:
-
 - access the DT binding files with their base name
 - recursively access YAML-included bindings
 - the name2path semantic expected for edtlib.Binding objects initialization
@@ -28,23 +23,22 @@ from typing import cast, Optional, List, Sequence, Dict, Mapping
 
 import os
 
-
-from dtsh.utils import CMakeCache, GitUtil, YAMLFile
+from dtsh.hwm import DTShBoard
+from dtsh.utils import CMakeCache, GitUtil, YAMLFile, DTShToolchain
 
 
 class DTS:
     """Devicetree source definition.
 
     A devicetree source is defined by:
-
     - a DTS file in Devicetree source format (DTSpec 6)
     - all of the YAML binding files the DTS recursively depends on;
       the list of directories to search for the YAML files is
       termed "bindings search path"
+    - the Zephyr hardware model
 
     When not explicitly set, a default bindings search path
     can be retrieved, or worked out, based on:
-
     - cached CMake variables: this is the preferred method,
       assuming the cache file was produced by the same build as the DTS file
     - environment variables: less reliable than the CMake cache,
@@ -62,6 +56,16 @@ class DTS:
         └── zephyr/
             └── zephyr.dts
 
+    The hardware model is determined whith a simple heuristic based
+    on the board target fomat and the existence of some files or directories.
+
+    NOTE: Many other CMake variables could help us if they were cache,
+    e.g. from the cmake/modules/soc_{v1,v2}.cmake files:
+
+        if(HWMv2)
+            set(SOC_NAME   ${CONFIG_SOC})
+            set(SOC_SERIES ${CONFIG_SOC_SERIES})
+            set(SOC_TOOLCHAIN_NAME ${CONFIG_SOC_TOOLCHAIN_NAME})
     """
 
     # See path().
@@ -78,6 +82,12 @@ class DTS:
 
     _cmake: Optional["CMakeCache"]
     _yamlfs: "YAMLFilesystem"
+
+    # Board/SoC and hardware model.
+    _board: Optional[DTShBoard] = None
+
+    # Toolchain used at build-time.
+    _toolchain: Optional[DTShToolchain] = None
 
     def __init__(
         self,
@@ -100,6 +110,10 @@ class DTS:
         self._binding_dirs = self._init_binding_dirs(binding_dirs)
         self._vendors_file = self._init_vendors_file(vendors_file)
         self._yamlfs = YAMLFilesystem(self._binding_dirs)
+
+        if self._cmake:
+            self._board = DTShBoard.get_instance(self._cmake)
+            self._toolchain = DTShToolchain.get_instance(self._cmake)
 
     @property
     def path(self) -> str:
@@ -162,6 +176,11 @@ class DTS:
         return self._yamlfs
 
     @property
+    def board(self) -> Optional[DTShBoard]:
+        """Hardware information (board, SoC, HWM)."""
+        return self._board
+
+    @property
     def app_binary_dir(self) -> str:
         """Application binary directory (aka build directory).
 
@@ -173,134 +192,21 @@ class DTS:
     def app_source_dir(self) -> Optional[str]:
         """Application source directory (aka project directory).
 
-        Either retrieved from the CMake cache (APPLICATION_SOURCE_DIR),
-        or derived from the application binary directory.
+        Retrieved from the CMake cache (APPLICATION_SOURCE_DIR).
         """
-        app_src_dir = None
         if self._cmake:
-            app_src_dir = self._cmake.getstr("APPLICATION_SOURCE_DIR")
-        if not app_src_dir:
-            app_src_dir = os.path.dirname(self.app_binary_dir)
-        return app_src_dir
+            return self._cmake.getstr("APPLICATION_SOURCE_DIR")
+        return None
 
     @property
-    def board_dir(self) -> Optional[str]:
-        """Board directory.
+    def app_conf_file(self) -> Optional[str]:
+        """Application configuration file.
 
-        Retrieved from the CMake cache (BOARD_DIR).
+        Retrieved from the CMake cache (CONF_FILE),
         """
-        return self._cmake.getstr("BOARD_DIR") if self._cmake else None
-
-    @property
-    def board(self) -> Optional[str]:
-        """Board name.
-
-        Retrieved from the CMake cache (BOARD, CACHED_BOARD).
-        """
-        board = None
         if self._cmake:
-            board = self._cmake.getstr("BOARD")
-            if not board:
-                board = self._cmake.getstr("CACHED_BOARD")
-        return board
-
-    @property
-    def soc(self) -> Optional[str]:
-        """SoC name.
-
-        Retrieve the SoC name from the board name (HWMv2).
-
-        Unsupported for Zephyr Hardware Model v1.
-        """
-        if self.board:
-            board_soc = self.board.split("/")
-            if len(board_soc) == 2:
-                return board_soc[1]
+            return self._cmake.getstr("CONF_FILE")
         return None
-
-    @property
-    def board_file(self) -> Optional[str]:
-        """Board DTS file.
-
-        Shortcut to "${BOARD_DIR}/${BOARD}.dts".
-        """
-        if self.board_dir and self.board:
-            board_sem = DTS._board_sem(self.board)
-            return os.path.join(self.board_dir, f"{board_sem}.dts")
-        return None
-
-    @property
-    def board_yaml(self) -> Optional[str]:
-        """Board YAML file with metadata.
-
-        Shortcut to "${BOARD_DIR}/${BOARD}.yaml".
-        """
-        if self.board_dir and self.board:
-            board_sem = DTS._board_sem(self.board)
-            path = os.path.join(self.board_dir, f"{board_sem}.yaml")
-            if not os.path.isfile(path):
-                # May be HWv2 board name with a unique SoC.
-                board_soc = DTS._board_noqualifiers(self.board)
-                path = os.path.join(self.board_dir, f"{board_soc}.yaml")
-            if os.path.isfile(path):
-                return path
-        return None
-
-    @property
-    def board2_yaml(self) -> Optional[str]:
-        """Board YAML file with metadata (HWv2).
-
-        Shortcut to "${BOARD_DIR}/board.yml".
-        """
-        if self.board_dir:
-            path = os.path.join(self.board_dir, "board.yml")
-            if os.path.isfile(path):
-                return path
-        return None
-
-    @property
-    def soc_dir(self) -> Optional[str]:
-        """SoC directory.
-
-        Retrieved from the CMake cache variable SOC_FULL_DIR,
-        which is defined since Zephyr Hardware Model v2.
-
-        Unsupported for Zephyr Hardware Model v1.
-        """
-        return self._cmake.getstr("SOC_FULL_DIR") if self._cmake else None
-
-    @property
-    def soc_yml(self) -> Optional[str]:
-        """SoC definition file.
-
-        Shortcut to "${SOC_FULL_DIR}/soc.yml".
-
-        Unsupported for Zephyr Hardware Model v1.
-        """
-        if self.soc_dir:
-            return os.path.join(self.soc_dir, "soc.yml")
-        return None
-
-    @property
-    def soc_svd(self) -> Optional[str]:
-        """SoC SVD file.
-
-        Retrieved from the CMake cache (SOC_SVD_FILE).
-        """
-        return self._cmake.getstr("SOC_SVD_FILE") if self._cmake else None
-
-    @property
-    def shield_dirs(self) -> Sequence[str]:
-        """Shield directories.
-
-        Retrieved from the CMake cache (SHIELD_DIRS, CACHED_SHIELD_DIRS).
-        """
-        shield_dirs = []
-        if self._cmake:
-            shield_dirs = self._cmake.getstrs("SHIELD_DIRS")
-            if not shield_dirs:
-                shield_dirs = self._cmake.getstrs("CACHED_SHIELD_DIRS")
-        return shield_dirs
 
     @property
     def fw_name(self) -> Optional[str]:
@@ -336,54 +242,12 @@ class DTS:
         return self._zephyr_base
 
     @property
-    def zephyr_sdk_dir(self) -> Optional[str]:
-        """Path to Zephyr SDK.
+    def toolchain(self) -> Optional[DTShToolchain]:
+        """The toolchain used at build-time.
 
-        Either retrieved from the CMake cache or the shell
-        environment (ZEPHYR_SDK_INSTALL_DIR).
+        Retrieved from the CMake cache.
         """
-        zephyr_sdk_dir = None
-        if self._cmake:
-            zephyr_sdk_dir = self._cmake.getstr("ZEPHYR_SDK_INSTALL_DIR")
-        if not zephyr_sdk_dir:
-            zephyr_sdk_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR")
-        return zephyr_sdk_dir
-
-    @property
-    def toolchain_variant(self) -> Optional[str]:
-        """Zephyr build toolchain variant.
-
-        Either retrieved from the CMake cache or the shell
-        environment (ZEPHYR_TOOLCHAIN_VARIANT).
-        """
-        toolchain_variant = None
-        if self._cmake:
-            toolchain_variant = self._cmake.getstr("ZEPHYR_TOOLCHAIN_VARIANT")
-        if not toolchain_variant:
-            toolchain_variant = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT")
-        return toolchain_variant
-
-    @property
-    def toolchain_dir(self) -> Optional[str]:
-        """Path to build toolchain.
-
-        Depends on toolchain variant:
-
-        - "zephyr": path to the Zephyr SDK
-        - other variants: build system variable {TOOLCHAIN}_TOOLCHAIN_PATH
-          (CMake cache or environment)
-        """
-        toolchain_dir = None
-        if self.toolchain_variant:
-            if self.toolchain_variant == "zephyr":
-                toolchain_dir = self.zephyr_sdk_dir
-            else:
-                var = f"{self.toolchain_variant.upper()}_TOOLCHAIN_PATH"
-                if self._cmake:
-                    toolchain_dir = self._cmake.getstr(var)
-                if not toolchain_dir:
-                    toolchain_dir = os.environ.get(var)
-        return toolchain_dir
+        return self._toolchain
 
     def get_zephyr_head(self) -> Optional[str]:
         """Retrieve Zephyr repository HEAD version.
@@ -469,10 +333,11 @@ class DTS:
                 # - is unavailable, and we won't access any build settings
                 dts_roots: List[Optional[str]] = [
                     self.app_source_dir,
-                    self.board_dir,
-                    *self.shield_dirs,
                     self.zephyr_base,
                 ]
+                if self._board:
+                    dts_roots.append(str(self._board.board_dir))
+
                 binding_dirs = [
                     os.path.join(dtsroot, "dts", "bindings")
                     for dtsroot in dts_roots
@@ -481,36 +346,6 @@ class DTS:
         # cast() is required to avoid type hinting error since
         # binding_dirs is first typed as an optional Sequence.
         return cast(List[str], binding_dirs)
-
-    # Starting with version 3.7.0, Zephyr uses new hardware model (HWMv2).
-    #
-    # Roughly speaking, the board naming scheme changes from:
-    #   <board>_<soc>
-    # to:
-    #   <board>/<soc>
-    #
-    # For example, with the Nordic nRF52840 DK:
-    #
-    # HWMv1:
-    # - BOARD: nrf52840dk_nrf52840
-    # - BOARD_DIR: <BOARD_ROOT>/boards/arm/nrf52840dk_nrf52840
-    # - Board files: <BOARD_DIR>/nrf52840dk_nrf52840.{dts,yaml}
-    #
-    # HWMv2:
-    # - BOARD: nrf52840dk/nrf52840
-    # - BOARD_DIR: <BOARD_ROOT>/boards/nordic/nrf52840dk
-    # - Board files: <BOARD_DIR>/nrf52840dk_nrf52840.{dts,yaml}
-    #
-    # This function answers a sem such that <BOARD_DIR>/<SEM>.{dts,yaml}
-    # should point to the board files for both hardware models.
-    @staticmethod
-    def _board_sem(board: str) -> str:
-        return board.replace("/", "_")
-
-    # Remove SoC from board names HWv2 when there's only one variant.
-    @staticmethod
-    def _board_noqualifiers(board: str) -> str:
-        return board.split("/")[0]
 
 
 class YAMLFilesystem:
@@ -569,7 +404,7 @@ class YAMLFilesystem:
             A wrapper to the requested YAML file,
             or None if not found.
         """
-        path = self.find_path((name))
+        path = self.find_path(name)
         return YAMLFile(path) if path else None
 
 
