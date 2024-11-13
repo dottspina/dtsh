@@ -36,8 +36,9 @@ from rich.text import Text
 from rich.tree import Tree
 
 from dtsh.config import DTShConfig, ActionableType
-from dtsh.dts import DTSFile, YAMLFilesystem
-from dtsh.utils import YAMLFile
+from dtsh.dts import DTS, DTSFile, YAMLFilesystem
+from dtsh.hwm import DTShBoard
+from dtsh.utils import YAMLFile, DTShToolchain
 from dtsh.model import (
     DTPath,
     DTWalkable,
@@ -2238,7 +2239,7 @@ class ViewYAMLFile(View):
         /,
         *,
         compact: bool = True,
-        expand_included: bool = True,
+        expand_included: bool = False,
         flabel: Optional[str] = None,
         style: Optional[StyleType] = None,
         yamlfs: Optional[YAMLFilesystem] = None,
@@ -2284,7 +2285,7 @@ class ViewYAMLFile(View):
         /,
         *,
         compact: bool = True,
-        expand_included: bool = True,
+        expand_included: bool = False,
         flabel: Optional[str] = None,
         style: Optional[StyleType] = None,
         yamlfs: Optional[YAMLFilesystem] = None,
@@ -2530,3 +2531,1249 @@ class ViewDTSFile(GridLayout):
         )
         self.add_row(txt_file)
         self.add_row(ViewDTSContent(fdts.content))
+
+
+class BoardModelView:
+    """View factories for board information."""
+
+    @staticmethod
+    def mk_board_dir(
+        board: DTShBoard,
+        zephyr_base: Optional[str] = None,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Text:
+        """Board directory (aka BOARD_DIR).
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE to try as path prefix.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view.
+        """
+        # BOARD_DIR is usually a sub-directory of ZEPHYR_BASE.
+        flabel: Optional[str] = None
+        if zephyr_base:
+            board_dir = str(board.board_dir)
+            flabel = board_dir.replace(zephyr_base, "ZEPHYR_BASE")
+        return TextUtil.mk_pathname(
+            board.board_dir,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_BOARD_DIR,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_soc_dir(
+        board: DTShBoard,
+        zephyr_base: Optional[str] = None,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """The SoC directory (HWMv2 only, SOC_FULL_DIR).
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE to try as path prefix.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+        """
+        if not board.soc_dir:
+            return None
+        # SOC_FULL_DIR is usually a sub-directory of ZEPHYR_BASE.
+        flabel: Optional[str] = None
+        if zephyr_base:
+            soc_dir: str = str(board.soc_dir)
+            flabel = soc_dir.replace(zephyr_base, "ZEPHYR_BASE")
+        return TextUtil.mk_pathname(
+            board.soc_dir,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_BOARD_DIR,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_dts_pathname(
+        board: DTShBoard,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Text:
+        """Board's DTS.
+
+        Args:
+            board: The board.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view.
+        """
+        # The board's DTS is usually in BOARD_DIR.
+        board_dir = str(board.board_dir)
+        dts_file = str(board.dts_file)
+        flabel = dts_file.replace(board_dir, DTShBoard.CMAKE_BOARD_DIR)
+        return TextUtil.mk_pathname(
+            board.dts_file,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_BOARD_DTS,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_soc_svd_pathname(
+        board: DTShBoard,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """SoC SVD.
+
+        Args:
+            board: The board.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view or None if SVD file unavailable.
+        """
+        if not board.soc_svd:
+            return None
+        return TextUtil.mk_pathname(
+            board.soc_svd, style=DTShTheme.STYLE_INF_SOC_SVD, linktype=linktype
+        )
+
+    @staticmethod
+    def mk_runner_metadata_pathname(
+        board: DTShBoard,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Text:
+        """Test runner metadata file.
+
+        Args:
+            board: The board.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view.
+        """
+        # The metadata file is usually in BOARD_DIR.
+        board_dir = str(board.board_dir)
+        runner_file = str(board.runner_metadata.path)
+        flabel = runner_file.replace(board_dir, DTShBoard.CMAKE_BOARD_DIR)
+        return TextUtil.mk_pathname(
+            board.runner_metadata.path,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_RUNNER_METADATA,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_board_metadata_pathname(
+        board: DTShBoard,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """Board metadata file (HWMv2).
+
+        Args:
+            board: The board.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view or None if metadata unavailable (HWMv1).
+        """
+        if not board.board_metadata:
+            return None
+        # The metadata file is usually in BOARD_DIR.
+        board_dir = str(board.board_dir)
+        metadata_file = str(board.board_metadata.path)
+        flabel = metadata_file.replace(board_dir, DTShBoard.CMAKE_BOARD_DIR)
+        return TextUtil.mk_pathname(
+            board.board_metadata.path,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_BOARD_METADATA,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_soc_metadata_pathname(
+        board: DTShBoard,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """SoC metadata file (HWMv2).
+
+        Args:
+            board: The board.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view or None if metadata unavailable (HWMv1).
+        """
+        if not (board.soc_dir and board.soc_metadata):
+            return None
+        # The metadata file is in SOC_FULL_DIR.
+        soc_dir = str(board.soc_dir)
+        metadata_file = str(board.soc_metadata.path)
+        flabel = metadata_file.replace(soc_dir, DTShBoard.CMAKE_SOC_DIR)
+        return TextUtil.mk_pathname(
+            board.soc_metadata.path,
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_SOC_METADATA,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_hwm(hwm: DTShBoard.HWM) -> Text:
+        """Zephyr HWM versions.
+
+        Args:
+            hwm: The board's hardware model.
+
+        Returns:
+            A rich Text view.
+        """
+        if hwm == DTShBoard.HWM.UNKNOWN:
+            return TextUtil.mk_apologies(hwm.version)
+
+        if hwm == DTShBoard.HWM.V2:
+            style = DTShTheme.STYLE_INF_HWM2
+        else:
+            style = DTShTheme.STYLE_INF_HWM1
+        return TextUtil.mk_text(hwm.value, style=style)
+
+    @staticmethod
+    def mk_board(board: DTShBoard) -> Text:
+        """The board target used at build-time (aka BOARD).
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view.
+        """
+        return TextUtil.mk_text(board.target, style=DTShTheme.STYLE_INF_BOARD)
+
+    @staticmethod
+    def mk_shield(board: DTShBoard) -> Optional[Text]:
+        """The selected shield (aka SHIELD).
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view or None if no selected shield.
+        """
+        if not board.shield:
+            return None
+        return TextUtil.mk_text(board.shield, DTShTheme.STYLE_INF_BOARD_SHIELD)
+
+    @staticmethod
+    def mk_full_name(board: DTShBoard) -> Optional[Text]:
+        """Full name retrieved from the board metadata (HWMv2, board.yml).
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if no full name available.
+        """
+        if not board.full_name:
+            return None
+        return TextUtil.mk_text(
+            board.full_name, style=DTShTheme.STYLE_INF_BOARD_FULL_NAME
+        )
+
+    @staticmethod
+    def mk_runner_name(board: DTShBoard) -> Optional[Text]:
+        """Name retrieved from the test runner metadata (Twister).
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if no name available.
+        """
+        if not board.runner_name:
+            return None
+        return TextUtil.mk_text(
+            board.runner_name, style=DTShTheme.STYLE_INF_RUNNER_NAME
+        )
+
+    @staticmethod
+    def mk_board_name(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 board name.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if the board name is unavailable (HWMv1).
+        """
+        if not board.name:
+            return None
+        return TextUtil.mk_text(
+            board.name, style=DTShTheme.STYLE_INF_BOARD_NAME
+        )
+
+    @staticmethod
+    def mk_board_revision(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 board revision.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if no board revision available.
+        """
+        if not board.revision:
+            return None
+        return TextUtil.mk_text(
+            board.revision, style=DTShTheme.STYLE_INF_BOARD_REVISION
+        )
+
+    @staticmethod
+    def mk_soc(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 SoC.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if board.soc:
+            return TextUtil.mk_text(board.soc, DTShTheme.STYLE_INF_BOARD_SOC)
+        return None
+
+    @staticmethod
+    def mk_cpus(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 CPU cluster.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if board.cpus:
+            return TextUtil.mk_text(board.cpus, DTShTheme.STYLE_INF_BOARD_CPUS)
+        return None
+
+    @staticmethod
+    def mk_variant(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 board variant.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if board.variant:
+            return TextUtil.mk_text(
+                board.variant, DTShTheme.STYLE_INF_BOARD_VARIANT
+            )
+        return None
+
+    @staticmethod
+    def mk_qualifiers(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 board qualifiers.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if no board qualifier available.
+        """
+        if not board.qualifiers:
+            return None
+        return TextUtil.mk_text(
+            board.qualifiers, style=DTShTheme.STYLE_INF_BOARD_QUALIFIERS
+        )
+
+    @staticmethod
+    def mk_board_v2(board: DTShBoard) -> Optional[Text]:
+        """HWMv2 board name and qualifiers.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if the board name is unavailable (HWMv1).
+        """
+        txt_parts: List[Text] = [
+            txt
+            for txt in (
+                BoardModelView.mk_board_name(board),
+                BoardModelView.mk_qualifiers(board),
+            )
+            if txt
+        ]
+        return TextUtil.join(" ", txt_parts) if txt_parts else None
+
+    @staticmethod
+    def mk_runner_arch(board: DTShBoard) -> Optional[Text]:
+        """Architecture (e.g. arm, xtensa) retrieved from
+        the test runner metadata.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if the 'arch' metadata is unavailable.
+        """
+        if not (board.runner_metadata and board.runner_metadata.run_arch):
+            return None
+        return TextUtil.mk_text(
+            board.runner_metadata.run_arch,
+            style=DTShTheme.STYLE_INF_RUNNER_ARCH,
+        )
+
+    @staticmethod
+    def mk_runner_type(board: DTShBoard) -> Optional[Text]:
+        """Target type (e.g. mcu, native, qemu) retrieved from
+        the test runner metadata.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if the 'type' metadata is unavailable.
+        """
+        if not (board.runner_metadata and board.runner_metadata.run_type):
+            return None
+        return TextUtil.mk_text(
+            board.runner_metadata.run_type,
+            style=DTShTheme.STYLE_INF_RUNNER_TYPE,
+        )
+
+    @staticmethod
+    def mk_runner_arch_type(board: DTShBoard) -> Optional[Text]:
+        """Concatenate runner arch and type metadata.
+
+        Args:
+            board: The board.
+
+        Returns:
+            A rich Text view, or None if no metadata available.
+        """
+        txt_parts: List[Text] = [
+            txt
+            for txt in (
+                BoardModelView.mk_runner_arch(board),
+                BoardModelView.mk_runner_type(board),
+            )
+            if txt
+        ]
+        return TextUtil.join(" ", txt_parts) if txt_parts else None
+
+
+class FormBoardInfo(FormLayout):
+    """Base form for board information (HWMv1)."""
+
+    @staticmethod
+    def create(
+        board: DTShBoard,
+        zephyr_base: Optional[str],
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = False,
+    ) -> "FormBoardInfo":
+        """Board view factory.
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE that may be used as path prefix
+            compact: If true, show only YAM file names, not their content.
+            expand_included: Whether to expand included files.
+
+        Returns:
+            Board information according to the HWM version.
+        """
+        if board.hwm == DTShBoard.HWM.V2:
+            return FormBoardInfoV2(
+                board,
+                zephyr_base,
+                compact=compact,
+                expand_included=expand_included,
+            )
+        return FormBoardInfo(
+            board, zephyr_base, compact=compact, expand_included=expand_included
+        )
+
+    _board: DTShBoard
+    _zephyr_base: Optional[str]
+    _compact: bool
+    _expand_included: bool
+
+    def __init__(
+        self,
+        board: DTShBoard,
+        zephyr_base: Optional[str],
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = False,
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE that may be used as path prefix
+            compact: If true, show only YAM file names, not their content.
+            expand_included: Whether to expand included files.
+        """
+        super().__init__(placeholder=TextUtil.mk_apologies("unavailable"))
+        self._board = board
+        self._zephyr_base = zephyr_base
+        self._compact = compact
+        self._expand_included = expand_included
+        self._init_view()
+
+    def _init_view(self) -> None:
+        self._init_hwm()
+        self._init_board()
+        self._init_name()
+        self._init_shield()
+        self._init_board_dir()
+        self._init_board_dts()
+        self._init_twister_metadata()
+
+    def _init_hwm(self) -> None:
+        self.add_content(
+            "Hardware Model", BoardModelView.mk_hwm(self._board.hwm)
+        )
+
+    def _init_board(self) -> None:
+        self.add_content("Board", BoardModelView.mk_board(self._board))
+
+    def _init_name(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_runner_name(self._board)
+        self.add_content("Name", content)  # Or "unavailable".
+
+    def _init_shield(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_shield(self._board)
+        self.add_content("Shield", content or "")
+
+    def _init_board_dir(self) -> None:
+        content: Text = BoardModelView.mk_board_dir(
+            self._board,
+            self._zephyr_base,
+            linktype=self._linktype,
+        )
+        self.add_content("Board directory", content)
+
+    def _init_board_dts(self) -> None:
+        content: Text = BoardModelView.mk_dts_pathname(
+            self._board, linktype=self._linktype
+        )
+        self.add_content("Board file (DTS)", content)
+
+    def _init_twister_metadata(self) -> None:
+        content: Text | ViewYAMLContent
+
+        titlebar: Text = BoardModelView.mk_runner_metadata_pathname(
+            self._board, linktype=self._linktype
+        )
+        if self._compact:
+            content = titlebar
+        else:
+            content = ViewYAMLContent(
+                self._board.runner_metadata.text,
+                titlebar=titlebar,
+            )
+        self.add_content("Twister Metadata", content)
+
+
+class FormBoardInfoV2(FormBoardInfo):
+    """Form for board information (HWMv2)."""
+
+    def _init_view(self) -> None:
+        self._init_hwm()
+        self._init_board()
+        self._init_board_v2()
+        self._init_revision()
+        self._init_name()
+        self._init_shield()
+        self._init_board_dir()
+        self._init_board_dts()
+        self._init_twister_metadata()
+        self._init_board_metadata()
+
+    def _init_board_v2(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_board_v2(self._board)
+        self.add_content("", content)
+
+    def _init_revision(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_board_revision(self._board)
+        self.add_content("Revision", content or "")
+
+    def _init_name(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_full_name(
+            self._board
+        ) or BoardModelView.mk_runner_name(self._board)
+        self.add_content("Name", content)  # Or "unavailable".
+
+    def _init_board_metadata(self) -> None:
+        content: Optional[Text | ViewYAMLContent] = None
+        if self._board.board_metadata:
+            titlebar: Optional[
+                Text
+            ] = BoardModelView.mk_board_metadata_pathname(
+                self._board, linktype=self._linktype
+            )
+
+            if self._compact:
+                content = titlebar
+            else:
+                content = ViewYAMLContent(
+                    self._board.board_metadata.text, titlebar=titlebar
+                )
+        self.add_content("Board Metadata", content)
+
+
+class FormSoCInfo(FormLayout):
+    """Base form for SoC information (HWMv1)."""
+
+    @staticmethod
+    def create(
+        board: DTShBoard,
+        zephyr_base: Optional[str],
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = False,
+    ) -> "FormSoCInfo":
+        """SoC view factory.
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE that may be used as path prefix
+            compact: If true, show only YAM file names, not their content.
+            expand_included: Whether to expand included files.
+
+        Returns:
+            SoC information according to the HWM version.
+        """
+        if board.hwm == DTShBoard.HWM.V2:
+            return FormSoCInfoV2(
+                board,
+                zephyr_base,
+                compact=compact,
+                expand_included=expand_included,
+            )
+        return FormSoCInfo(
+            board, zephyr_base, compact=compact, expand_included=expand_included
+        )
+
+    _board: DTShBoard
+    _zephyr_base: Optional[str]
+    _compact: bool
+    _expand_included: bool
+
+    def __init__(
+        self,
+        board: DTShBoard,
+        zephyr_base: Optional[str],
+        /,
+        *,
+        compact: bool = True,
+        expand_included: bool = False,
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            board: The board.
+            zephyr_base: ZEPHYR_BASE that may be used as path prefix
+            compact: If true, show only YAM file names, not their content.
+            expand_included: Whether to expand included files.
+        """
+        super().__init__(placeholder=TextUtil.mk_apologies("unavailable"))
+        self._board = board
+        self._zephyr_base = zephyr_base
+        self._compact = compact
+        self._expand_included = expand_included
+        self._init_view()
+
+    def _init_view(self) -> None:
+        self._init_hwm()
+        self._init_arch_type()
+        self._init_soc_svd()
+
+    def _init_hwm(self) -> None:
+        self.add_content(
+            "Hardware Model", BoardModelView.mk_hwm(self._board.hwm)
+        )
+
+    def _init_arch_type(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_runner_arch_type(
+            self._board
+        )
+        self.add_content("Architecture type", content)
+
+    def _init_soc_svd(self) -> None:
+        content: Optional[Text] = None
+        if self._board.soc_svd:
+            content = BoardModelView.mk_soc_svd_pathname(
+                self._board, linktype=self._linktype
+            )
+        self.add_content("SoC SVD", content)
+
+
+class FormSoCInfoV2(FormSoCInfo):
+    """Form for SoC information (HWMv2)."""
+
+    def _init_view(self) -> None:
+        self._init_hwm()
+        self._init_soc()
+        self._init_cpus()
+        self._init_variant()
+        self._init_arch_type()
+        self._init_soc_svd()
+        self._init_soc_dir()
+        self._init_soc_metadata()
+
+    def _init_soc(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_soc(self._board)
+        self.add_content("SoC", content)
+
+    def _init_cpus(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_cpus(self._board)
+        self.add_content("CPU cluster", content or "")
+
+    def _init_variant(self) -> None:
+        content: Optional[Text] = BoardModelView.mk_variant(self._board)
+        self.add_content("Variant", content or "")
+
+    def _init_soc_dir(self) -> None:
+        content: Optional[Text] = None
+        if self._board.soc_dir:
+            content = BoardModelView.mk_soc_dir(
+                self._board,
+                self._zephyr_base,
+                linktype=self._linktype,
+            )
+        self.add_content("SoC directory", content)
+
+    def _init_soc_metadata(self) -> None:
+        content: Optional[Text | ViewYAMLContent] = None
+        if self._board.soc_metadata:
+            titlebar: Optional[Text] = BoardModelView.mk_soc_metadata_pathname(
+                self._board, linktype=self._linktype
+            )
+            if self._compact:
+                content = titlebar
+            else:
+                content = ViewYAMLContent(
+                    self._board.soc_metadata.text, titlebar=titlebar
+                )
+        self.add_content("SoC Metadata", content)
+
+
+class KernelModelView:
+    """View factories for kernel information."""
+
+    @staticmethod
+    def mk_zephyr_base(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """ZEPHYR_BASE directory.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if ZEPHYR_BASE unavailable.
+        """
+        if not dts.zephyr_base:
+            return None
+        return TextUtil.mk_pathname(
+            Path(dts.zephyr_base),
+            style=DTShTheme.STYLE_INF_ZEPHYR_BASE,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_kernel_version(dts: DTS) -> Optional[Text]:
+        """Zephyr project version (Git head).
+
+        Args:
+            dts: DTS definition.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        kernel_rev: Optional[str] = dts.get_zephyr_head()
+        if kernel_rev:
+            return TextUtil.mk_text(
+                kernel_rev, style=DTShTheme.STYLE_INF_KERNEL_VERSION
+            )
+        return None
+
+    @staticmethod
+    def mk_binding_dirs(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[GridLayout]:
+        """Bindings search path.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.bindings_search_path:
+            return None
+
+        layout = GridLayout()
+        flabel: Optional[str] = None
+        for binding_dir in dts.bindings_search_path:
+            if dts.zephyr_base:
+                flabel = binding_dir.replace(dts.zephyr_base, "ZEPHYR_BASE")
+            txt = TextUtil.mk_pathname(
+                Path(binding_dir),
+                flabel=flabel,
+                style=DTShTheme.STYLE_INF_BINDINGS,
+                linktype=linktype,
+            )
+            layout.add_row(txt)
+        return layout
+
+    @staticmethod
+    def mk_vendors_pathname(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """SoC metadata file (HWMv2).
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view or None if metadata unavailable (HWMv1).
+        """
+        if not dts.vendors_file:
+            return None
+
+        flabel: Optional[str] = None
+        if dts.zephyr_base:
+            flabel = dts.vendors_file.replace(dts.zephyr_base, "ZEPHYR_BASE")
+        return TextUtil.mk_pathname(
+            Path(dts.vendors_file),
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_VENDORS_FILE,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_toolchain_dir(
+        toolchain: DTShToolchain,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """Toolchain directory.
+
+        Args:
+            toolchain: The toolchain used at build-time.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not toolchain.path:
+            return None
+
+        style: StyleType
+        if toolchain.variant == DTShToolchain.ZEPHYR_SDK:
+            style = DTShTheme.STYLE_INF_ZEPHYR_SDK
+        else:
+            style = DTShTheme.STYLE_INF_TOOLCHAIN_DIR
+        return TextUtil.mk_pathname(
+            toolchain.path,
+            style=style,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_toolchain_variant(toolchain: DTShToolchain) -> Text:
+        """Toolchain variant.
+
+        Args:
+            toolchain: The toolchain used at build-time.
+
+        Returns:
+            A rich Text view.
+        """
+        return TextUtil.mk_text(
+            toolchain.variant, style=DTShTheme.STYLE_INF_TOOLCHAIN
+        )
+
+    @staticmethod
+    def mk_toolchain_name(toolchain: DTShToolchain) -> Optional[Text]:
+        """Toolchain friendly name (variants zephyr and gnuarmemb only).
+
+        Args:
+            toolchain: The toolchain used at build-time.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not toolchain.name:
+            return None
+        style: StyleType
+        if toolchain.variant == DTShToolchain.ZEPHYR_SDK:
+            style = DTShTheme.STYLE_INF_ZEPHYR_SDK
+        else:
+            style = DTShTheme.STYLE_INF_TOOLCHAIN
+        return TextUtil.mk_text(toolchain.name, style=style)
+
+    @staticmethod
+    def mk_toolchain_release(toolchain: DTShToolchain) -> Optional[Text]:
+        """Toolchain version (variants zephyr and gnuarmemb only).
+
+        Args:
+            toolchain: The toolchain used at build-time.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not toolchain.release:
+            return None
+        style: StyleType
+        if toolchain.variant == DTShToolchain.ZEPHYR_SDK:
+            style = DTShTheme.STYLE_INF_ZEPHYR_SDK
+        else:
+            style = DTShTheme.STYLE_INF_TOOLCHAIN_RELEASE
+        return TextUtil.mk_text(toolchain.release, style=style)
+
+    @staticmethod
+    def mk_toolchain(toolchain: DTShToolchain) -> Text:
+        """Toolchain name and/or variant.
+
+        Args:
+            toolchain: The toolchain used at build-time.
+
+        Returns:
+            A rich Text view.
+        """
+        txt_parts: List[Text]
+        if toolchain.name:
+            txt_name = KernelModelView.mk_toolchain_name(toolchain) or Text()
+            txt_variant = TextUtil.assemble(
+                "(",
+                KernelModelView.mk_toolchain_variant(toolchain),
+                ")",
+            )
+            txt_parts = [txt_name, txt_variant]
+        else:
+            txt_parts = [KernelModelView.mk_toolchain_variant(toolchain)]
+
+        return TextUtil.join(" ", txt_parts)
+
+
+class FormKernelInfo(FormLayout):
+    """Form for Zephyr kernel information."""
+
+    _dts: DTS
+    _toolchain: Optional[DTShToolchain]
+
+    def __init__(self, dts: DTS) -> None:
+        """Initialize view.
+
+        Args:
+            dts: DTS definition.
+        """
+        super().__init__(placeholder=TextUtil.mk_apologies("unavailable"))
+        self._dts = dts
+        self._toolchain = dts.toolchain
+        self._init_view()
+
+    def _init_view(self) -> None:
+        self._init_zephyr_base()
+        self._init_kernel_version()
+        self._init_binding_dirs()
+        self._init_vendors_file()
+        self._init_toolchain()
+        self._init_toolchain_release()
+        self._init_toolchain_dir()
+
+    def _init_zephyr_base(self) -> None:
+        content: Optional[Text] = KernelModelView.mk_zephyr_base(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("ZEPHYR_BASE", content)
+
+    def _init_kernel_version(self) -> None:
+        content: Optional[Text] = KernelModelView.mk_kernel_version(self._dts)
+        self.add_content("Kernel version", content)
+
+    def _init_binding_dirs(self) -> None:
+        content: Optional[GridLayout] = KernelModelView.mk_binding_dirs(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Bindings", content)
+
+    def _init_vendors_file(self) -> None:
+        content: Optional[Text] = KernelModelView.mk_vendors_pathname(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Vendors", content)
+
+    def _init_toolchain(self) -> None:
+        content: Optional[Text] = None
+        if self._toolchain:
+            content = KernelModelView.mk_toolchain(self._toolchain)
+        self.add_content("Toolchain", content)
+
+    def _init_toolchain_release(self) -> None:
+        content: Optional[Text] = None
+        if self._toolchain:
+            content = KernelModelView.mk_toolchain_release(self._toolchain)
+        self.add_content("Toolchain release", content)
+
+    def _init_toolchain_dir(self) -> None:
+        content: Optional[Text] = None
+        if self._toolchain:
+            content = KernelModelView.mk_toolchain_dir(
+                self._toolchain, linktype=self._linktype
+            )
+        self.add_content("Toolchain path", content)
+
+
+class FirmwareModelView:
+    """View factories for firmware information."""
+
+    @staticmethod
+    def mk_app_src_dir(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """Source directory.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.app_source_dir:
+            return None
+        return TextUtil.mk_pathname(
+            Path(dts.app_source_dir),
+            style=DTShTheme.STYLE_INF_APP_SRC_DIR,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_app_bin_dir(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """Build directory.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.app_binary_dir:
+            return None
+
+        flabel: Optional[str] = None
+        if dts.app_source_dir:
+            flabel = dts.app_binary_dir.replace(
+                dts.app_source_dir, "APPLICATION_SOURCE_DIR"
+            )
+
+        return TextUtil.mk_pathname(
+            Path(dts.app_binary_dir),
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_APP_BIN_DIR,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_dts_pathname(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Text:
+        """Firmware devicetree.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view.
+        """
+        flabel = dts.path.replace(dts.app_binary_dir, "APPLICATION_BINARY_DIR")
+        return TextUtil.mk_pathname(
+            Path(dts.path),
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_DEVICETREE,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_app_conf_pathname(
+        dts: DTS,
+        /,
+        *,
+        linktype: Optional[ActionableType] = None,
+    ) -> Optional[Text]:
+        """Application configuration file.
+
+        Args:
+            dts: DTS definition.
+            linktype: How to represent actionable text.
+                Default to configured preference.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.app_conf_file:
+            return None
+
+        flabel: Optional[str] = None
+        if dts.app_source_dir:
+            flabel = dts.app_conf_file.replace(
+                dts.app_source_dir, "APPLICATION_SOURCE_DIR"
+            )
+        return TextUtil.mk_pathname(
+            Path(dts.app_conf_file),
+            flabel=flabel,
+            style=DTShTheme.STYLE_INF_APP_CONF_FILE,
+            linktype=linktype,
+        )
+
+    @staticmethod
+    def mk_fw_name(dts: DTS) -> Optional[Text]:
+        """Firmware name.
+
+        Args:
+            dts: DTS definition.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.fw_name:
+            return None
+        return TextUtil.mk_text(dts.fw_name, style=DTShTheme.STYLE_INF_FW_NAME)
+
+    @staticmethod
+    def mk_fw_version(dts: DTS) -> Optional[Text]:
+        """Firmware version.
+
+        Args:
+            dts: DTS definition.
+
+        Returns:
+            A rich Text view, or None if unavailable.
+        """
+        if not dts.fw_version:
+            return None
+        return TextUtil.mk_text(
+            dts.fw_version, style=DTShTheme.STYLE_INF_FW_VERSION
+        )
+
+
+class FormFirmwareInfo(FormLayout):
+    """Form for Zephyr kernel information."""
+
+    _dts: DTS
+
+    def __init__(
+        self,
+        dts: DTS,
+    ) -> None:
+        """Initialize view.
+
+        Args:
+            dts: DTS definition.
+        """
+        super().__init__(placeholder=TextUtil.mk_apologies("unavailable"))
+        self._dts = dts
+        self._init_view()
+
+    def _init_view(self) -> None:
+        self._init_app_src_dir()
+        self._init_app_bin_dir()
+        self._init_devicetree()
+        self._init_fw_name()
+        self._init_fw_version()
+        self._init_conf_file()
+
+    def _init_app_src_dir(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_app_src_dir(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Source directory", content)
+
+    def _init_app_bin_dir(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_app_bin_dir(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Build directory", content)
+
+    def _init_fw_name(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_fw_name(self._dts)
+        self.add_content("Firmware name", content)
+
+    def _init_fw_version(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_fw_version(self._dts)
+        self.add_content("Firmware version", content)
+
+    def _init_devicetree(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_dts_pathname(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Devicetree", content)
+
+    def _init_conf_file(self) -> None:
+        content: Optional[Text] = FirmwareModelView.mk_app_conf_pathname(
+            self._dts, linktype=self._linktype
+        )
+        self.add_content("Configuration file", content)
