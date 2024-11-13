@@ -41,7 +41,6 @@ from dtsh.builtins.find import DTShBuiltinFind
 from dtsh.builtins.alias import DTShBuiltinAlias
 from dtsh.builtins.chosen import DTShBuiltinChosen
 from dtsh.builtins.cat import DTShBuiltinCat
-from dtsh.builtins.board import DTShBuiltinBoard
 from dtsh.builtins.uname import DTShBuiltinUname
 
 
@@ -351,7 +350,6 @@ class DTShSession:
                 DTShBuiltinAlias(),
                 DTShBuiltinChosen(),
                 DTShBuiltinCat(),
-                DTShBuiltinBoard(),
                 DTShBuiltinUname(),
             ],
         )
