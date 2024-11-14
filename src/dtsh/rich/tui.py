@@ -123,17 +123,21 @@ class GridLayout(View):
         """
         return self._grid
 
-    def add_row(self, *views: Optional[RenderableType]) -> None:
+    def add_row(self, *views: Optional[RenderableType]) -> "GridLayout":
         """Add a row to this grid layout.
 
         Args:
             views: The row's render-able columns.
+
+        Returns:
+            Self to allow chaining.
         """
         if len(self._grid.columns) != len(views):
             raise ValueError(
                 f"Expected {len(self._grid.columns)} views, got {len(views)}"
             )
         self._grid.add_row(*views)
+        return self
 
 
 class TableLayout(View):
