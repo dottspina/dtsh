@@ -121,6 +121,7 @@ class DTShBuiltinCat(DTShCommand):
     def parse_argv(self, argv: Sequence[str]) -> None:
         """Overrides DTShCommand.parse_argv()."""
         super().parse_argv(argv)
+        # Preconditions for compact mode.
         if self.with_flag(CatFlagCompactYAML):
             if not self.with_flag(DTShFlagLongList):
                 raise DTShUsageError(
@@ -131,6 +132,21 @@ class DTShBuiltinCat(DTShCommand):
             ):
                 raise DTShUsageError(
                     self, "option '--compact-yaml' requires '-Y' or '-A"
+                )
+
+        # Precondition for POSIX-like output only.
+        if not self._with_longfmt():
+            if self._nfmtspecs() > 1:
+                raise DTShUsageError(
+                    self, "more than one option among '-DBY' requires '-l'"
+                )
+
+        # Precondition for both POSIX-like and rich outputs.
+        if self.with_param(DTShParamDTPathX).is_globexpr():
+            if self.with_flag(DTShFlagAll) or self._nfmtspecs():
+                raise DTShUsageError(
+                    self,
+                    "globbing properties, options '-DBYA' not allowed",
                 )
 
     def execute(self, argv: Sequence[str], sh: DTSh, out: DTShOutput) -> None:
@@ -207,13 +223,6 @@ class DTShBuiltinCat(DTShCommand):
               matching the PROP globbing expression.
             out: Where to cat.
         """
-        # Precondition for both POSIX-like and rich outputs.
-        if self.with_flag(DTShFlagAll) or self._nfmtspecs():
-            raise DTShCommandError(
-                self,
-                "globbing properties, options '-DBYA' not allowed",
-            )
-
         # Ignore no match.
         if dtprops:
             if self._with_longfmt():
@@ -290,12 +299,6 @@ class DTShBuiltinCat(DTShCommand):
         self._out_rich_sections(sections, out)
 
     def _out_dtnode_raw(self, node: DTNode, out: DTShOutput) -> None:
-        # Precondition for POSIX-like output only.
-        if self._nfmtspecs() > 1:
-            raise DTShCommandError(
-                self, "more than one option among '-DBY' requires '-l'"
-            )
-
         if self.with_flag(DTShFlagDescription):
             if node.description:
                 out.write(node.description)
@@ -410,8 +413,6 @@ class DTShBuiltinCat(DTShCommand):
             self.with_flag(DTShFlagLongList)
             # "-A" implies "-l"
             or self.with_flag(DTShFlagAll)
-            # Enforced by preferences.
-            or _dtshconf.pref_always_longfmt
         )
 
     def _nfmtspecs(self) -> int:
