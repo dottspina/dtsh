@@ -183,7 +183,7 @@ class DTNodeSortByVendor(DTNodeSortByAttr):
             The vendor name.
         """
         # At this point, we know the device has a vendor.
-        return [node.vendor.name]  # type: ignore
+        return [node.vendor.name] if node.vendor else []
 
 
 class DTNodeSortByDeviceLabel(DTNodeSortByAttr):
