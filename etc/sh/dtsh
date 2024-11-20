@@ -30,7 +30,7 @@ dtsh_clean() {
 
 dtsh_venv() {
     local arg_venv="$1"
-    python -m venv "$arg_venv"
+    python3.11 -m venv "$arg_venv"
 	. "$arg_venv/bin/activate"
     echo "Python venv: $arg_venv"
 	pip install -U pip setuptools
@@ -47,7 +47,7 @@ dtsh_unittests() {
     echo 'done.'
     echo
     echo '**** Run unit tests'
-    python -m pytest tests || zef_abort
+    python3.11 -m pytest tests || zef_abort
     echo 'done.'
     echo
     echo '**** Dispose unit tests environment'
@@ -66,7 +66,7 @@ dtsh_build() {
     echo 'done.'
     echo
     echo '**** Build'
-    python -m build || zef_abort
+    python3.11 -m build || zef_abort
     echo 'done.'
     echo
     echo '**** Dispose build environment'
@@ -94,7 +94,7 @@ dtsh_dist_test() {
     local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
     echo "Wheel dist:  $whl_dist"
     echo "WARNING: will publish on TestPyPI!!"
-    python -m twine upload --repository testpypi "$whl_dist" || zef_abort
+    python3.11 -m twine upload --repository testpypi "$whl_dist" || zef_abort
     echo 'done.'
     echo
     echo '**** Dispose dist environment'
@@ -123,7 +123,7 @@ dtsh_dist_release() {
     echo "WARNING: will publish on PyPI!!"
     zef_continue_yn
     echo '**** Uploading to PyPI'
-    python -m twine upload "$src_dist" "$whl_dist" || zef_abort
+    python3.11 -m twine upload "$src_dist" "$whl_dist" || zef_abort
     echo 'done.'
     echo
     echo '**** Dispose dist environment'
