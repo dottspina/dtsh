@@ -415,7 +415,7 @@ class DTSFile:
     _path: str
 
     # DTS.
-    _content: Optional[str]
+    _content: str
 
     # If set, we've failed to load the DTS file (IO error).
     _lasterr: Optional[OSError]
@@ -441,7 +441,7 @@ class DTSFile:
     @property
     def content(self) -> str:
         """Text content, or None if we failed to read the DTS file."""
-        return self._content  # type: ignore
+        return self._content
 
     @property
     def lasterr(self) -> Optional[OSError]:
@@ -454,7 +454,7 @@ class DTSFile:
         """
         return self._lasterr
 
-    def _init_content(self) -> Optional[str]:
+    def _init_content(self) -> str:
         try:
             with open(self._path, mode="r", encoding="utf-8") as f:
                 return f.read().strip()
