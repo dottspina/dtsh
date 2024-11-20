@@ -1453,14 +1453,19 @@ def test_dtshparam_dtpathx_xsplit() -> None:
     dt_uart0 = sh.node_at("&uart0")
     param.parsed(["&uart0$pinctrl*"])
     assert param.is_globexpr()
-    assert (
-        dt_uart0,
-        [
+    expect_props = sorted(
+        (
             dt_uart0.dtproperty("pinctrl-0"),
             dt_uart0.dtproperty("pinctrl-1"),
             dt_uart0.dtproperty("pinctrl-names"),
-        ],
-    ) == param.xsplit(cmd, sh)
+        ),
+        key=lambda x: x.name,
+    )
+
+    (node, props) = param.xsplit(cmd, sh)
+    assert dt_uart0 == node
+    assert props
+    assert expect_props == sorted(props, key=lambda x: x.name)
 
     with pytest.raises(DTShCommandError):
         # Fault on missing property name.
