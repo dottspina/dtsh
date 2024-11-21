@@ -258,12 +258,12 @@ def test_dtbinding_child_binding() -> None:
     assert dt_partition0.binding
     assert 1 == dt_partition0.binding.cb_depth
     assert not dt_partition0.binding.child_binding
-    assert dt_partition0.binding is dt_partitions.binding.child_binding
+    assert dt_partition0.binding == dt_partitions.binding.child_binding
 
     assert dt_partition1.binding
     assert 1 == dt_partition1.binding.cb_depth
     assert not dt_partition1.binding.child_binding
-    assert dt_partition1.binding is dt_partitions.binding.child_binding
+    assert dt_partition1.binding == dt_partitions.binding.child_binding
 
 
 def test_dtinterrupt() -> None:
@@ -421,7 +421,7 @@ def test_dtnode_binding() -> None:
     dt_partition0 = dt_partitions.get_child("partition@0")
     assert dt_partition0.binding
     assert not dt_partition0.binding.compatible
-    assert dt_partitions.binding.child_binding is dt_partition0.binding
+    assert dt_partitions.binding.child_binding == dt_partition0.binding
 
     # Node without binding (e.g. "/", "/chosen", "/aliases", "/soc", "/cpus").
     assert not dtmodel["/soc"].binding
@@ -606,7 +606,7 @@ def test_dtmodel_init() -> None:
                 assert binding._edtbinding is edtbinding
                 assert node.compatible == binding.compatible
                 assert edtnode.matching_compat == binding.compatible
-                assert binding is dtmodel.get_compatible_binding(
+                assert binding == dtmodel.get_compatible_binding(
                     binding.compatible, node.on_bus
                 )
             else:
@@ -618,13 +618,13 @@ def test_dtmodel_init() -> None:
                 assert binding.cb_depth > 0
                 assert not node.compatible
                 assert node.parent.binding
-                assert binding is node.parent.binding.child_binding
+                assert binding == node.parent.binding.child_binding
 
             if binding.child_binding:
                 assert binding.child_binding
                 assert binding.child_binding.cb_depth > 0
                 for child in node.children:
-                    assert binding.child_binding is child.binding
+                    assert binding.child_binding == child.binding
 
         if node.on_bus:
             assert node.binding

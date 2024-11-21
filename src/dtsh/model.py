@@ -1559,29 +1559,6 @@ class DTModel:
     # See labeled_nodes().
     _labeled_nodes: Dict[str, DTNode]
 
-    @staticmethod
-    def get_cb_depth(node: DTNode) -> int:
-        """Compute the child-binding depth for a node.
-
-        This is a non negative integer:
-
-        - initialized to zero
-        - incremented while walking the devicetree backward
-          until we reach a node whose binding does not have child-binding
-        """
-        cb_depth = 0
-        edtparent = node._edtnode.parent  # pylint: disable=protected-access
-        while edtparent:
-            parent_binding = (
-                edtparent._binding  # pylint: disable=protected-access
-            )
-            if parent_binding and parent_binding.child_binding:
-                cb_depth += 1
-                edtparent = edtparent.parent
-            else:
-                break
-        return cb_depth
-
     @classmethod
     def create(
         cls,
@@ -1737,17 +1714,7 @@ class DTModel:
             or None if the node does not represent an actual device,
             e.g. "/cpus".
         """
-        edtnode, edtbinding = self._edtnode_edtbinding(node)
-        if not edtbinding:
-            return None
-
-        compat = edtbinding.compatible
-        if compat:
-            bus = edtbinding.on_bus
-            return self.get_compatible_binding(compat, bus)
-
-        cb_depth = self._edtnode_cb_depth(edtnode)
-        return self._get_compatless_binding(edtbinding, cb_depth)
+        return self._init_node_binding(node._edtnode)
 
     def get_compatible_binding(
         self, compat: str, bus: Optional[str] = None
@@ -1776,12 +1743,6 @@ class DTModel:
         binding = self._compatible_bindings.get((compat, bus))
         if not binding and bus:
             binding = self._compatible_bindings.get((compat, None))
-
-        if not binding:
-            edtbinding = self._edt_compat2binding(compat, bus)
-            if edtbinding:
-                cb_depth = self._edtbinding_cb_depth(edtbinding)
-                binding = self._init_binding(edtbinding, cb_depth)
 
         return binding
 
@@ -1933,6 +1894,59 @@ class DTModel:
             branch._children.append(child)  # pylint: disable=protected-access
             self._init_dt(child)
 
+    def _init_node_binding(self, edtnode: edtlib.Node) -> Optional[DTBinding]:
+        if not edtnode._binding:
+            return None
+        edtbinding: edtlib.Binding = edtnode._binding
+        # Child-binding depth of the node's binding.
+        cb_depth: int = self._get_edtnode_cb_depth(edtnode, edtbinding)
+        return self._init_binding(edtbinding, cb_depth)
+
+    def _init_binding(
+        self,
+        edtbinding: edtlib.Binding,
+        cb_depth: int,
+    ) -> DTBinding:
+        child_binding: Optional[DTBinding] = None
+        if edtbinding.child_binding:
+            child_binding = self._init_binding(
+                edtbinding.child_binding, cb_depth + 1
+            )
+
+        binding = DTBinding(edtbinding, cb_depth, child_binding)
+        self._post_init_binding(binding)
+        return binding
+
+    def _post_init_binding(self, binding: DTBinding) -> None:
+        compat: Optional[str] = binding.compatible
+        if compat:
+            # Register if binding has a compatible: this cache should be
+            # used only by autocomp and such.
+            on_bus: Optional[str] = binding.on_bus
+            if (compat, on_bus) not in self._compatible_bindings:
+                self._compatible_bindings[(compat, on_bus)] = binding
+
+    def _get_edtnode_cb_depth(
+        self, edtnode: edtlib.Node, edtbinding: edtlib.Binding
+    ) -> int:
+        cb_depth: int = 0
+
+        p_node: Optional[edtlib.Node] = edtnode
+        p_binding: Optional[edtlib.Binding] = edtbinding
+
+        while p_node and p_binding:
+            parent = p_node.parent
+            if not (parent and parent._binding):
+                break
+            if parent._binding.child_binding is not p_binding:
+                break
+
+            p_node = parent
+            p_binding = p_node._binding
+            cb_depth += 1
+
+        return cb_depth
+
     def _init_aliased_nodes(self) -> None:
         self._aliased_nodes.update(
             {
@@ -1955,99 +1969,6 @@ class DTModel:
             (node_, node_.labels) for node_ in self._nodes.values()
         ]:
             self._labeled_nodes.update({label: node for label in labels})
-
-    def _get_compatless_binding(
-        self, edtbinding: edtlib.Binding, cb_depth: int
-    ) -> DTBinding:
-        if not edtbinding.path:
-            raise ValueError(edtbinding)
-
-        basename = os.path.basename(edtbinding.path)
-        if (basename, cb_depth) not in self._compatless_bindings:
-            binding = self._init_binding(edtbinding, cb_depth)
-            self._compatless_bindings[(basename, cb_depth)] = binding
-
-        return self._compatless_bindings[(basename, cb_depth)]
-
-    def _init_binding(
-        self, edtbinding: edtlib.Binding, cb_depth: int
-    ) -> DTBinding:
-        if not edtbinding.path:
-            raise ValueError(f"Binding file expected: {edtlib.Binding}")
-
-        edtbinding_child = edtbinding.child_binding
-        if edtbinding_child:
-            child_binding = self._init_binding(edtbinding_child, cb_depth + 1)
-        else:
-            child_binding = None
-
-        binding = DTBinding(edtbinding, cb_depth, child_binding)
-
-        if edtbinding.compatible:
-            compat = edtbinding.compatible
-            bus = edtbinding.on_bus
-            self._compatible_bindings[(compat, bus)] = binding
-        else:
-            basename = os.path.basename(edtbinding.path)
-            self._compatless_bindings[(basename, cb_depth)] = binding
-
-        return binding
-
-    def _edt_compat2binding(
-        self, compat: str, bus: Optional[str]
-    ) -> Optional[edtlib.Binding]:
-        edtbinding = (
-            self._edt._compat2binding.get(  # pylint: disable=protected-access
-                (compat, bus)
-            )
-        )
-        if not edtbinding and bus:
-            edtbinding = self._edt._compat2binding.get(  # pylint: disable=protected-access
-                (compat, None)
-            )
-        return edtbinding
-
-    def _edtbinding_cb_depth(self, edtbinding: edtlib.Binding) -> int:
-        if not edtbinding.compatible:
-            raise ValueError(edtbinding)
-
-        # We're computing the child-binding depth of any node
-        # whose compatible value and bus of appearance
-        # match this binding.
-        compat = edtbinding.compatible
-        bus = edtbinding.on_bus
-
-        for edtnode in self._edt.compat2nodes[compat]:
-            binding = edtnode._binding  # pylint: disable=protected-access
-            if binding and (binding.on_bus == bus):
-                return self._edtnode_cb_depth(edtnode)
-
-        # The binding does not appear in any compatible string in the model.
-        raise ValueError(edtbinding)
-
-    def _edtnode_cb_depth(self, edtnode: edtlib.Node) -> int:
-        cb_depth = 0
-
-        # Walk the devicetree backward until we're not specified
-        # by a child-binding.
-        parent = edtnode.parent
-        while parent:
-            binding = parent._binding  # pylint: disable=protected-access
-            if binding and binding.child_binding:
-                cb_depth += 1
-                parent = parent.parent
-            else:
-                parent = None
-
-        return cb_depth
-
-    def _edtnode_edtbinding(
-        self, node: DTNode
-    ) -> Tuple[edtlib.Node, Optional[edtlib.Binding]]:
-        return (
-            node._edtnode,  # pylint: disable=protected-access
-            node._edtnode._binding,  # pylint: disable=protected-access
-        )
 
     def _load_binding_file(self, path: str) -> DTBinding:
         edtbinding = edtlib.Binding(
