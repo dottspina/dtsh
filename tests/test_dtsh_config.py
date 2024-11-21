@@ -123,8 +123,8 @@ def test_dtshconfig_defaults() -> None:
         cfg_defaults.pref_tree_actionable_type
     )
     assert ActionableType.LINK == cfg_defaults.pref_2Sided_actionable_type
-    # 2-sided views child marker.
-    assert cfg_defaults.pref_tree_cb_anchor
+    # 2-sided views child marker (disabled).
+    assert not cfg_defaults.pref_tree_cb_anchor
 
     # Actionable type.
     assert ActionableType.LINK == cfg_defaults.pref_actionable_type
