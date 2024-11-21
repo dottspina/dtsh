@@ -162,18 +162,29 @@ class YAMLFile:
         if not self._raw:
             return
 
-        # See edtlib.Binding._merge_includes()
         yaml_inc = self._raw.get("include")
+        if yaml_inc:
+            self._add_yaml_include(self._includes, yaml_inc)
+
+        child_binding = self._raw.get("child-binding")
+        while isinstance(child_binding, dict):
+            yaml_inc = child_binding.get("include")
+            if yaml_inc:
+                self._add_yaml_include(self._includes, yaml_inc)
+            child_binding = child_binding.get("child-binding")
+
+    def _add_yaml_include(self, includes: List[str], yaml_inc: Any) -> None:
         if isinstance(yaml_inc, str):
-            self._includes.append(yaml_inc)
+            includes.append(yaml_inc)
         elif isinstance(yaml_inc, list):
+            # List of intermixed strings and maps.
             for inc in yaml_inc:
                 if isinstance(inc, str):
-                    self._includes.append(inc)
+                    includes.append(inc)
                 elif isinstance(inc, dict):
                     basename = inc.get("name")
                     if basename:
-                        self._includes.append(basename)
+                        includes.append(basename)
 
 
 class CMakeCache:
