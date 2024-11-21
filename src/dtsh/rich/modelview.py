@@ -1995,18 +1995,23 @@ class ViewNodeChildBindings(View):
         if not binding:
             raise ValueError(node)
 
-        # The device node that has the top-level bindings we're looking for.
-        toplevel_node = node
-        cb_depth = binding.cb_depth
+        return (binding, self._get_bindings_ancestor(node) or binding)
 
-        while cb_depth != 0:
-            toplevel_node = toplevel_node.parent
-            cb_depth -= 1
-
-        if not toplevel_node.binding:
-            raise ValueError(node)
-
-        return (binding, toplevel_node.binding)
+    def _get_bindings_ancestor(self, node: DTNode) -> Optional[DTBinding]:
+        bindings_ancestor: Optional[DTBinding] = None
+        p_node: Optional[DTNode] = node
+        while p_node and p_node.binding:
+            parent = p_node.parent
+            if (
+                parent
+                and parent.binding
+                and parent.binding.child_binding == p_node.binding
+            ):
+                bindings_ancestor = parent.binding
+                p_node = parent
+            else:
+                break
+        return bindings_ancestor
 
     def _add_child_binding(self, binding: DTBinding, parent: Tree) -> Tree:
         anchor = parent.add(self._mk_anchor(binding))
@@ -2018,14 +2023,14 @@ class ViewNodeChildBindings(View):
         txt_anchor: Text
 
         if binding.compatible:
-            if binding is self._binding:
+            if binding == self._binding:
                 style = DTShTheme.STYLE_DT_BINDING_COMPAT
             else:
                 style = DTShTheme.STYLE_DT_COMPAT_STR
             txt_anchor = TextUtil.mk_text(binding.compatible, style)
 
         elif binding.description:
-            if binding is self._binding:
+            if binding == self._binding:
                 style = DTShTheme.STYLE_DT_BINDING_DESC
             else:
                 style = DTShTheme.STYLE_DT_DESCRIPTION
