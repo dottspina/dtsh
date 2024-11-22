@@ -8,7 +8,17 @@ The herein CMake cache reader implementation is adapted
 from the zcmake.py module in zephyr/scripts/west_commands.
 """
 
-from typing import Any, Optional, Union, List, Sequence, Dict, Iterator, Tuple
+from typing import (
+    Any,
+    Optional,
+    Union,
+    List,
+    Sequence,
+    Dict,
+    Mapping,
+    Iterator,
+    Tuple,
+)
 
 from pathlib import Path
 
@@ -185,6 +195,66 @@ class YAMLFile:
                     basename = inc.get("name")
                     if basename:
                         includes.append(basename)
+
+
+class YAMLFilesystem:
+    """Find YAML files within a fixed search path (set of directories).
+
+    Rationale:
+
+    - retrieve YAML files with their base name
+    - provide the name2path semantic expected for edtlib.Binding
+      objects initialization
+    """
+
+    _name2path: Dict[str, str]
+
+    def __init__(self, yaml_dirs: Sequence[str]) -> None:
+        """Initialize the YAML file system.
+
+        Args:
+            yaml_dirs: The YAML search path as a set of absolute or relative
+              directory paths.
+        """
+        self._name2path = {}
+        for yaml_dir in [os.path.abspath(path) for path in yaml_dirs]:
+            for root, _, basenames in os.walk(yaml_dir):
+                for name in basenames:
+                    if name.endswith((".yaml", ".yml")):
+                        self._name2path[name] = os.path.join(root, name)
+
+    @property
+    def name2path(self) -> Mapping[str, str]:
+        """Mapping from YAML base names to absolute file paths.
+
+        This mapping contains all YAML files within this file system.
+        """
+        return self._name2path
+
+    def find_path(self, name: str) -> Optional[str]:
+        """Find a YAML file by name.
+
+        Args:
+            name: The base name of a YAML file.
+
+        Returns:
+            The absolute path to the requested YAML file,
+            or None if not found.
+        """
+        return self._name2path.get(name)
+
+    def find_file(self, name: str) -> Optional["YAMLFile"]:
+        """Find a YAML file by name.
+
+        Args:
+            name: The base name of a YAML file.
+
+        Returns:
+            A wrapper to the requested YAML file,
+            or None if not found.
+        """
+        path = self.find_path(name)
+        return YAMLFile(path) if path else None
 
 
 class CMakeCache:
