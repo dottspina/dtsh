@@ -35,6 +35,37 @@ import yaml
 from devicetree.edtlib import _BindingLoader
 
 
+class YAMLInclude:
+    """YAML 'include:' entry."""
+
+    _name: str
+    _allow_list: Optional[List[str]]
+    _block_list: Optional[List[str]]
+
+    def __init__(
+        self,
+        name: str,
+        allow_list: Optional[List[str]] = None,
+        block_list: Optional[List[str]] = None,
+    ) -> None:
+        self._name = name
+        self._allow_list = allow_list
+        self._block_list = block_list
+
+    @property
+    def name(self) -> str:
+        """Base file name."""
+        return self._name
+
+    def is_filtered_out(self, prop: str) -> bool:
+        """Whether this YAML 'include:' masks a property."""
+        if self._allow_list:
+            return prop not in self._allow_list
+        if self._block_list:
+            return prop in self._block_list
+        return False
+
+
 class YAMLFile:
     """Cheap wrapper around a YAML file.
 
@@ -63,7 +94,7 @@ class YAMLFile:
     # Lazy-initialized YAML "include:",
     # sorted by child-binding depth of inclusion (i.e. top-level,
     # child-binding, grandchild-binding, etc).
-    _depth2included: Optional[Dict[int, List[str]]]
+    _depth2included: Optional[Dict[int, List[YAMLInclude]]]
 
     # If set, we've failed to load the YAML file at some point:
     # - OSError: all kinds of file system errors
@@ -111,15 +142,14 @@ class YAMLFile:
     def includes(self) -> Sequence[str]:
         """Names of all included YAML files."""
         self._init_includes()
-        return (
-            [
-                inc_name
-                for includes in list(self._depth2included.values())
-                for inc_name in includes
-            ]
-            if self._depth2included
-            else []
-        )
+        if not self._depth2included:
+            return []
+        yaml_includes: List[YAMLInclude] = [
+            yaml_inc
+            for included in self._depth2included.values()
+            for yaml_inc in included
+        ]
+        return [yaml_inc.name for yaml_inc in yaml_includes]
 
     @property
     def lasterr(self) -> Optional[Union[OSError, yaml.YAMLError]]:
@@ -133,7 +163,7 @@ class YAMLFile:
         """
         return self._lasterr
 
-    def included_at_depth(self, cb_depth: int) -> List[str]:
+    def includes_at_depth(self, cb_depth: int) -> List[YAMLInclude]:
         """Get the YAML files included at a given child-binding depth.
 
         Args:
@@ -207,22 +237,58 @@ class YAMLFile:
             child_binding = child_binding.get("child-binding")
 
     def _add_yaml_include(self, yaml_inc: Any, cb_depth: int) -> None:
+        # yaml_inc: YAML "include:" entry, string or list of intermixed
+        # strings and maps. Maps may set property filters.
         if self._depth2included is None:
             # Should not happen: called to early?
             return
 
         if isinstance(yaml_inc, str):
-            # Single line "include:".
-            self._depth2included[cb_depth].append(yaml_inc)
+            # The "include:" entry is the file name as string.
+            self._depth2included[cb_depth].append(YAMLInclude(yaml_inc))
         elif isinstance(yaml_inc, list):
             # List of intermixed strings and maps.
             for inc in yaml_inc:
                 if isinstance(inc, str):
-                    self._depth2included[cb_depth].append(inc)
+                    self._depth2included[cb_depth].append(YAMLInclude(inc))
                 elif isinstance(inc, dict):
                     basename = inc.get("name")
-                    if basename:
-                        self._depth2included[cb_depth].append(basename)
+                    if isinstance(basename, str):
+                        allowlist: List[str] = [
+                            str(p) for p in inc.get("property-allowlist", [])
+                        ]
+                        blocklist: List[str] = [
+                            str(p) for p in inc.get("property-blocklist", [])
+                        ]
+                        self._depth2included[cb_depth].append(
+                            YAMLInclude(basename, allowlist, blocklist)
+                        )
+
+
+class PropertyLineage:
+    """Property specifications lineage."""
+
+    fyaml_last: Optional[YAMLFile] = None
+    fyaml_spec: Optional[YAMLFile] = None
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        """Commodity for clearing found lineage."""
+        self.fyaml_last = None
+        self.fyaml_spec = None
+
+    def is_complete(self) -> bool:
+        """Lineage complete."""
+        return (self.fyaml_last is not None) and (self.fyaml_spec is not None)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, PropertyLineage):
+            return False
+        return (self.fyaml_last == other.fyaml_last) and (
+            self.fyaml_spec == other.fyaml_spec
+        )
 
 
 class YAMLFilesystem:
@@ -283,6 +349,100 @@ class YAMLFilesystem:
         """
         path = self.find_path(name)
         return YAMLFile(path) if path else None
+
+    def find_property(
+        self, name: str, fyaml: YAMLFile, cb_depth: int
+    ) -> Optional[YAMLFile]:
+        """Find where the property was last modified.
+
+        Starting from the given "top-level" YAML file,
+        down to the recursively included files,
+        stop at the first binding file that adds some definition
+        (e.g. "required: true") to a property with the given name.
+        This file is where we assume the property was last modified.
+
+        This is a workaround for issue #5.
+
+        Note that this API has no notion of what a binding is,
+        other than that the YAML document may contain (nested)
+        "child-binding" and "properties:" keys.
+
+        Args:
+            name: The property name.
+            fyaml: Start from this YAML file.
+            cb_depth: Child-binding depth at which we'll search
+                for the property.
+
+        Returns:
+            The YAML file where the property was last modified,
+            or None if not found.
+        """
+        if self._fyaml_get_property(name, fyaml, cb_depth):
+            return fyaml
+
+        for depth in range(cb_depth + 1):
+            includes = fyaml.includes_at_depth(depth)
+            for yaml_inc in includes:
+                if not yaml_inc.is_filtered_out(name):
+                    fyaml_inc = self.find_file(yaml_inc.name)
+                    if fyaml_inc:
+                        fyaml_found = self.find_property(
+                            name, fyaml_inc, cb_depth - depth
+                        )
+                        if fyaml_found:
+                            return fyaml_found
+        return None
+
+    def backtrack_property(
+        self,
+        lineage: PropertyLineage,
+        name: str,
+        fyaml: YAMLFile,
+        cb_depth: int,
+    ) -> None:
+        """Backtrack a property lineage.
+
+        Similar to find_property() but won't stop at the first YAML file
+        where we find the property, and also search for a YAML file where
+        the property has a "description:".
+        This file is where we assume the property is first specified.
+
+        Args:
+            lineage: Empty property lineage, will hold search results on return.
+            name: The property name.
+            fyaml: Start from this YAML file.
+            cb_depth: Child-binding depth at which we'll search
+                for the property.
+        """
+        raw: Optional[Dict[Any, Any]] = self._fyaml_get_property(
+            name, fyaml, cb_depth
+        )
+        if raw:
+            if not lineage.fyaml_last:
+                lineage.fyaml_last = fyaml
+            if "description" in raw:
+                lineage.fyaml_spec = fyaml
+            if lineage.is_complete():
+                return
+
+        for depth in range(cb_depth + 1):
+            includes = fyaml.includes_at_depth(depth)
+            for yaml_inc in includes:
+                if not yaml_inc.is_filtered_out(name):
+                    fyaml_inc = self.find_file(yaml_inc.name)
+                    if fyaml_inc:
+                        self.backtrack_property(
+                            lineage, name, fyaml_inc, cb_depth - depth
+                        )
+
+    def _fyaml_get_property(
+        self, name: str, fyaml: YAMLFile, cb_depth: int
+    ) -> Optional[Dict[Any, Any]]:
+        raw: Dict[Any, Any] = fyaml.raw
+        for _ in range(cb_depth):
+            raw = raw.get("child-binding", {})
+        prop = raw.get("properties", {}).get(name)
+        return prop if isinstance(prop, dict) else None
 
 
 class CMakeCache:

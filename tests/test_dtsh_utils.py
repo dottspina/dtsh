@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from dtsh.utils import CMakeCache, YAMLFile, YAMLFilesystem
+from dtsh.utils import CMakeCache, YAMLFile, YAMLFilesystem, PropertyLineage
 
 from .dtsh_uthelpers import DTShTests
 
@@ -147,6 +147,182 @@ def test_included_at_depth() -> None:
         assert fyaml.raw
 
     assert ["inc1.yaml", "inc2.yaml", "inc3.yaml"] == fyaml.includes
-    assert ["inc1.yaml"] == fyaml.included_at_depth(0)
-    assert ["inc2.yaml"] == fyaml.included_at_depth(1)
-    assert ["inc3.yaml"] == fyaml.included_at_depth(2)
+    assert ["inc1.yaml"] == [inc.name for inc in fyaml.includes_at_depth(0)]
+    assert ["inc2.yaml"] == [inc.name for inc in fyaml.includes_at_depth(1)]
+    assert ["inc3.yaml"] == [inc.name for inc in fyaml.includes_at_depth(2)]
+
+
+def test_find_property() -> None:
+    with DTShTests.from_res():
+        yamlfs = YAMLFilesystem(["yaml"])
+    fyaml_base = yamlfs.find_file("included_at_depth.yaml")
+    assert fyaml_base
+
+    # Depth-0.
+    assert not yamlfs.find_property("inc1_depth0_p1", fyaml_base, 1)
+    assert not yamlfs.find_property("inc1_depth0_p1", fyaml_base, 2)
+    # From inc1.yaml.
+    fyaml = yamlfs.find_property("inc1_depth0_p1", fyaml_base, 0)
+    assert fyaml
+    assert "inc1.yaml" == fyaml.path.name
+    # Last modified in included_at_depth.yaml.
+    fyaml = yamlfs.find_property("inc1_depth0_p2", fyaml_base, 0)
+    assert fyaml
+    assert "included_at_depth.yaml" == fyaml.path.name
+    assert not yamlfs.find_property("inc1_depth0_p2", fyaml_base, 1)
+
+    # Child-bindings.
+    assert not yamlfs.find_property("inc2_depth0_p1", fyaml_base, 0)
+    assert not yamlfs.find_property("inc2_depth1_p1", fyaml_base, 1)
+    assert yamlfs.find_property("inc1_depth1_p1", fyaml_base, 1)
+    # From inc2.yaml.
+    fyaml = yamlfs.find_property("inc2_depth0_p1", fyaml_base, 1)
+    assert fyaml
+    assert "inc2.yaml" == fyaml.path.name
+    # Last modified in included_at_depth.yaml.
+    fyaml = yamlfs.find_property("inc2_depth0_p2", fyaml_base, 1)
+    assert fyaml
+    assert "included_at_depth.yaml" == fyaml.path.name
+
+    # Grandchild-bindings.
+    assert not yamlfs.find_property("inc3_depth0_p1", fyaml_base, 0)
+    assert not yamlfs.find_property("inc3_depth1_p1", fyaml_base, 1)
+    assert not yamlfs.find_property("inc3_depth2_p1", fyaml_base, 2)
+    # From inc3.yaml.
+    fyaml = yamlfs.find_property("inc3_depth0_p1", fyaml_base, 2)
+    assert fyaml
+    assert "inc3.yaml" == fyaml.path.name
+    # Last modified in included_at_depth.yaml.
+    fyaml = yamlfs.find_property("inc3_depth0_p2", fyaml_base, 2)
+    assert fyaml
+    assert "included_at_depth.yaml" == fyaml.path.name
+
+
+def test_backtrack_property_depth0() -> None:
+    with DTShTests.from_res():
+        yamlfs = YAMLFilesystem(["yaml"])
+    fyaml_base = yamlfs.find_file("included_at_depth.yaml")
+    assert fyaml_base
+
+    backtrack = PropertyLineage()
+    # Included from inc1.yaml.
+    yamlfs.backtrack_property(backtrack, "inc1_depth0_p1", fyaml_base, 0)
+    assert backtrack.fyaml_last
+    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc1.yaml, last modified in included_at_depth.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth0_p2", fyaml_base, 0)
+    assert backtrack.fyaml_last
+    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc1.yaml, does not have a description.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth0_p3", fyaml_base, 0)
+    assert backtrack.fyaml_last
+    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert not backtrack.fyaml_spec
+
+    # Undefined at other levels.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth1_p1", fyaml_base, 0)
+    assert not backtrack.fyaml_last
+    assert not backtrack.fyaml_spec
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth0_p1", fyaml_base, 1)
+    assert not backtrack.fyaml_last
+    assert not backtrack.fyaml_spec
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth0_p1", fyaml_base, 2)
+    assert not backtrack.fyaml_last
+    assert not backtrack.fyaml_spec
+
+
+def test_backtrack_property_child_binding() -> None:
+    with DTShTests.from_res():
+        yamlfs = YAMLFilesystem(["yaml"])
+    fyaml_base = yamlfs.find_file("included_at_depth.yaml")
+    assert fyaml_base
+
+    # Included from inc1.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth1_p1", fyaml_base, 1)
+    assert backtrack.fyaml_last
+    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc2.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth0_p1", fyaml_base, 1)
+    assert backtrack.fyaml_last
+    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc2.yaml, last modified in included_at_depth.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth0_p2", fyaml_base, 1)
+    assert backtrack.fyaml_last
+    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc2.yaml, does not have a description.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth0_p3", fyaml_base, 1)
+    assert backtrack.fyaml_last
+    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert not backtrack.fyaml_spec
+
+    # Undefined at other levels.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth0_p1", fyaml_base, 0)
+    assert not backtrack.fyaml_last
+    assert not backtrack.fyaml_spec
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth1_p1", fyaml_base, 1)
+    assert not backtrack.fyaml_last
+    assert not backtrack.fyaml_spec
+
+
+def test_backtrack_property_grandchild_binding() -> None:
+    with DTShTests.from_res():
+        yamlfs = YAMLFilesystem(["yaml"])
+    fyaml_base = yamlfs.find_file("included_at_depth.yaml")
+    assert fyaml_base
+
+    # Included from inc1.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc1_depth2_p1", fyaml_base, 2)
+    assert backtrack.fyaml_last
+    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc2.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc2_depth1_p1", fyaml_base, 2)
+    assert backtrack.fyaml_last
+    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+
+    # Included from inc3.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc3_depth0_p1", fyaml_base, 2)
+    assert backtrack.fyaml_last
+    assert "inc3.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc3.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc3.yaml, last modified in included_at_depth.yaml.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc3_depth0_p2", fyaml_base, 2)
+    assert backtrack.fyaml_last
+    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_spec
+    assert "inc3.yaml" == backtrack.fyaml_spec.path.name
+    # Included from inc3.yaml, does not have a description.
+    backtrack = PropertyLineage()
+    yamlfs.backtrack_property(backtrack, "inc3_depth0_p3", fyaml_base, 2)
+    assert backtrack.fyaml_last
+    assert "inc3.yaml" == backtrack.fyaml_last.path.name
+    assert not backtrack.fyaml_spec
