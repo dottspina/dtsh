@@ -2266,7 +2266,7 @@ class ViewYAMLFile(View):
         )
 
     # Fully initialized YAML include files.
-    _yaml_includes: Dict[str, YAMLFile] = {}
+    _yaml_includes: Dict[str, YAMLFile]
 
     # Either YAML files treeview or error view.
     _view: RenderableType
@@ -2298,6 +2298,7 @@ class ViewYAMLFile(View):
         super().__init__()
         self._linktype = linktype or _dtshconf.pref_yaml_actionable_type
 
+        self._yaml_includes = {}
         err_fyaml: Optional[YAMLFile] = self._init_follow_included(
             fyaml, yamlfs
         )
