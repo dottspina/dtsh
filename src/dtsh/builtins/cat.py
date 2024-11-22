@@ -123,10 +123,6 @@ class DTShBuiltinCat(DTShCommand):
         super().parse_argv(argv)
         # Preconditions for compact mode.
         if self.with_flag(CatFlagCompactYAML):
-            if not self.with_flag(DTShFlagLongList):
-                raise DTShUsageError(
-                    self, "option '--compact-yaml' requires '-l'"
-                )
             if not (
                 self.with_flag(DTShFlagYamlFile) or self.with_flag(DTShFlagAll)
             ):
@@ -173,11 +169,11 @@ class DTShBuiltinCat(DTShCommand):
             if parm_xpath.is_globexpr():
                 # Globbing: we may have zero, one or more matching properties.
                 # Concatenate and output property values.
-                self.cat_dtproperties(parm_dtprops, out)
+                self.cat_dtproperties(parm_dtprops, parm_dtnode, out)
             else:
                 # If not globbing, we have exactly one property name.
                 # Concatenate and output info about this property.
-                self.cat_dtproperty(parm_dtprops[0], out)
+                self.cat_dtproperty(parm_dtprops[0], parm_dtnode, out)
 
         else:
             # The command is invoked for node at PATH.
@@ -187,7 +183,7 @@ class DTShBuiltinCat(DTShCommand):
         if self.with_flag(DTShFlagPager):
             out.pager_exit()
 
-    def cat_dtnode(self, dtnode: DTNode, out: DTShOutput) -> None:
+    def cat_dtnode(self, node: DTNode, out: DTShOutput) -> None:
         """The command is invoked with a DT node as parameter.
 
         Args:
@@ -195,11 +191,13 @@ class DTShBuiltinCat(DTShCommand):
             out: Where to cat.
         """
         if self._with_longfmt():
-            self._out_dtnode_rich(dtnode, out)
+            self._out_dtnode_rich(node, out)
         else:
-            self._out_dtnode_raw(dtnode, out)
+            self._out_dtnode_raw(node, out)
 
-    def cat_dtproperty(self, dtprop: DTNodeProperty, out: DTShOutput) -> None:
+    def cat_dtproperty(
+        self, dtprop: DTNodeProperty, node: DTNode, out: DTShOutput
+    ) -> None:
         """The command is invoked with a single DT property as parameter.
 
         Args:
@@ -207,12 +205,12 @@ class DTShBuiltinCat(DTShCommand):
             out: Where to cat.
         """
         if self._with_longfmt():
-            self._out_dtproperty_rich(dtprop, out)
+            self._out_dtproperty_rich(dtprop, node, out)
         else:
             self._out_dtproperty_raw(dtprop, out)
 
     def cat_dtproperties(
-        self, dtprops: List[DTNodeProperty], out: DTShOutput
+        self, dtprops: List[DTNodeProperty], node: DTNode, out: DTShOutput
     ) -> None:
         """The command is invoked with a PROP globbing expression.
 
@@ -226,18 +224,18 @@ class DTShBuiltinCat(DTShCommand):
         # Ignore no match.
         if dtprops:
             if self._with_longfmt():
-                self._out_dtproperties_rich(dtprops, out)
+                self._out_dtproperties_rich(dtprops, node, out)
             else:
                 self._out_dtproperties_raw(dtprops, out)
 
-    def _out_dtnode_rich(self, dtnode: DTNode, out: DTShOutput) -> None:
+    def _out_dtnode_rich(self, node: DTNode, out: DTShOutput) -> None:
         show_all = self.with_flag(DTShFlagAll)
         if not (show_all or self._nfmtspecs()):
             # If the user hasn't explicitly selected what to cat,
             # just dump all node property values, if any.
-            dtprops = dtnode.all_dtproperties()
+            dtprops = node.all_dtproperties()
             if dtprops:
-                self._out_dtproperties_rich(dtprops, out)
+                self._out_dtproperties_rich(dtprops, node, out)
             return
 
         # Otherwise, concatenate and output selected sections.
@@ -245,17 +243,17 @@ class DTShBuiltinCat(DTShCommand):
         if show_all or self.with_flag(DTShFlagDescription):
             sections.append(
                 HeadingsContentWriter.Section(
-                    "description", ViewDescription(dtnode.description)
+                    "description", ViewDescription(node.description)
                 )
             )
         if show_all:
             # Show property values only when '-A' is set.
-            dtprops = dtnode.all_dtproperties()
+            dtprops = node.all_dtproperties()
             sections.append(
                 HeadingsContentWriter.Section(
                     "Properties",
                     (
-                        ViewPropertyValueTable(dtprops)
+                        ViewPropertyValueTable(dtprops, node.dt)
                         if dtprops
                         else TextUtil.mk_apologies(
                             "This node does not set any property."
@@ -268,8 +266,8 @@ class DTShBuiltinCat(DTShCommand):
                 HeadingsContentWriter.Section(
                     "Binding",
                     (
-                        ViewNodeBinding(dtnode)
-                        if dtnode.binding
+                        ViewNodeBinding(node)
+                        if node.binding
                         else TextUtil.mk_apologies("This node has no binding.")
                     ),
                 )
@@ -281,12 +279,12 @@ class DTShBuiltinCat(DTShCommand):
                         "YAML",
                         (
                             ViewYAMLFile.create(
-                                dtnode.binding_path,
-                                dtnode.dt.dts.yamlfs,
+                                node.binding_path,
+                                node.dt.dts.yamlfs,
                                 style=DTShTheme.STYLE_YAML_BINDING,
                                 compact=self.with_flag(CatFlagCompactYAML),
                             )
-                            if dtnode.binding_path
+                            if node.binding_path
                             else TextUtil.mk_apologies(
                                 "YAML binding unavailable."
                             )
@@ -314,21 +312,21 @@ class DTShBuiltinCat(DTShCommand):
             self._out_dtproperties_raw(node.all_dtproperties(), out)
 
     def _out_dtproperties_rich(
-        self, dtprops: List[DTNodeProperty], out: DTShOutput
+        self, dtprops: List[DTNodeProperty], node: DTNode, out: DTShOutput
     ) -> None:
         # Multiple properties: dump values in table view.
-        view = ViewPropertyValueTable(dtprops)
+        view = ViewPropertyValueTable(dtprops, node.dt)
         view.left_indent(1)
         out.write(view)
 
     def _out_dtproperty_rich(
-        self, dtprop: DTNodeProperty, out: DTShOutput
+        self, dtprop: DTNodeProperty, node: DTNode, out: DTShOutput
     ) -> None:
         show_all = self.with_flag(DTShFlagAll)
         if not (show_all or self._nfmtspecs()):
             # If the user hasn't explicitly selected what to cat,
             # just dump property value.
-            out.write(ViewPropertyValueTable([dtprop]))
+            out.write(ViewPropertyValueTable([dtprop], node.dt))
             return
 
         # Otherwise, concatenate and output selected sections.
@@ -343,7 +341,7 @@ class DTShBuiltinCat(DTShCommand):
             sections.append(
                 HeadingsContentWriter.Section(
                     "specification",
-                    FormPropertySpec(dtprop.dtspec),
+                    FormPropertySpec(dtprop.dtspec, node.dt),
                 )
             )
         if show_all or self.with_flag(DTShFlagYamlFile):
