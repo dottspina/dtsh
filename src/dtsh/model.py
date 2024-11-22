@@ -495,6 +495,11 @@ class DTBinding:
         """The nested child-binding this binding defines, if any."""
         return self._child_binding
 
+    @property
+    def fyaml(self) -> YAMLFile:
+        """YAML file defining the binding."""
+        return self._yaml
+
     def all_dtproperties(self) -> List["DTPropertySpec"]:
         """Enumerate specifications for all properties defined by this binding.
 
@@ -502,7 +507,7 @@ class DTBinding:
             A list client code can sort, filter, etc.
         """
         return [
-            DTPropertySpec(edtspec)
+            DTPropertySpec(edtspec, self)
             for edtspec in self._edtbinding.prop2specs.values()
         ]
 
@@ -798,13 +803,25 @@ class DTPropertySpec:
 
     _edtspec: edtlib.PropertySpec
 
-    def __init__(self, edtspec: edtlib.PropertySpec) -> None:
+    # The node's binding that carries this property.
+    _binding: Optional[DTBinding]
+
+    def __init__(
+        self, edtspec: edtlib.PropertySpec, binding: Optional[DTBinding]
+    ) -> None:
         """Initialize specification.
 
         Args:
-            edtcad: Peer edtlib object.
+            edtspec: Peer edtlib object.
+            binding: The device binding that carries the property.
         """
         self._edtspec = edtspec
+        self._binding = binding
+
+    @property
+    def binding(self) -> Optional[DTBinding]:
+        """The node's binding where this specifies a property, if any."""
+        return self._binding
 
     @property
     def name(self) -> str:
@@ -927,7 +944,7 @@ class DTNodeProperty:
     @property
     def dtspec(self) -> DTPropertySpec:
         """Property specification."""
-        return DTPropertySpec(self._edtprop.spec)
+        return DTPropertySpec(self._edtprop.spec, self._node.binding)
 
     @property
     def value(self) -> "DTNodeProperty.ValueType":
