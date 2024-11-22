@@ -417,6 +417,8 @@ class DTBinding:
     # Nested child-binding this binding defines, if any.
     _child_binding: Optional["DTBinding"]
 
+    _prop2specs: Optional[Dict[str, "DTPropertySpec"]] = None
+
     # The parent model (used to resolve child binding).
     def __init__(
         self,
@@ -500,16 +502,24 @@ class DTBinding:
         """YAML file defining the binding."""
         return self._yaml
 
+    @property
+    def prop2specs(self) -> Mapping[str, "DTPropertySpec"]:
+        """Enumerate specifications for all properties defined by this binding.
+
+        Returns:
+            A list client code can sort, filter, etc.
+        """
+        self._init_prop2specs()
+        return self._prop2specs or {}
+
     def all_dtproperties(self) -> List["DTPropertySpec"]:
         """Enumerate specifications for all properties defined by this binding.
 
         Returns:
             A list client code can sort, filter, etc.
         """
-        return [
-            DTPropertySpec(edtspec, self)
-            for edtspec in self._edtbinding.prop2specs.values()
-        ]
+        self._init_prop2specs()
+        return list(self._prop2specs.values()) if self._prop2specs else []
 
     def get_headline(self) -> Optional[str]:
         """The headline of this binding description, if any."""
@@ -545,6 +555,14 @@ class DTBinding:
 
     def __repr__(self) -> str:
         return f"yaml:{os.path.basename(self.path)}, cb_depth:{self.cb_depth}"
+
+    def _init_prop2specs(self) -> None:
+        if self._prop2specs is not None:
+            return
+        self._prop2specs = {
+            edtspec.name: DTPropertySpec(edtspec, self)
+            for edtspec in self._edtbinding.prop2specs.values()
+        }
 
 
 class DTNodeInterrupt:
