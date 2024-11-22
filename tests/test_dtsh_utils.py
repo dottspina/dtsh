@@ -8,6 +8,8 @@
 # pylint: disable=protected-access
 # pylint: disable=missing-function-docstring
 
+from pathlib import Path
+
 import pytest
 
 from dtsh.utils import CMakeCache, YAMLFile, YAMLFilesystem
@@ -90,15 +92,11 @@ def test_yamlfs_name2path() -> None:
     with DTShTests.from_res():
         yamlfs = YAMLFilesystem(["yaml"])
 
-    assert {
-        "i2c-device.yaml": DTShTests.get_resource_path(
-            "yaml", "i2c-device.yaml"
-        ),
-        "power.yaml": DTShTests.get_resource_path("yaml", "power.yaml"),
-        "sensor-device.yaml": DTShTests.get_resource_path(
-            "yaml", "sensor-device.yaml"
-        ),
-    } == yamlfs.name2path
+    assert 7 == len(yamlfs.name2path)
+    assert (
+        DTShTests.get_resource_path("yaml", "i2c-device.yaml")
+        == yamlfs.name2path["i2c-device.yaml"]
+    )
 
     with pytest.raises(KeyError):
         _ = yamlfs.name2path["notafile"]
@@ -130,7 +128,7 @@ def test_yamlfile() -> None:
     # Lazy initialzation.
     assert yaml._content is None
     assert yaml._raw is None
-    assert yaml._includes is None
+    assert not yaml._depth2included
     assert yaml.content.startswith("# Copyright (c) 2017, Linaro Limited")
     assert yaml.content.endswith("i2c bus")
     assert "i2c" == yaml.raw["on-bus"]
@@ -140,4 +138,15 @@ def test_yamlfile() -> None:
     yaml = YAMLFile("notafile")
     assert "" == yaml.content
     assert {} == yaml.raw
-    assert [] == yaml.includes
+    assert not yaml.includes
+
+
+def test_included_at_depth() -> None:
+    with DTShTests.from_res():
+        fyaml = YAMLFile(Path("yaml") / "included_at_depth.yaml")
+        assert fyaml.raw
+
+    assert ["inc1.yaml", "inc2.yaml", "inc3.yaml"] == fyaml.includes
+    assert ["inc1.yaml"] == fyaml.included_at_depth(0)
+    assert ["inc2.yaml"] == fyaml.included_at_depth(1)
+    assert ["inc3.yaml"] == fyaml.included_at_depth(2)

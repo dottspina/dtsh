@@ -8,6 +8,7 @@ The herein CMake cache reader implementation is adapted
 from the zcmake.py module in zephyr/scripts/west_commands.
 """
 
+from collections import defaultdict
 from typing import (
     Any,
     Optional,
@@ -59,8 +60,10 @@ class YAMLFile:
     # Lazy-initialized YAML model.
     _raw: Optional[Dict[str, Any]]
 
-    # Lazy-initialized YAML "include: ".
-    _includes: Optional[List[str]]
+    # Lazy-initialized YAML "include:",
+    # sorted by child-binding depth of inclusion (i.e. top-level,
+    # child-binding, grandchild-binding, etc).
+    _depth2included: Optional[Dict[int, List[str]]]
 
     # If set, we've failed to load the YAML file at some point:
     # - OSError: all kinds of file system errors
@@ -82,7 +85,7 @@ class YAMLFile:
         self._lasterr = None
         self._content = None
         self._raw = None
-        self._includes = None
+        self._depth2included = None
 
     @property
     def path(self) -> Path:
@@ -92,26 +95,31 @@ class YAMLFile:
     @property
     def content(self) -> str:
         """Text content."""
-        # Will Initialize an empty content if we can't read the YAML file.
         self._init_content()
-        return self._content  # type: ignore
+        return self._content or ""
 
     @property
-    def raw(self) -> Dict[str, object]:
+    def raw(self) -> Dict[str, Any]:
         """YAML model.
 
         If empty, see lasterr().
         """
-        # Will Initialize an empty model if the YAML file's content
-        # is unavailable or invalid.
         self._init_model()
-        return self._raw  # type: ignore
+        return self._raw or {}
 
     @property
     def includes(self) -> Sequence[str]:
-        """Names of included YAML files."""
+        """Names of all included YAML files."""
         self._init_includes()
-        return self._includes  # type: ignore
+        return (
+            [
+                inc_name
+                for includes in list(self._depth2included.values())
+                for inc_name in includes
+            ]
+            if self._depth2included
+            else []
+        )
 
     @property
     def lasterr(self) -> Optional[Union[OSError, yaml.YAMLError]]:
@@ -124,6 +132,19 @@ class YAMLFile:
         - YAMLError: invalid YAML content
         """
         return self._lasterr
+
+    def included_at_depth(self, cb_depth: int) -> List[str]:
+        """Get the YAML files included at a given child-binding depth.
+
+        Args:
+            cb_depth: Child-binding depth (0 means top-level "include:",
+                1 means child-binding, etc).
+
+        Returns:
+            A list of YAML file names.
+        """
+        self._init_includes()
+        return self._depth2included[cb_depth] if self._depth2included else []
 
     def _init_content(self) -> None:
         # Actually try top open the YAML file and read its content.
@@ -162,10 +183,10 @@ class YAMLFile:
     def _init_includes(self) -> None:
         # Search YAML model for include directives.
 
-        if self._includes is not None:
+        if self._depth2included is not None:
             return
         # Only one attempt to initialize includes.
-        self._includes = []
+        self._depth2included = defaultdict(list)
 
         # Depends on YAML model.
         self._init_model()
@@ -174,27 +195,34 @@ class YAMLFile:
 
         yaml_inc = self._raw.get("include")
         if yaml_inc:
-            self._add_yaml_include(self._includes, yaml_inc)
+            self._add_yaml_include(yaml_inc, 0)
 
+        cb_depth: int = 0
         child_binding = self._raw.get("child-binding")
         while isinstance(child_binding, dict):
+            cb_depth += 1
             yaml_inc = child_binding.get("include")
             if yaml_inc:
-                self._add_yaml_include(self._includes, yaml_inc)
+                self._add_yaml_include(yaml_inc, cb_depth)
             child_binding = child_binding.get("child-binding")
 
-    def _add_yaml_include(self, includes: List[str], yaml_inc: Any) -> None:
+    def _add_yaml_include(self, yaml_inc: Any, cb_depth: int) -> None:
+        if self._depth2included is None:
+            # Should not happen: called to early?
+            return
+
         if isinstance(yaml_inc, str):
-            includes.append(yaml_inc)
+            # Single line "include:".
+            self._depth2included[cb_depth].append(yaml_inc)
         elif isinstance(yaml_inc, list):
             # List of intermixed strings and maps.
             for inc in yaml_inc:
                 if isinstance(inc, str):
-                    includes.append(inc)
+                    self._depth2included[cb_depth].append(inc)
                 elif isinstance(inc, dict):
                     basename = inc.get("name")
                     if basename:
-                        includes.append(basename)
+                        self._depth2included[cb_depth].append(basename)
 
 
 class YAMLFilesystem:
@@ -243,7 +271,7 @@ class YAMLFilesystem:
         """
         return self._name2path.get(name)
 
-    def find_file(self, name: str) -> Optional["YAMLFile"]:
+    def find_file(self, name: str) -> Optional[YAMLFile]:
         """Find a YAML file by name.
 
         Args:
