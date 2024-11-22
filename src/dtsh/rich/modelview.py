@@ -36,12 +36,13 @@ from rich.text import Text
 from rich.tree import Tree
 
 from dtsh.config import DTShConfig, ActionableType
-from dtsh.dts import DTS, DTSFile, YAMLFilesystem
+from dtsh.dts import DTS, DTSFile
 from dtsh.hwm import DTShBoard
-from dtsh.utils import YAMLFile, DTShToolchain
+from dtsh.utils import YAMLFile, YAMLFilesystem, DTShToolchain
 from dtsh.model import (
     DTPath,
     DTWalkable,
+    DTModel,
     DTNode,
     DTNodeRegister,
     DTNodeInterrupt,
@@ -1754,11 +1755,15 @@ class NodePropertyMV:
     """Helper for making views (e.g. lists) of node properties."""
 
     @classmethod
-    def mk_name(cls, dtprop: DTNodeProperty, link_spec: bool = False) -> Text:
+    def mk_name(
+        cls, dtprop: DTNodeProperty, dt: DTModel, link_spec: bool = False
+    ) -> Text:
         """Make styled property name."""
         txt_name = TextUtil.mk_text(dtprop.name, DTShTheme.STYLE_DT_PROPERTY)
-        if link_spec and dtprop.path:
-            txt_name = TextUtil.link(txt_name, dtprop.path)
+        if link_spec:
+            fyaml = dt.find_property(dtprop.dtspec)
+            if fyaml:
+                txt_name = TextUtil.link(txt_name, str(fyaml.path))
         return txt_name
 
     @classmethod
@@ -1831,16 +1836,20 @@ class FormPropertySpec(FormLayout):
 
     _spec: DTPropertySpec
 
-    def __init__(self, spec: DTPropertySpec) -> None:
+    # Used to retrieve properties lineage.
+    _dt: DTModel
+
+    def __init__(self, spec: DTPropertySpec, dt: DTModel) -> None:
         super().__init__()
         self._spec = spec
+        self._dt = dt
         self._init_content()
 
     def _init_content(self) -> None:
         show_all: bool = _dtshconf.pref_form_show_all
 
         self.add_content("Name", self._mk_name())
-        self.add_content("From", self._mk_file())
+        self.add_content("Files", self._mk_files())
         self.add_content("Type", FormPropertySpec.mk_dttype(self._spec))
         self.add_content("Required", self._mk_required())
         self.add_content("Deprecated", self._mk_deprecated())
@@ -1890,20 +1899,35 @@ class FormPropertySpec(FormLayout):
             return TextUtil.mk_text(self._spec.specifier_space)
         return TextUtil.mk_apologies("No specifier space")
 
-    def _mk_file(self) -> Optional[Text]:
-        if not self._spec.path:
-            return TextUtil.mk_apologies("No specification file")
-        txt_file = TextUtil.mk_text(
-            os.path.basename(self._spec.path), DTShTheme.STYLE_YAML_INCLUDE
-        )
-        txt_file = TextUtil.link(txt_file, self._spec.path)
-        return txt_file
+    def _mk_files(self) -> Optional[RenderableType]:
+        lineage = self._dt.backtrack_property(self._spec)
+        if lineage.fyaml_last:
+            tree = Tree(
+                TextUtil.mk_pathname(
+                    lineage.fyaml_last.path,
+                    flabel=lineage.fyaml_last.path.name,
+                    linktype=_dtshconf.pref_form_actionable_type,
+                )
+            )
+            if lineage.fyaml_spec and (
+                lineage.fyaml_spec != lineage.fyaml_last
+            ):
+                tree.add(
+                    TextUtil.mk_pathname(
+                        lineage.fyaml_spec.path,
+                        flabel=lineage.fyaml_spec.path.name,
+                        linktype=_dtshconf.pref_form_actionable_type,
+                    )
+                )
+            return tree
+
+        return TextUtil.mk_apologies("Specifications not found")
 
 
 class ViewPropertyValueTable(TableLayout):
     """Table view for DT property values."""
 
-    def __init__(self, dtprops: Sequence[DTNodeProperty]) -> None:
+    def __init__(self, dtprops: Sequence[DTNodeProperty], dt: DTModel) -> None:
         """Initialize view.
 
         Args:
@@ -1917,7 +1941,7 @@ class ViewPropertyValueTable(TableLayout):
 
         for dtprop in dtprops:
             self.add_row(
-                NodePropertyMV.mk_name(dtprop, link_spec=True),
+                NodePropertyMV.mk_name(dtprop, dt, link_spec=True),
                 NodePropertyMV.mk_type(dtprop),
                 NodePropertyMV.mk_value(dtprop),
             )
@@ -2045,7 +2069,7 @@ class ViewNodeChildBindings(View):
 class ViewPropertySpecTable(TableLayout):
     """Table view for DT property specifications."""
 
-    def __init__(self, dtspecs: Sequence[DTPropertySpec]) -> None:
+    def __init__(self, dtspecs: Sequence[DTPropertySpec], dt: DTModel) -> None:
         """Initialize the view.
 
         Args:
@@ -2063,7 +2087,7 @@ class ViewPropertySpecTable(TableLayout):
             self.add_row(
                 self._mk_name(spec),
                 FormPropertySpec.mk_dttype(spec),
-                self._mk_description(spec),
+                self._mk_description(spec, dt),
             )
 
     def _mk_name(self, spec: DTPropertySpec) -> Text:
@@ -2074,16 +2098,21 @@ class ViewPropertySpecTable(TableLayout):
             TextUtil.dim(txt_name)
         return txt_name
 
-    def _mk_description(self, spec: DTPropertySpec) -> Optional[Text]:
+    def _mk_description(
+        self, spec: DTPropertySpec, dt: DTModel
+    ) -> Optional[Text]:
         if spec.description:
             txt_desc = TextUtil.mk_headline(
                 spec.description, DTShTheme.STYLE_DT_DESCRIPTION
             )
             if spec.deprecated:
                 TextUtil.dim(txt_desc)
-            if spec.path:
+            fyaml = dt.find_property(spec)
+            if fyaml:
                 txt_desc = TextUtil.link(
-                    txt_desc, spec.path, _dtshconf.pref_form_actionable_type
+                    txt_desc,
+                    str(fyaml.path),
+                    _dtshconf.pref_form_actionable_type,
                 )
             return txt_desc
         return None
@@ -2179,7 +2208,7 @@ class ViewNodeBinding(GridLayout):
         dtprops = node.binding.all_dtproperties()
         if dtprops:
             self.add_row(None)
-            self.add_row(ViewPropertySpecTable(dtprops))
+            self.add_row(ViewPropertySpecTable(dtprops, node.dt))
 
 
 class ViewYAMLContent(View):
