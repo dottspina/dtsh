@@ -11,9 +11,7 @@
 
 import os
 
-import pytest
-
-from dtsh.dts import DTS, YAMLFilesystem, YAMLFile
+from dtsh.dts import DTS
 
 from .dtsh_uthelpers import DTShTests
 
@@ -193,94 +191,3 @@ def test_dts_init_from_cmake_gnuarm() -> None:
         assert dts.toolchain
         assert "gnuarmemb" == dts.toolchain.variant
         assert DTShTests.ANON_GNUARMEMB == str(dts.toolchain.path)
-
-
-def test_yamlfs_find_path() -> None:
-    with DTShTests.from_res():
-        yamlfs = YAMLFilesystem(["yaml"])
-
-    assert yamlfs.find_path("notafile") is None
-
-    for name, path in [
-        ("power.yaml", DTShTests.get_resource_path("yaml", "power.yaml")),
-        (
-            "i2c-device.yaml",
-            DTShTests.get_resource_path("yaml", "i2c-device.yaml"),
-        ),
-        (
-            "sensor-device.yaml",
-            DTShTests.get_resource_path("yaml", "sensor-device.yaml"),
-        ),
-    ]:
-        assert path == yamlfs.find_path(name)
-
-
-def test_yamlfs_find_file() -> None:
-    with DTShTests.from_res():
-        yamlfs = YAMLFilesystem(["yaml"])
-
-    fyaml = yamlfs.find_file("i2c-device.yaml")
-    assert fyaml
-    assert DTShTests.get_resource_path("yaml", "i2c-device.yaml") == str(
-        fyaml.path.absolute()
-    )
-
-    # Opening a non existing file should not fault.
-    assert yamlfs.find_file("notafile") is None
-
-
-def test_yamlfs_name2path() -> None:
-    with DTShTests.from_res():
-        yamlfs = YAMLFilesystem(["yaml"])
-
-    assert {
-        "i2c-device.yaml": DTShTests.get_resource_path(
-            "yaml", "i2c-device.yaml"
-        ),
-        "power.yaml": DTShTests.get_resource_path("yaml", "power.yaml"),
-        "sensor-device.yaml": DTShTests.get_resource_path(
-            "yaml", "sensor-device.yaml"
-        ),
-    } == yamlfs.name2path
-
-    with pytest.raises(KeyError):
-        _ = yamlfs.name2path["notafile"]
-
-
-def test_dtshdts_yamlfs_find_path() -> None:
-    with DTShTests.from_res():
-        dts = DTS("zephyr.dts", ["yaml"])
-
-    assert DTShTests.get_resource_path(
-        "yaml", "sensor-device.yaml"
-    ) == dts.yamlfs.find_path("sensor-device.yaml")
-
-
-def test_dtshdts_yamlfs_find_file() -> None:
-    with DTShTests.from_res():
-        dts = DTS("zephyr.dts", ["yaml"])
-
-    yaml = dts.yamlfs.find_file("sensor-device.yaml")
-    assert yaml
-    assert DTShTests.get_resource_path("yaml", "sensor-device.yaml") == str(
-        yaml.path.absolute()
-    )
-
-
-def test_yamlfile() -> None:
-    yaml = YAMLFile(DTShTests.get_resource_path("yaml", "i2c-device.yaml"))
-
-    # Lazy initialzation.
-    assert yaml._content is None
-    assert yaml._raw is None
-    assert yaml._includes is None
-    assert yaml.content.startswith("# Copyright (c) 2017, Linaro Limited")
-    assert yaml.content.endswith("i2c bus")
-    assert "i2c" == yaml.raw["on-bus"]
-    assert ["base.yaml", "power.yaml"] == yaml.includes
-
-    # Fail-safe
-    yaml = YAMLFile("notafile")
-    assert "" == yaml.content
-    assert {} == yaml.raw
-    assert [] == yaml.includes
