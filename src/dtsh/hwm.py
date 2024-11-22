@@ -50,7 +50,7 @@ class HWMetaData:
     _text: str
 
     # Structured YAML content.
-    _raw: Dict[Any, Any] = {}
+    _raw: Dict[Any, Any]
 
     def __init__(self, path: Path) -> None:
         """Initialize metadata.
@@ -58,6 +58,7 @@ class HWMetaData:
         Args:
             path: Path to YAML file.
         """
+        self._raw = {}
         self._path = path
         if self._path.is_file():
             try:
