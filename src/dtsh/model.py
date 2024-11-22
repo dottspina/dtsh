@@ -48,7 +48,7 @@ import sys
 
 from devicetree import edtlib
 
-from dtsh.utils import YAMLFile
+from dtsh.utils import YAMLFile, PropertyLineage
 from dtsh.dts import DTS
 
 
@@ -1885,6 +1885,25 @@ class DTModel:
             reverse=reverse,
             enabled_only=enabled_only,
         )
+
+    def find_property(self, spec: DTPropertySpec) -> Optional[YAMLFile]:
+        """Find where the property was last modified."""
+        binding: Optional[DTBinding] = spec.binding
+        if not binding:
+            return None
+        return self._dts.yamlfs.find_property(
+            spec.name, binding.fyaml, binding.cb_depth
+        )
+
+    def backtrack_property(self, spec: DTPropertySpec) -> PropertyLineage:
+        """Find where the property was last modified."""
+        lineage = PropertyLineage()
+        binding: Optional[DTBinding] = spec.binding
+        if binding:
+            self._dts.yamlfs.backtrack_property(
+                lineage, spec.name, binding.fyaml, binding.cb_depth
+            )
+        return lineage
 
     def __contains__(self, pathname: str) -> bool:
         return pathname in self._nodes
