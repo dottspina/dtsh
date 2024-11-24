@@ -47,7 +47,9 @@ class DTShRichVT(DTShVT):
     def __init__(self) -> None:
         """Initialize VT."""
         super().__init__()
-        self._console = Console(theme=Theme(_theme.styles), highlight=False)
+        self._console = Console(
+            theme=Theme(_theme.styles), highlight=False, markup=False
+        )
         self._pager = None
 
     def write(self, *args: Any, **kwargs: Any) -> None:
@@ -150,6 +152,7 @@ class DTShOutputFile(DTShOutput):
         """Initialize console for commands output redirection."""
         self._console = Console(
             highlight=False,
+            markup=False,
             theme=Theme(_theme.styles),
             record=True,
             # Set the console's width to the configured maximum,
