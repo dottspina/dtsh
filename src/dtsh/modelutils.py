@@ -765,7 +765,19 @@ class DTSUtil:
             - DT type "phandle-array": e.g. < &ctrl-1 0x01 0x02 >, < &ctrl-2 0x01 0x02 >
         """
         value: DTNodeProperty.ValueType = prop.value
+        return cls.mk_value(value)
 
+    @classmethod
+    def mk_value(cls, value: DTNodeProperty.ValueType) -> str:
+        """Make a string representation of a property value that resembles
+        its DTS format.
+
+        Args:
+            value: The property value (DT).
+
+        Returns:
+            The property value as it could appear in the DTS.
+        """
         if isinstance(value, list):
             val0: Union[int, str, DTNode, DTNodePHandleData, None] = value[0]
 
@@ -784,12 +796,11 @@ class DTSUtil:
                 phandles: List[DTNode] = cast(List[DTNode], value)
                 return cls.mk_phandles(phandles)
 
-            if isinstance(val0, DTNodePHandleData):
-                # DTS "type: phandle-array".
-                phandle_array: List[DTNodePHandleData] = cast(
-                    List[DTNodePHandleData], value
-                )
-                return cls.mk_phandle_array(phandle_array)
+            # DTS "type: phandle-array".
+            phandle_array: List[DTNodePHandleData] = cast(
+                List[DTNodePHandleData], value
+            )
+            return cls.mk_phandle_array(phandle_array)
 
         if isinstance(value, bool):
             # DTS "type: boolean".
