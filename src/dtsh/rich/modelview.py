@@ -2019,23 +2019,8 @@ class ViewNodeChildBindings(View):
         if not binding:
             raise ValueError(node)
 
-        return (binding, self._get_bindings_ancestor(node) or binding)
-
-    def _get_bindings_ancestor(self, node: DTNode) -> Optional[DTBinding]:
-        bindings_ancestor: Optional[DTBinding] = None
-        p_node: Optional[DTNode] = node
-        while p_node and p_node.binding:
-            parent = p_node.parent
-            if (
-                parent
-                and parent.binding
-                and parent.binding.child_binding == p_node.binding
-            ):
-                bindings_ancestor = parent.binding
-                p_node = parent
-            else:
-                break
-        return bindings_ancestor
+        ancestor: Optional[DTBinding] = node.get_child_binding_ancestor()
+        return (binding, ancestor or binding)
 
     def _add_child_binding(self, binding: DTBinding, parent: Tree) -> Tree:
         anchor = parent.add(self._mk_anchor(binding))
