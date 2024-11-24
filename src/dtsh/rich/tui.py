@@ -36,6 +36,11 @@ class View:
       typically named ViewXXX
     """
 
+    PrintableType = Union[RenderableType | "View"]
+    """Represent anything we may print() to the console,
+    custom views, rich segments or ANSI strings.
+    """
+
     SUB = Text()
     """View placecholder (empty Text)."""
 
