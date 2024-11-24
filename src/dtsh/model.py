@@ -1397,6 +1397,37 @@ class DTNode(DTWalkable):
                 return node
         raise KeyError(name)
 
+    def get_child_binding_ancestor(self) -> Optional[DTBinding]:
+        """Retrieve the child-binding ancestor of this node's binding.
+
+        This is the binding this node's binding is recursively
+        a child-binding of.
+
+        This node's binding must be a child-binding.
+
+        Returns:
+            The child-binding ancestor or None the child-binding specification
+            is not inherited from the bindings of a parent node (e.g. when
+            the child-binding is specified by a compatible string).
+        """
+        if not (self.binding and self.binding.cb_depth):
+            return None
+
+        bindings_ancestor: Optional[DTBinding] = None
+        p_node: Optional[DTNode] = self
+        while p_node and p_node.binding:
+            parent = p_node.parent
+            if (
+                parent
+                and parent.binding
+                and parent.binding.child_binding == p_node.binding
+            ):
+                bindings_ancestor = parent.binding
+                p_node = parent
+            else:
+                break
+        return bindings_ancestor
+
     def walk(
         self,
         /,
