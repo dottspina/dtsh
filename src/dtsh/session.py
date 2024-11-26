@@ -203,12 +203,15 @@ class DTShSession:
 
                     finally:
                         if out is not self._vt:
-                            # Flush the file the command output
-                            # was redirected to, even on error.
-                            # Note that the shell (error) messages themselves
-                            # are always written to the session VT,
-                            # and never redirected.
-                            out.flush()
+                            # Flush the stream the command output
+                            # was redirected to: redirection streams are
+                            # expected to close their file on flush().
+                            # Note that DTSh error messages are always written
+                            # to the session VT, not to redirection streams.
+                            try:
+                                out.flush()
+                            except DTShRedirect.Error as e:
+                                self.on_redir2_error(e)
 
             # NOTE: Be sure to set prompt_sparse in preferences
             # when running batch sessions.
