@@ -32,7 +32,7 @@ from dtsh.config import DTShConfig
 from dtsh.io import DTShVT, DTShInput, DTShOutput, DTShRedirect
 
 from dtsh.rich.theme import DTShTheme
-from dtsh.rich.svg import SVGDocument
+from dtsh.rich.svg import SVGDocument, SVGFormat
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 _theme: DTShTheme = DTShTheme.getinstance()
@@ -360,6 +360,12 @@ class DTShOutputFileHtml(DTShOutputFile):
         while line and not line.startswith("</body>"):
             offset = self._out.tell()
             line = self._out.readline()
+
+        if not line.startswith("</body>"):
+            self._out.close()
+            raise DTShRedirect.Error(
+                "invalid HTML file format, redirection canceled"
+            )
         self._out.seek(offset, os.SEEK_SET)
 
 
@@ -478,11 +484,18 @@ class DTShOutputFileSVG(DTShOutputFile):
         svg_doc: SVGDocument
         if self._append:
             # Load the SVG content we're appending to.
-            svg_doc = SVGDocument(
-                self._out.read().splitlines(),
-                len(_dtshconf.pref_svg_title) > 0,
-                _dtshconf.pref_svg_decorations,
-            )
+            try:
+                svg_doc = SVGDocument(
+                    self._out.read().splitlines(),
+                    len(_dtshconf.pref_svg_title) > 0,
+                    _dtshconf.pref_svg_decorations,
+                )
+            except SVGFormat.Error as e:
+                self._out.close()
+                raise DTShRedirect.Error(
+                    "invalid SVG file format, redirection canceled"
+                ) from e
+
             self._out.seek(0, os.SEEK_SET)
             # Append the last command output capture.
             svg_doc.append(svg_capture)
