@@ -1907,6 +1907,7 @@ class FormPropertySpec(FormLayout):
                     lineage.fyaml_last.path,
                     flabel=lineage.fyaml_last.path.name,
                     linktype=_dtshconf.pref_form_actionable_type,
+                    style=DTShTheme.STYLE_DT_PROPERTY,
                 )
             )
             if lineage.fyaml_spec and (
@@ -1917,6 +1918,7 @@ class FormPropertySpec(FormLayout):
                         lineage.fyaml_spec.path,
                         flabel=lineage.fyaml_spec.path.name,
                         linktype=_dtshconf.pref_form_actionable_type,
+                        style=DTShTheme.STYLE_YAML_INCLUDE,
                     )
                 )
             return tree
@@ -3054,7 +3056,7 @@ class FormBoardInfo(FormLayout):
                 self._board.runner_metadata.text,
                 titlebar=titlebar,
             )
-        self.add_content("Twister Metadata", content)
+        self.add_content("Twister metadata", content)
 
 
 class FormBoardInfoV2(FormBoardInfo):
@@ -3072,9 +3074,12 @@ class FormBoardInfoV2(FormBoardInfo):
         self._init_twister_metadata()
         self._init_board_metadata()
 
+    def _init_board(self) -> None:
+        self.add_content("Target", BoardModelView.mk_board(self._board))
+
     def _init_board_v2(self) -> None:
         content: Optional[Text] = BoardModelView.mk_board_v2(self._board)
-        self.add_content("", content)
+        self.add_content("Board", content)
 
     def _init_revision(self) -> None:
         content: Optional[Text] = BoardModelView.mk_board_revision(self._board)
@@ -3084,7 +3089,7 @@ class FormBoardInfoV2(FormBoardInfo):
         content: Optional[Text] = BoardModelView.mk_full_name(
             self._board
         ) or BoardModelView.mk_runner_name(self._board)
-        self.add_content("Name", content)  # Or "unavailable".
+        self.add_content("Full name", content)  # Or "unavailable".
 
     def _init_board_metadata(self) -> None:
         content: Optional[Text | ViewYAMLContent] = None
@@ -3101,7 +3106,7 @@ class FormBoardInfoV2(FormBoardInfo):
                 content = ViewYAMLContent(
                     self._board.board_metadata.text, titlebar=titlebar
                 )
-        self.add_content("Board Metadata", content)
+        self.add_content("Board metadata", content)
 
 
 class FormSoCInfo(FormLayout):
@@ -3181,7 +3186,7 @@ class FormSoCInfo(FormLayout):
         content: Optional[Text] = BoardModelView.mk_runner_arch_type(
             self._board
         )
-        self.add_content("Architecture type", content)
+        self.add_content("Twister metadata", content)
 
     def _init_soc_svd(self) -> None:
         content: Optional[Text] = None
@@ -3239,7 +3244,7 @@ class FormSoCInfoV2(FormSoCInfo):
                 content = ViewYAMLContent(
                     self._board.soc_metadata.text, titlebar=titlebar
                 )
-        self.add_content("SoC Metadata", content)
+        self.add_content("SoC metadata", content)
 
 
 class KernelModelView:
@@ -3371,14 +3376,9 @@ class KernelModelView:
         if not toolchain.path:
             return None
 
-        style: StyleType
-        if toolchain.variant == DTShToolchain.ZEPHYR_SDK:
-            style = DTShTheme.STYLE_INF_ZEPHYR_SDK
-        else:
-            style = DTShTheme.STYLE_INF_TOOLCHAIN_DIR
         return TextUtil.mk_pathname(
             toolchain.path,
-            style=style,
+            style=DTShTheme.STYLE_INF_TOOLCHAIN_DIR,
             linktype=linktype,
         )
 
@@ -3427,12 +3427,10 @@ class KernelModelView:
         """
         if not toolchain.release:
             return None
-        style: StyleType
-        if toolchain.variant == DTShToolchain.ZEPHYR_SDK:
-            style = DTShTheme.STYLE_INF_ZEPHYR_SDK
-        else:
-            style = DTShTheme.STYLE_INF_TOOLCHAIN_RELEASE
-        return TextUtil.mk_text(toolchain.release, style=style)
+
+        return TextUtil.mk_text(
+            toolchain.release, style=DTShTheme.STYLE_INF_TOOLCHAIN_RELEASE
+        )
 
     @staticmethod
     def mk_toolchain(toolchain: DTShToolchain) -> Text:
@@ -3447,11 +3445,7 @@ class KernelModelView:
         txt_parts: List[Text]
         if toolchain.name:
             txt_name = KernelModelView.mk_toolchain_name(toolchain) or Text()
-            txt_variant = TextUtil.assemble(
-                "(",
-                KernelModelView.mk_toolchain_variant(toolchain),
-                ")",
-            )
+            txt_variant = TextUtil.mk_text(f"({toolchain.variant})")
             txt_parts = [txt_name, txt_variant]
         else:
             txt_parts = [KernelModelView.mk_toolchain_variant(toolchain)]
@@ -3550,8 +3544,14 @@ class FirmwareModelView:
         """
         if not dts.app_source_dir:
             return None
+
+        flabel: Optional[str] = None
+        if dts.zephyr_base:
+            flabel = dts.app_source_dir.replace(dts.zephyr_base, "ZEPHYR_BASE")
+
         return TextUtil.mk_pathname(
             Path(dts.app_source_dir),
+            flabel=flabel,
             style=DTShTheme.STYLE_INF_APP_SRC_DIR,
             linktype=linktype,
         )
