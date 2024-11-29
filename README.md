@@ -32,8 +32,6 @@ This branch (`dtsh-next`) mirrors and packages the new code base which serves as
 
 This is the branch that shall be installed, used and commented on: it is now the **default** branch of this repository.
 
-**Latest release**: DTSh [0.2.3](https://github.com/dottspina/dtsh/releases/tag/v0.2.3) ([PyPI](https://pypi.org/project/dtsh/0.2.3/)).
-
 > [!NOTE]
 > Although this branch *reflects* the state of the PR's [content](https://github.com/dottspina/zephyr/tree/rfc-dtsh), it's not an actual mirror:
 > - while the implementation in the RFC can *find* the [python-devicetree](https://github.com/zephyrproject-rtos/zephyr/tree/main/scripts/dts/python-devicetree) library the same way other [Zepyhr's devicetree tool](https://github.com/zephyrproject-rtos/zephyr/tree/main/scripts/dts) do, DTSh has to re-distribute snapshots of this library when published on PyPI (see [Possible multiple different versions of python-devicetree](https://github.com/dottspina/dtsh/issues/2))
@@ -89,12 +87,12 @@ user files:
 
 ```
 $ cd zephyr/samples/sensor/bme680
-$ west build -b nrf52840dk_nrf52840
+$ west build -b nrf52840dk/nrf52840
 ```
 
 > [!TIP]
-> - Actually building the sample is not necessary, the configuration phase is sufficient: `cmake -B build -DBOARD=nrf52840dk_nrf52840`
-> - Replace `nrf52840dk_nrf52840` with the *name* of the [board](https://docs.zephyrproject.org/latest/boards/index.html) you're interested in.
+> - Actually building the sample is not necessary, the configuration phase is sufficient: `cmake -B build -DBOARD=nrf52840dk/nrf52840`
+> - Replace `nrf52840dk/nrf52840` with the *name* of the [board](https://docs.zephyrproject.org/latest/boards/index.html) you're interested in.
 > - Replace `sensor/bme680` with any sample supported by your board.
 
 ### Open the devicetree
@@ -102,7 +100,7 @@ $ west build -b nrf52840dk_nrf52840
 ```
 $ cd zephyr/samples/sensor/bme680
 $ dtsh
-dtsh (0.2.3): A Devicetree Shell
+dtsh (0.2.4): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /

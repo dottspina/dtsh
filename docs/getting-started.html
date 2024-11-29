@@ -5,7 +5,7 @@
 <meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting Started Guide &mdash; DTSh 0.2.3 documentation</title>
+  <title>Getting Started Guide &mdash; DTSh 0.2.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -20,7 +20,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=a47416a6"></script>
+        <script src="_static/documentation_options.js?v=6ffd866b"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -50,7 +50,7 @@
             DTSh
           </a>
               <div class="version">
-                0.2.3
+                0.2.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -119,7 +119,7 @@
 <p>This simple guide covers DTSh’s installation, configuration and basic usage.</p>
 <section id="install-dtsh">
 <span id="dtsh-install"></span><h2>Install DTSh<a class="headerlink" href="#install-dtsh" title="Link to this heading"></a></h2>
-<p>DTSh runs on Linux, macOS and Windows with Python 3.8 to 3.11.</p>
+<p>DTSh runs on Linux, macOS and Windows with Python 3.10+.</p>
 <p>It can be installed in <em>some</em> Zephyr development environment,
 or standalone in any Python environment.</p>
 <div class="admonition warning">
@@ -127,7 +127,7 @@ or standalone in any Python environment.</p>
 <p>On <strong>Windows</strong>, the <a class="reference external" href="https://docs.python.org/fr/3.8/library/readline.html">readline API</a>, on which DTSh relies for auto-completion
 and command history, is no longer distributed with the Python Standard Library: as a consequence,
 the user experience will be significantly degraded on this platform.
-This is <a class="reference external" href="https://github.com/dottspina/dtsh/issues/3">known issue</a> without workaround.</p>
+This is a <a class="reference external" href="https://github.com/dottspina/dtsh/issues/3">known issue</a> without workaround.</p>
 <p>Prefer <a class="reference external" href="https://learn.microsoft.com/en-us/windows/wsl/">WSL</a> if possible.</p>
 </div>
 <section id="requirements">
@@ -173,7 +173,7 @@ This works but <a class="reference external" href="https://github.com/dottspina/
 </ul>
 <section id="install-alongside-west">
 <span id="dtsh-install-alongside"></span><h4>Install Alongside West<a class="headerlink" href="#install-alongside-west" title="Link to this heading"></a></h4>
-<p>This method installs DTSh in a Python virtual environment that belongs to a West workspace,
+<p>This method installs DTSh in a Python virtual environment that belongs to a West workspace
 (where the <cite>west</cite> command itself is installed, with other dependencies).</p>
 <p>Assuming you’ve followed Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/develop/getting_started/index.html">Getting Started Guide</a>,
 the workspace should look like this:</p>
@@ -258,9 +258,9 @@ the system hardware during the actual build phase.</p>
 in <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code> for <em>debugging</em> purpose.</p>
 <p>The typical DTSh’s use case is to open this DTS file generated at build-time, e.g.:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ cd zephyr/samples/sensor/bme680
-$ cmake -B build -DBOARD=nrf52840dk_nrf52840
+$ cmake -B build -DBOARD=nrf52840dk/nrf52840
 $ dtsh build/zephyr/zephyr.dts
-dtsh (0.2.3): A Devicetree Shell
+dtsh (0.2.4): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
@@ -283,7 +283,7 @@ How to exit: q, or quit, or exit, or press Ctrl-D
 </div>
 <p>The above example should <em>always</em> work:</p>
 <ul class="simple">
-<li><p>regardless of the installation method, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> being sufficient for the configuration phase</p></li>
+<li><p>regardless of the installation method (e.g. using <code class="docutils literal notranslate"><span class="pre">cmake</span></code> directly without West)</p></li>
 <li><p>regardless of whether <code class="docutils literal notranslate"><span class="pre">ZEPHYR_BASE</span></code> is set</p></li>
 <li><p>regardless of whether you target a <a class="reference external" href="https://docs.zephyrproject.org/latest/boards/index.html">supported board</a>
 or a <a class="reference external" href="https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#board-porting-guide">custom board</a></p></li>
@@ -324,21 +324,20 @@ $ dtsh /path/to/zephyr.dts
 </div>
 <p>This default behavior does not address all situations, though:</p>
 <ul class="simple">
-<li><p>you may need additional bindings files from a custom location,
-or explicitly set the <code class="docutils literal notranslate"><span class="pre">DTS_ROOT</span></code> CMake variable</p></li>
+<li><p>you may need additional bindings files from a custom location, which we can’t guess without the CMake cache</p></li>
 <li><p>you’re not working with Zephyr</p></li>
 </ul>
 <p>For these use cases, the <code class="docutils literal notranslate"><span class="pre">-b</span> <span class="pre">--bindings</span></code> option permits to explicitly enumerate all the directories
 to search in:</p>
-<blockquote>
-<div><p>$ dtsh –bindings dir1 –bindings dir2 foobar.dts</p>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dtsh --bindings dir1 --bindings dir2 foobar.dts
+</pre></div>
+</div>
 <p>Where:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">dir1</span></code> and <code class="docutils literal notranslate"><span class="pre">dir1</span></code>, and their sub-directories, shall contain all necessary YAML binding files
 in Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-syntax.html">Devicetree Binding Syntax</a>,
 even if not working with Zephyr</p></li>
-<li><p>one of these directories shall contain a valid vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
+<li><p>one of these directories may provide a vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
 </ul>
 </section>
 <section id="batch-mode">
@@ -355,7 +354,7 @@ even if not working with Zephyr</p></li>
 to another directory, before entering the interactive loop, you can use the
 following command:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ dtsh -c &quot;ls -l&quot; -c &quot;cd &amp;i2c0&quot; -i
-dtsh (0.2.3): A Devicetree Shell
+dtsh (0.2.4): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 &gt; Name              Labels          Binding

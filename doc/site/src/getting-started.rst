@@ -11,7 +11,7 @@ This simple guide covers DTSh's installation, configuration and basic usage.
 Install DTSh
 ************
 
-DTSh runs on Linux, macOS and Windows with Python 3.8 to 3.11.
+DTSh runs on Linux, macOS and Windows with Python 3.10+.
 
 It can be installed in *some* Zephyr development environment,
 or standalone in any Python environment.
@@ -21,7 +21,7 @@ or standalone in any Python environment.
    On **Windows**, the `readline API <Python readline_>`_, on which DTSh relies for auto-completion
    and command history, is no longer distributed with the Python Standard Library: as a consequence,
    the user experience will be significantly degraded on this platform.
-   This is `known issue <DTSh-Issue gnureadline_>`_ without workaround.
+   This is a `known issue <DTSh-Issue gnureadline_>`_ without workaround.
 
    Prefer `WSL <WSL_>`_ if possible.
 
@@ -86,7 +86,7 @@ There are basically two types of installation:
 Install Alongside West
 ----------------------
 
-This method installs DTSh in a Python virtual environment that belongs to a West workspace,
+This method installs DTSh in a Python virtual environment that belongs to a West workspace
 (where the `west` command itself is installed, with other dependencies).
 
 Assuming you've followed Zephyr's `Getting Started Guide <Zephyr-Getting Started_>`_,
@@ -189,9 +189,9 @@ The typical DTSh's use case is to open this DTS file generated at build-time, e.
 .. code-block:: none
 
    $ cd zephyr/samples/sensor/bme680
-   $ cmake -B build -DBOARD=nrf52840dk_nrf52840
+   $ cmake -B build -DBOARD=nrf52840dk/nrf52840
    $ dtsh build/zephyr/zephyr.dts
-   dtsh (0.2.3): A Devicetree Shell
+   dtsh (0.2.4): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    /
@@ -213,7 +213,7 @@ The typical DTSh's use case is to open this DTS file generated at build-time, e.
 
 The above example should *always* work:
 
-- regardless of the installation method, ``cmake`` being sufficient for the configuration phase
+- regardless of the installation method (e.g. using ``cmake`` directly without West)
 - regardless of whether ``ZEPHYR_BASE`` is set
 - regardless of whether you target a `supported board <Zephyr-Boards_>`_
   or a `custom board <Zephyr-Board Porting Guide_>`_
@@ -256,12 +256,11 @@ the most simple use cases (e.g. Zephyr samples).
 
 This default behavior does not address all situations, though:
 
-- you may need additional bindings files from a custom location,
-  or explicitly set the ``DTS_ROOT`` CMake variable
+- you may need additional bindings files from a custom location, which we can't guess without the CMake cache
 - you're not working with Zephyr
 
 For these use cases, the ``-b --bindings`` option permits to explicitly enumerate all the directories
-to search in:
+to search in::
 
    $ dtsh --bindings dir1 --bindings dir2 foobar.dts
 
@@ -270,7 +269,7 @@ Where:
 - ``dir1`` and ``dir1``, and their sub-directories, shall contain all necessary YAML binding files
   in Zephyr's `Devicetree Binding Syntax <Zephyr-Binding Syntax_>`_,
   even if not working with Zephyr
-- one of these directories shall contain a valid vendors file, e.g. ``dir1/vendor-prefixes.txt``
+- one of these directories may provide a vendors file, e.g. ``dir1/vendor-prefixes.txt``
 
 
 Batch Mode
@@ -290,7 +289,7 @@ following command:
 .. code-block:: none
 
    $ dtsh -c "ls -l" -c "cd &i2c0" -i
-   dtsh (0.2.3): A Devicetree Shell
+   dtsh (0.2.4): A Devicetree Shell
    How to exit: q, or quit, or exit, or press Ctrl-D
 
    > Name              Labels          Binding

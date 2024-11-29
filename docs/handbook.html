@@ -5,7 +5,7 @@
 <meta content="zephyr, devicetree, dts, viewer, user interface" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DTSh’s Handbook &mdash; DTSh 0.2.3 documentation</title>
+  <title>DTSh’s Handbook &mdash; DTSh 0.2.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -20,7 +20,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=a47416a6"></script>
+        <script src="_static/documentation_options.js?v=6ffd866b"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -51,7 +51,7 @@
             DTSh
           </a>
               <div class="version">
-                0.2.3
+                0.2.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -149,11 +149,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#dtsh-chosen-examples">Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#board">board</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#dtsh-board-options">Options</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dtsh-board-examples">Examples</a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="#uname">uname</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dtsh-uname-options">Options</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dtsh-uname-examples">Examples</a></li>
@@ -217,10 +212,10 @@
              
   <section id="dtsh-s-handbook">
 <span id="dtsh-handbook"></span><h1>DTSh’s Handbook<a class="headerlink" href="#dtsh-s-handbook" title="Link to this heading"></a></h1>
-<figure class="align-center" id="id19">
+<figure class="align-center" id="id17">
 <a class="reference internal image-reference" href="_images/buses.png"><img alt="Buses" src="_images/buses.png" style="width: 100%;" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id19" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--on-bus</span> <span class="pre">*</span> <span class="pre">--OR</span> <span class="pre">--with-bus</span> <span class="pre">*</span> <span class="pre">-T</span> <span class="pre">--format</span> <span class="pre">NYCd</span></code></span><a class="headerlink" href="#id17" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <section id="usage">
@@ -256,12 +251,12 @@ session control:
 Zephyr <em>assembles</em> the final <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html">devicetree</a> that will represent
 the system hardware during the actual build phase.</p>
 <p>This devicetree is saved in <a class="reference external" href="https://devicetree-specification.readthedocs.io/en/latest/chapter6-source-language.html">Devicetree Source Format</a> (DTS)
-in <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code> for <em>debugging</em> purpose.</p>
+as <code class="docutils literal notranslate"><span class="pre">build/zephyr/zephyr.dts</span></code> for <em>debugging</em> purpose.</p>
 <p>The typical DTSh’s use case is to open this DTS file generated at build-time, e.g.:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ cd zephyr/samples/sensor/bme680
-$ cmake -B build -DBOARD=nrf52840dk_nrf52840
+$ cmake -B build -DBOARD=nrf52840dk/nrf52840
 $ dtsh build/zephyr/zephyr.dts
-dtsh (0.2.3): A Devicetree Shell
+dtsh (0.2.4): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
@@ -284,13 +279,13 @@ How to exit: q, or quit, or exit, or press Ctrl-D
 </div>
 <p>The above example should <em>always</em> work:</p>
 <ul class="simple">
-<li><p>regardless of the installation method, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> being sufficient for the configuration phase</p></li>
+<li><p>regardless of the installation method (e.g. using <code class="docutils literal notranslate"><span class="pre">cmake</span></code> directly without West)</p></li>
 <li><p>regardless of whether <code class="docutils literal notranslate"><span class="pre">ZEPHYR_BASE</span></code> is set</p></li>
 <li><p>regardless of whether you target a <a class="reference external" href="https://docs.zephyrproject.org/latest/boards/index.html">supported board</a>
 or a <a class="reference external" href="https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#board-porting-guide">custom board</a></p></li>
 </ul>
-<p>Here, DTSh retrieves <em>all it needs</em>, and especially where to search for the bindings files,
-from the CMake cache content in <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>:</p>
+<p>Here, DTSh retrieves <em>all it needs</em>, and especially where to search for the
+binding files, from the CMake cache content in <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build/
 ├── CMakeCache.txt
 └── zephyr/
@@ -325,21 +320,21 @@ $ dtsh /path/to/zephyr.dts
 </div>
 <p>This default behavior does not address all situations, though:</p>
 <ul class="simple">
-<li><p>you may need additional bindings files from a custom location,
-or explicitly set the <code class="docutils literal notranslate"><span class="pre">DTS_ROOT</span></code> CMake variable</p></li>
+<li><p>you may need additional binding files from a custom location,
+which we can’t guess without the CMake cache</p></li>
 <li><p>you’re not working with Zephyr</p></li>
 </ul>
 <p>For these use cases, the <code class="docutils literal notranslate"><span class="pre">-b</span> <span class="pre">--bindings</span></code> option permits to explicitly enumerate all the directories
 to search in:</p>
-<blockquote>
-<div><p>$ dtsh –bindings dir1 –bindings dir2 foobar.dts</p>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dtsh --bindings dir1 --bindings dir2 foobar.dts
+</pre></div>
+</div>
 <p>Where:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">dir1</span></code> and <code class="docutils literal notranslate"><span class="pre">dir1</span></code>, and their sub-directories, shall contain all necessary YAML binding files
 in Zephyr’s <a class="reference external" href="https://docs.zephyrproject.org/latest/build/dts/bindings-syntax.html">Devicetree Binding Syntax</a>,
 even if not working with Zephyr</p></li>
-<li><p>one of these directories shall contain a valid vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
+<li><p>one of these directories may provide a valid vendors file, e.g. <code class="docutils literal notranslate"><span class="pre">dir1/vendor-prefixes.txt</span></code></p></li>
 </ul>
 </section>
 <section id="configuration">
@@ -507,10 +502,10 @@ to the file <code class="docutils literal notranslate"><span class="pre">flash.s
 &gt; ls --format naLrC &amp;flash0/partitions &gt;&gt; flash.svg
 </pre></div>
 </div>
-<figure class="align-center" id="id20">
+<figure class="align-center" id="id18">
 <a class="reference internal image-reference" href="_images/flash.svg"><img alt="flash.svg" src="_images/flash.svg" width="100%" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">flash.svg</span></code></span><a class="headerlink" href="#id20" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">flash.svg</span></code></span><a class="headerlink" href="#id18" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <div class="admonition note">
@@ -528,13 +523,27 @@ preferences (see <a class="reference internal" href="#dtsh-prefs-fs"><span class
 </pre></div>
 </div>
 </div>
-<p><a class="reference internal" href="#dtsh-prefs-redir2fs"><span class="std std-ref">Output redirection preferences</span></a> allow basic configuration
-of <em>exported</em> content.</p>
+<p>When redirecting to <em>styled</em> outputs (HTML, SVG), the final appearance is determined by:</p>
+<ul class="simple">
+<li><p>the colors and font effects (e.g. <em>italic</em>) used by DTSh to style commands output,
+which can be thoroughly configured with <a class="reference internal" href="#dtsh-themes"><span class="std std-ref">user themes</span></a></p></li>
+<li><p>but also an HTML/SVG theme, setting basics like the default foreground and background colors,
+which can be changed in user preferences (<code class="docutils literal notranslate"><span class="pre">pref.{html,svg}.theme</span></code>)</p></li>
+</ul>
+<p>By default, the HTML and SVG files generated by DTSh will have the same appearance,
+and correspond to reading in a console with a dark color profile.</p>
+<p>All of this doesn’t always come together very well, e.g. when it comes to printing:</p>
+<ul class="simple">
+<li><p>a lighter background color, or no background color at all, would probably better fit</p></li>
+<li><p>but then, you won’t want DTSh to style some outputs with too light foreground colors</p></li>
+</ul>
+<p>The recommended approach is to craft specialized <a class="reference internal" href="#dtsh-themes"><span class="std std-ref">theme</span></a> and <a class="reference internal" href="#dtsh-preferences"><span class="std std-ref">preferences</span></a> files for these particular use cases.</p>
+<p>Refer to <a class="reference internal" href="#dtsh-prefs-redir2fs"><span class="std std-ref">Output redirection preferences</span></a> for all available options.</p>
 </section>
 </section>
 <section id="format-commands-output">
 <span id="dtsh-format-output"></span><h3>Format Commands Output<a class="headerlink" href="#format-commands-output" title="Link to this heading"></a></h3>
-<p>We here consider the DTSh commands that will eventually enumerate devicetree nodes,
+<p>We here first consider the DTSh commands that will eventually enumerate devicetree nodes,
 like <em>shell</em> commands may list files or directories.</p>
 <p>Nodes may be represented:</p>
 <ul class="simple">
@@ -552,8 +561,11 @@ through the <code class="docutils literal notranslate"><span class="pre">FMT</sp
 <li><p><code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code> implies <code class="docutils literal notranslate"><span class="pre">-l</span></code></p></li>
 <li><p>what the <code class="docutils literal notranslate"><span class="pre">-l</span></code> option alone will show depends on configurable defaults</p></li>
 </ul>
-<p>Formatted outputs include <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">list</span></a>
-and <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">tree</span></a> views.</p>
+<p>Such formatted outputs include <a class="reference internal" href="#dtsh-formatted-lists"><span class="std std-ref">list</span></a>
+and <a class="reference internal" href="#dtsh-formatted-trees"><span class="std std-ref">tree</span></a> views produced by <code class="docutils literal notranslate"><span class="pre">alias</span></code>, <code class="docutils literal notranslate"><span class="pre">chosen</span></code>, <code class="docutils literal notranslate"><span class="pre">ls</span></code>, <code class="docutils literal notranslate"><span class="pre">find</span></code> and <code class="docutils literal notranslate"><span class="pre">tree</span></code>.
+They use <em>styles</em> (colors, font effects) and special characters (box drawing) to represent <em>things</em>.</p>
+<p>For commands that do not format node lists or trees, and thus do not support <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">FMT</span></code>,
+<code class="docutils literal notranslate"><span class="pre">-l</span></code> still switches to such <em>rich</em> outputs using styles and formatting, and generally more detailed command responses.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>DTSh is a bit biased toward POSIX shells’ users, for who it should make sense to default
@@ -568,7 +580,7 @@ on a per-command basis</p></li>
 <code class="docutils literal notranslate"><span class="pre">-l</span></code> flag will then be implied wherever supported, and outputs will be formatted
 according to configurable defaults.
 Although <code class="docutils literal notranslate"><span class="pre">--format</span></code> will still permit to select columns on a per-command basis,
-there’s no syntax to get the POSIX-like output when this preference is set.</p>
+there’s no syntax to get the POSIX-like output back when this preference is set.</p>
 </div>
 <section id="format-strings">
 <span id="dtsh-fmtstr"></span><h4>Format Strings<a class="headerlink" href="#format-strings" title="Link to this heading"></a></h4>
@@ -584,8 +596,8 @@ each of which appending a <em>column</em> to the formatted output.</p>
  ficr@10000000                  Nordic FICR (Factory Information Configuration Registers)
 </pre></div>
 </div>
-<table class="docutils align-center" id="id21">
-<caption><span class="caption-text">Format string specifiers</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id19">
+<caption><span class="caption-text">Format string specifiers</span><a class="headerlink" href="#id19" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
 <td><p>unit address</p></td>
@@ -735,8 +747,8 @@ when walking through the DTS file.</p>
 <section id="sort-keys">
 <span id="dtsh-sort-keys"></span><h4>Sort Keys<a class="headerlink" href="#sort-keys" title="Link to this heading"></a></h4>
 <p>A sort <em>key</em> identifies an node order relationship.</p>
-<table class="docutils align-center" id="id22">
-<caption><span class="caption-text">Sort keys</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id20">
+<caption><span class="caption-text">Sort keys</span><a class="headerlink" href="#id20" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
 <td><p>sort by unit address</p></td>
@@ -897,8 +909,8 @@ a <em>plain text search</em> happens.</p>
 <p class="admonition-title">Tip</p>
 <p>When the command option <code class="docutils literal notranslate"><span class="pre">-i</span></code> is set, text patterns are assumed case-insensitive.</p>
 </div>
-<table class="docutils align-center" id="id23">
-<caption><span class="caption-text">Text-based criteria</span><a class="headerlink" href="#id23" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id21">
+<caption><span class="caption-text">Text-based criteria</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--also-known-as</span></code></p></td>
 <td><p>match labels or aliases</p></td>
@@ -975,8 +987,8 @@ whose size is greater than 4 kB</p></li>
 </pre></div>
 </div>
 </div>
-<table class="docutils align-center" id="id24">
-<caption><span class="caption-text">Integer-based criteria</span><a class="headerlink" href="#id24" title="Link to this table"></a></caption>
+<table class="docutils align-center" id="id22">
+<caption><span class="caption-text">Integer-based criteria</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-dts-ord</span></code></p></td>
 <td><p>match dependency ordinal</p></td>
@@ -1056,6 +1068,8 @@ are valid syntax for the same semantic, not different predicates:</p>
 <li><p>the <code class="docutils literal notranslate"><span class="pre">-i</span> <span class="pre">--interactive</span></code> option permits to enter the interactive loop
 after they have been executed (the default is to exit <code class="docutils literal notranslate"><span class="pre">dtsh</span></code>)</p></li>
 </ul>
+<p>A typical use of batch commands or files is for automatic generation
+of documentation.</p>
 <section id="batch-commands">
 <span id="dtsh-batch-cmds"></span><h4>Batch Commands<a class="headerlink" href="#batch-commands" title="Link to this heading"></a></h4>
 <p>Providing DTSh command lines as program arguments is appropriate for executing
@@ -1084,21 +1098,24 @@ e.g.:</p>
 <ol class="arabic simple">
 <li><p>a command is executed, and its output is paged</p></li>
 <li><p>speaker can talk with the command’s output as supporting <em>slide</em></p></li>
-<li><p>speaker exits the pager (<kbd class="kbd docutils literal notranslate">q</kbd>) to advance to the next command, i.e. the next slide</p></li>
+<li><p>speaker exits the pager (<kbd class="kbd docutils literal notranslate">q</kbd>) to advance to the next command,
+i.e. the next slide</p></li>
 </ol>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># presentation.dtsh: DTSh sample script</span>
 
-<span class="c1"># Start with the tree of buses and connected devices: speaker will press &quot;q&quot;  when done</span>
+<span class="c1"># Start with the tree of buses and connected devices: speaker will</span>
+<span class="c1"># press &quot;q&quot; when done</span>
 find<span class="w"> </span>--with-bus<span class="w"> </span>*<span class="w"> </span>--OR<span class="w"> </span>--on-bus<span class="w"> </span>*<span class="w"> </span>--format<span class="w"> </span>NYcd<span class="w"> </span>-T<span class="w"> </span>--pager
 
 <span class="c1"># Let&#39;s look at the Flash partitions.</span>
 <span class="c1">#</span>
-<span class="c1"># 1st, the controller: : speaker will press &quot;q&quot;  when done</span>
+<span class="c1"># 1st, the controller: : speaker will press &quot;q&quot; when done</span>
 cat<span class="w"> </span><span class="p">&amp;</span>flash_controller<span class="w"> </span>-A<span class="w"> </span>--pager
-<span class="c1"># Then partitions with addresses and sizes: speaker will press &quot;q&quot;  when done</span>
+<span class="c1"># Then partitions with addresses and sizes: speaker will press &quot;q&quot;</span>
+<span class="c1"># when done</span>
 tree<span class="w"> </span><span class="p">&amp;</span>flash_controller<span class="w"> </span>--format<span class="w"> </span>NrC<span class="w"> </span>--pager
 
-<span class="c1"># Lets talk about DTS labels: speaker will press &quot;q&quot;  when done</span>
+<span class="c1"># Lets talk about DTS labels: speaker will press &quot;q&quot; when done</span>
 find<span class="w"> </span>--with-label<span class="w"> </span>*<span class="w"> </span>-l<span class="w"> </span>--pager
 </pre></div>
 </div>
@@ -1122,8 +1139,9 @@ navigate the command history to re-open <em>slides</em> while answering question
 <li><p>DTSh loads default values for all defined configuration options</p></li>
 <li><p>if a user preferences file exists, e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/dtsh.ini</span></code> on GNU Linux,
 it’s loaded, overriding the default values with the options it contains</p></li>
-<li><p>if an additional preferences file is specified with the West command option <code class="docutils literal notranslate"><span class="pre">--preferences</span></code>,
-it’s eventually loaded, overriding previous values with the options it contains</p></li>
+<li><p>if an additional preferences file is specified with the command
+option <code class="docutils literal notranslate"><span class="pre">--preferences</span></code>, it’s eventually loaded, overriding previous values
+with the options it contains</p></li>
 </ol>
 <p>See also <a class="reference internal" href="#dtsh-configuration"><span class="std std-ref">Configuration</span></a>.</p>
 <section id="general-preferences">
@@ -1134,7 +1152,7 @@ it’s eventually loaded, overriding previous values with the options it contain
 <p>Default: No</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">pref.sizes_si</span></code></dt><dd><p>Whether to print sizes in SI units (bytes, kB, MB, GB).</p>
-<p>Sizes are otherwise printed in hexadecimal format.</p>
+<p>Sizes are otherwise printed in hexadecimal bytes.</p>
 <p>Default: Yes</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">pref.hex_upper</span></code></dt><dd><p>Whether to print hexadecimal digits upper case (e.g. <code class="docutils literal notranslate"><span class="pre">OXFF</span></code> rather than <code class="docutils literal notranslate"><span class="pre">0xff</span></code>).</p>
@@ -1163,14 +1181,14 @@ it’s eventually loaded, overriding previous values with the options it contain
 </dl>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>To simply change the prompt character (Unicode <code class="docutils literal notranslate"><span class="pre">U+276D</span></code>), no need to actually mess with
-the ANSI strings, just set <code class="docutils literal notranslate"><span class="pre">prompt.wchar</span></code> to your liking.</p>
+<p>To simply change the prompt character (Unicode <code class="docutils literal notranslate"><span class="pre">U+276D</span></code>), no need to
+actually mess with the ANSI strings, just set <code class="docutils literal notranslate"><span class="pre">prompt.wchar</span></code> to your liking.</p>
 </div>
 </section>
 <section id="file-system-access">
 <span id="dtsh-prefs-fs"></span><h4>File System Access<a class="headerlink" href="#file-system-access" title="Link to this heading"></a></h4>
 <dl>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.fs.hide_dotted</span></code></dt><dd><p>Whether to hide files and directories whose name starts with “.”.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.fs.hide_dotted</span></code></dt><dd><p>Whether to hide files and directories whose name starts with <code class="docutils literal notranslate"><span class="pre">.</span></code>.</p>
 <p>These are commonly hidden file system entries on POSIX-like systems.</p>
 <p>Default: Yes</p>
 </dd>
@@ -1191,80 +1209,151 @@ even for appending.</p>
 <span id="id1"></span><h4>Output Redirection<a class="headerlink" href="#dtsh-prefs-redir2fs" title="Link to this heading"></a></h4>
 <dl>
 <dt><code class="docutils literal notranslate"><span class="pre">pref.redir2.maxwidth</span></code></dt><dd><p>Maximum width in number of characters for command output redirection.</p>
-<p>VT-like terminals do not scroll horizontally, and will crop or wrap what’s printed
-to match the current terminal width.</p>
+<p>VT-like terminals do not scroll horizontally, and will crop or wrap what’s
+printed to match the current terminal width.</p>
 <p>When redirecting commands output to files, this may unnecessarily limit the width
 of the produced documents (SVG, HTML and plain text): these will be used in viewers
 (e.g. a text editor or Web brower) that can handle outputs significantly wider
 than the current width of the console (e.g. with horizontal scrolling).</p>
-<p>This preference configures the maximum width of the virtual console
-DTSh will actually redirect the command’s output to.</p>
+<p>This preference configures the maximum width, in number of characters,
+of the virtual console DTSh will actually redirect the command’s output to.</p>
 <p>Default: 255</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.html.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting commands output
-to HTML files.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting command
+outputs to HTML files.</p>
 <p>Possible values:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG documents (dark background, light text)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: default theme for HTML documents (light background, dark text)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dark</span></code>: darker</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">light</span></code>: lighter</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">night</span></code>: darkest, highest contrasts</p></li>
-</ul>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">html</span></code></p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.html.font_family</span></code></dt><dd><p>Preferred font to use when redirecting commands output
-to HTML files.</p>
-<p>This the family name, e.g. “Courier New”.</p>
-<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier New”.</p>
-<p>The generic “monospace” family is automatically appended as fallback.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">Courier</span> <span class="pre">New</span></code> ()</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting commands output
-to SVG files.</p>
-<p>Possible values:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG documents (dark background, light text)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: default theme for HTML documents (light background, dark text)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG and HTML documents
+(looks like reading in a console with a dark color profile)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: theme recommended for printable HTML documents (no background)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">dark</span></code>: darker</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">light</span></code>: lighter</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">night</span></code>: darkest, highest contrasts</p></li>
 </ul>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">svg</span></code></p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_family</span></code></dt><dd><p>Preferred font to use when redirecting commands output
-to SVG files.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.font_family</span></code></dt><dd><p>Preferred font to use when redirecting command outputs to HTML files.</p>
 <p>This the family name, e.g. “Courier New”.</p>
-<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier New”.</p>
-<p>The generic “monospace” family is automatically appended as fallback.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">Courier</span> <span class="pre">New</span></code></p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_ratio</span></code></dt><dd><p>Font aspect ratio to use when redirecting commands output
-to SVG files.</p>
-<p>This is the width to height ratio, which varies with fonts.</p>
-<p>Most monospace fonts will render fine with a 3:5 ratio.</p>
-<p>Default: 0.6</p>
-</dd>
-</dl>
+<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier”</p>
+<p>The generic <code class="docutils literal notranslate"><span class="pre">monospace</span></code> family is automatically appended last.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>The default “Courier New” may not render as well as other monospace fonts you’re used,
-e.g. within your Terminal application,
-but should be available <em>everywhere</em> (<a class="reference external" href="https://www.w3schools.com/csSref/css_websafe_fonts.php">Web Safe Fonts</a>): it’s chosen for correctness.</p>
-<p>You can safely override this preference.</p>
+<p>Choosing a font family:</p>
+<ul class="simple">
+<li><p>the “Courier New” font family is installed nearly everywhere,
+but will unlikely provide all box drawing characters required
+to properly render (sharp) trees and tables</p></li>
+<li><p>“DejaVu Sans Mono” is almost as widespread, and trees and tables
+should render fine, at least for the default HTML font size (<code class="docutils literal notranslate"><span class="pre">medium</span></code>)</p></li>
+<li><p>fonts families like “Source Code Pro” are quite popular among software engineers,
+and may offer better rendering for non default font sizes</p></li>
+</ul>
+<p>The HTML client should pick up the first font it finds: to use the
+default monospace font configured in e.g. your browser’s settings,
+just leave this preference empty.</p>
 </div>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">DejaVu</span> <span class="pre">Sans</span> <span class="pre">Mono</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.font_size</span></code></dt><dd><p>Preferred font size to use when redirecting command outputs to HTML files.</p>
+<p>Any valid value for CSS <code class="docutils literal notranslate"><span class="pre">font-size:</span></code> is allowed, e.g.:</p>
+<ul class="simple">
+<li><p>predefined absolute sizes, e.g.: <code class="docutils literal notranslate"><span class="pre">xx-small</span></code>, <code class="docutils literal notranslate"><span class="pre">medium</span></code>, <code class="docutils literal notranslate"><span class="pre">xxx-large</span></code></p></li>
+<li><p>relative sizes, e.g.: <code class="docutils literal notranslate"><span class="pre">smaller</span></code>, <code class="docutils literal notranslate"><span class="pre">larger</span></code></p></li>
+<li><p>arbitrary absolute values: <code class="docutils literal notranslate"><span class="pre">18px</span></code>, <code class="docutils literal notranslate"><span class="pre">0.8em</span></code></p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">medium</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.html.compact</span></code></dt><dd><p>By default, DTSh will insert a blank line between command outputs when appending
+to an existing file.</p>
+<p>Although this is necessary when redirecting to raw text files, this seems
+like too much when formatting to HTML, where successive command outputs
+are already rendered as successive paragraphs (<code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;</span></code>).</p>
+<p>When this preference is set, DTSh won’t separate successive captured commands
+by an additional blank line.</p>
+<p>Default: Yes</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.theme</span></code></dt><dd><p>Preferred default text and background colors to use when redirecting
+command outputs to SVG files.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">svg</span></code>: default theme for SVG and HTML documents
+(looks like reading in a console with a dark color profile)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code>: theme recommended for printable HTML documents (no background)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dark</span></code>: darker</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">light</span></code>: lighter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">night</span></code>: darkest, highest contrasts</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">svg</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_family</span></code></dt><dd><p>Preferred font to use when redirecting command outputs to SVG files.</p>
+<p>This the family name, e.g. “Courier New”.</p>
+<p>Multiple coma separated values allowed, e.g. “Source Code Pro, Courier New”.</p>
+<p>The generic <code class="docutils literal notranslate"><span class="pre">monospace</span></code> family is automatically appended as fallback.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>“Fira Code” is the default font expected by the rich API
+when exporting to SVG:</p>
+<ul class="simple">
+<li><p>it’s thus well tested</p></li>
+<li><p>the complete CSS specification (faces definitions, reliable source URL
+from which to download the actual fonts) is included in the SVG format
+string of the rich library</p></li>
+<li><p>but keep in mind that this CSS specification will be lost
+if the SVG file is used in an HTML <code class="docutils literal notranslate"><span class="pre">&lt;img&gt;</span></code> tag</p></li>
+</ul>
+</div>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">Fira</span> <span class="pre">Code,</span> <span class="pre">DejaVu</span> <span class="pre">Sans</span> <span class="pre">Mono</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.font_ratio</span></code></dt><dd><p>Font aspect ratio to use when redirecting command outputs to SVG files.</p>
+<p>This is the width to height ratio, which varies with fonts.</p>
+<p>Most monospace fonts will render fine with a 3:5 ratio.</p>
+<p>Default: 0.61 (Fira Code)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.title</span></code></dt><dd><p>An optional title to use in SVG files.
+If appending, the title won’t repeat nor change.</p>
+<p>Default: No title</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.decorations</span></code></dt><dd><p>Whether to decorate the SVG output with macOS-like window buttons.
+If appending, the window decoration won’t repeat.</p>
+<p>Default: No</p>
+</dd>
+</dl>
+<figure class="align-center" id="id23">
+<a class="reference internal image-reference" href="_images/macos-like-buttons.svg"><img alt="macos-like-buttons.svg" src="_images/macos-like-buttons.svg" width="100%" /></a>
+<figcaption>
+<p><span class="caption-text">SVG redirection with a title and macOS-like window buttons</span><a class="headerlink" href="#id23" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.svg.compact</span></code></dt><dd><p>By default, DTSh will insert a blank line between commands output when appending
+to an existing file.</p>
+<p>Although this is necessary when redirecting to raw text files, this may seem
+like too much with formatted contents such as SVG, which already includes
+some margins and padding.</p>
+<p>Compact output won’t separate successive captured commands by
+an additional blank line.</p>
+<p>Default: No</p>
+</dd>
+</dl>
 </section>
 <section id="syntax-highlighting">
 <span id="dtsh-prefs-highlighting"></span><h4>Syntax Highlighting<a class="headerlink" href="#syntax-highlighting" title="Link to this heading"></a></h4>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When redirecting commands output to HTML or SVG files,
+configure a syntax highlighting theme (aka Pygments) matching
+the HTML or SVG default background color.</p>
+<p>See also <a class="reference internal" href="faq-and-tips.html#dtsh-tips-html-backgrounds"><span class="std std-ref">Mismatched HTML backgrounds</span></a> in FAQ &amp; Tips.</p>
+</div>
 <dl>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.dts.theme</span></code></dt><dd><p>Pygment theme for DTS syntax highlighting.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.dts.theme</span></code></dt><dd><p>Pygments theme for DTS syntax highlighting.</p>
 <p>E.g.:</p>
 <ul class="simple">
 <li><p>dark: “monokai”, “dracula”, “material”</p></li>
 <li><p>light: “bw”, “sas”, “arduino”</p></li>
 </ul>
 <p>See <a class="reference external" href="https://pygments.org/styles/">Pygments styles</a>.</p>
-<p>Default: monokai</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">monokai</span></code></p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">pref.yaml.theme</span></code></dt><dd><p>Pygments theme for YAML syntax highlighting.</p>
 <p>E.g.:</p>
@@ -1273,7 +1362,17 @@ but should be available <em>everywhere</em> (<a class="reference external" href=
 <li><p>light: “bw”, “sas”, “arduino”</p></li>
 </ul>
 <p>See <a class="reference external" href="https://pygments.org/styles/">Pygments styles</a>.</p>
-<p>Default: monokai</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">monokai</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.yaml.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">hyperlinks</span></a> to included YAML files.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link</span></code>: let the terminal alone handle the rendering,
+typically with a dashed line bellow the text to link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alt</span></code>: append an alternative actionable view next to the text</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">link</span></code></p>
 </dd>
 </dl>
 </section>
@@ -1289,7 +1388,8 @@ but should be available <em>everywhere</em> (<a class="reference external" href=
 <dt><code class="docutils literal notranslate"><span class="pre">pref.list.fmt</span></code></dt><dd><p>Default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> (<em>columns</em>) to use in formatted lists.</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">NLC</span></code> (node name, labels and binding)</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.list.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>) in formatted lists.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.list.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>)
+in formatted lists.</p>
 <p>Possible values:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
@@ -1318,7 +1418,8 @@ like registers or dependencies (<em>required-by</em> and <em>depends-on</em>).</
 <dt><code class="docutils literal notranslate"><span class="pre">pref.tree.fmt</span></code></dt><dd><p>Default <a class="reference internal" href="#dtsh-fmtstr"><span class="std std-ref">format string</span></a> (<em>columns</em>) to use in formatted trees.</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">Nd</span></code> (node name and description)</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>) in formatted trees.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>)
+in tree anchors.</p>
 <p>Possible values:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
@@ -1328,9 +1429,57 @@ typically with a dashed line bellow the text to link</p></li>
 </ul>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">none</span></code></p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.cb_anchor</span></code></dt><dd><p>Symbol used to anchor child-bindings to their parents in formatted trees.</p>
-<p>Unset (left blank) to disable, or set e.g. to “+” to avoid Unicode.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">${wchar.arrow_right_hook}</span></code></p>
+<dt><code class="docutils literal notranslate"><span class="pre">pref.2sided.actionable_type</span></code></dt><dd><p>How to render <a class="reference internal" href="#dtsh-hyperlinks"><span class="std std-ref">actionable text</span></a> (<em>hyperlinks</em>)
+in the right pane of a 2-sided view.</p>
+<p>Possible values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>: don’t make text actionable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link</span></code>: let the terminal alone handle the rendering,
+typically with a dashed line bellow the text to link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alt</span></code>: append an alternative actionable view next to the text</p></li>
+</ul>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">link</span></code></p>
+</dd>
+</dl>
+<dl id="dtsh-prefs-child-binding-anchor">
+<dt><code class="docutils literal notranslate"><span class="pre">pref.tree.cb_anchor</span></code></dt><dd><p>Symbol used to anchor child-bindings to the bindings they’re a child-binding of.</p>
+<p>Unset (left blank) to disable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although these anchors are often informative, they may also be confusing
+when a child-binding does not immediately follow its parent
+in the right pane of the tree view.</p>
+<p>Consider the command output bellow:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; tree /soc/iomuxc@30330000 --format nC
+                                             Binding
+                                             ──────────────────────────────────────────────
+iomuxc                                       nxp,imx-iomuxc
+├── pinctrl                                  nxp,imx7d-pinctrl
+│   ├── uart2_default                        ↳ iMX pin controller pin group
+│   │   └── group0                             ↳ iMX pin controller pin configuration node.
+│   └── i2c4_default                         ↳ iMX pin controller pin group
+│       └── group0                             ↳ iMX pin controller pin configuration node.
+├── MX7D_PAD_GPIO1_IO08__GPIO1_IO8           ↳ MCUX RT pin mux option
+</pre></div>
+</div>
+<p>The left pane is a devicetree branch, where tree anchors are node names.</p>
+<p>The list view on the right pane has one column, the node’s binding,
+where the <code class="docutils literal notranslate"><span class="pre">↳</span></code> are intended to anchor child-bindings
+to the binding they’re a child of.</p>
+<p>Things work well under <code class="docutils literal notranslate"><span class="pre">pinctrl</span></code>, child-bindings always immediately follow
+the binding they’re a child of, and the <code class="docutils literal notranslate"><span class="pre">↳</span></code> rightly tag the child-binding
+and grandchild-binding of <code class="docutils literal notranslate"><span class="pre">nxp,imx7d-pinctrl</span></code>.</p>
+<p>But the last binding, described as “MCUX RT pin mux option”,
+isn’t a child-binding of <code class="docutils literal notranslate"><span class="pre">nxp,imx7d-pinctrl</span></code>, but of <code class="docutils literal notranslate"><span class="pre">nxp,imx-iomuxc</span></code>,
+much more above in the list, which we don’t know how to visually represent.
+This happens because <code class="docutils literal notranslate"><span class="pre">pinctrl</span></code> is specified by the <code class="docutils literal notranslate"><span class="pre">nxp,imx7d-pinctrl</span></code>
+compatible string, not by the child-binding of its parent node.</p>
+<p>To avoid confusion, child-binding anchors are thus disabled by default.</p>
+<p>To visualize the <em>genealogy</em> of a binding (ancestors and descendants),
+use <code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">-Bl</span></code>.</p>
+</div>
+<p>Default: Unset (disabled)</p>
 </dd>
 </dl>
 </section>
@@ -1350,7 +1499,7 @@ DTSh will use for some common symbols:</p>
 <p>This is the reference manual for DTSh built-in commands.</p>
 <section id="cd">
 <span id="dtsh-builtin-cd"></span><h3>cd<a class="headerlink" href="#cd" title="Link to this heading"></a></h3>
-<p><strong>cd</strong> Change the current working branch.</p>
+<p>Change the <em>current working branch</em> used to resolve relative DT paths.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cd [PATH]
 </pre></div>
@@ -1374,7 +1523,7 @@ DTSh will use for some common symbols:</p>
 </section>
 <section id="pwd">
 <span id="dtsh-builtin-pwd"></span><h3>pwd<a class="headerlink" href="#pwd" title="Link to this heading"></a></h3>
-<p><strong>pwd</strong> Print path of the current working branch.</p>
+<p>Print path of the current working branch.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-ld</span></code> instead to quickly get detailed information about the current working branch:</p>
@@ -1393,7 +1542,7 @@ DTSh will use for some common symbols:</p>
 </section>
 <section id="ls">
 <span id="dtsh-builtin-ls"></span><h3>ls<a class="headerlink" href="#ls" title="Link to this heading"></a></h3>
-<p><strong>ls</strong> List branch contents.</p>
+<p>List branch contents like files or directories.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ls [OPTIONS] [PATH ...]
 </pre></div>
@@ -1490,7 +1639,8 @@ partition@f8000
 </section>
 <section id="examples">
 <span id="dtsh-ls-examples"></span><h4>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h4>
-<p>Open a quick view of the whole devicetree in the pager (press <kbd class="kbd docutils literal notranslate">q</kbd> to quit the pager):</p>
+<p>Open a quick view of the whole devicetree in the pager
+(press <kbd class="kbd docutils literal notranslate">q</kbd> to quit the pager):</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
 &gt; ls -Rl --pager
 </pre></div>
@@ -1513,14 +1663,14 @@ partition@f8000
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>If distinguishing the leading lowercase “e” in <code class="docutils literal notranslate"><span class="pre">0xe000e100</span></code> proves difficult,
-try setting the <code class="docutils literal notranslate"><span class="pre">pref_hex_upper</span></code> preference to get <code class="docutils literal notranslate"><span class="pre">0XE000E100</span></code> instead
+try setting the <code class="docutils literal notranslate"><span class="pre">pref.hex_upper</span></code> preference to get <code class="docutils literal notranslate"><span class="pre">0XE000E100</span></code> instead
 (see <a class="reference internal" href="#dtsh-prefs-misc"><span class="std std-ref">General Preferences</span></a>).</p>
 </div>
 </section>
 </section>
 <section id="tree">
 <span id="dtsh-builtin-tree"></span><h3>tree<a class="headerlink" href="#tree" title="Link to this heading"></a></h3>
-<p><strong>tree</strong> List branch contents in tree-like format.</p>
+<p>List branch contents in tree-like format.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tree [OPTIONS] [PATH ...]
 </pre></div>
@@ -1607,22 +1757,23 @@ flash-controller@4001e000    0x4001e000 (4 kB)  nordic,nrf52-flash-controller
         └── partition@f8000  0xf8000 (32 kB)
 </pre></div>
 </div>
-<p>Highlight child-bindings:</p>
+<p>Highlight child-bindings (disabled by default, see <a class="reference internal" href="#dtsh-prefs-child-binding-anchor"><span class="std std-ref">pref.tree.cb_anchor</span></a>):</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
 &gt; tree &amp;flash0/partitions --format NRC
 </pre></div>
 </div>
-<figure class="align-center" id="id25">
+<figure class="align-center" id="id24">
 <a class="reference internal image-reference" href="_images/partitions.svg"><img alt="partitions.svg" src="_images/partitions.svg" width="100%" /></a>
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">&amp;flash0/partitions</span> <span class="pre">--format</span> <span class="pre">NRC</span></code></span><a class="headerlink" href="#id25" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">tree</span> <span class="pre">&amp;flash0/partitions</span> <span class="pre">--format</span> <span class="pre">NRC</span></code></span><a class="headerlink" href="#id24" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
 </section>
 <section id="find">
 <span id="dtsh-builtin-find"></span><h3>find<a class="headerlink" href="#find" title="Link to this heading"></a></h3>
-<p><strong>find</strong> Search branches for nodes.</p>
+<p>Search branches for nodes matching flexible criteria (e.g. bindings, buses,
+register sizes, interrupts). See also <a class="reference internal" href="#dtsh-search-devicetree"><span class="std std-ref">Search the Devicetree</span></a>.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find [OPTIONS] [PATH ...]
 </pre></div>
@@ -1741,12 +1892,14 @@ spi3, arduino_spi      Nordic nRF family SPIM (SPI master with EasyDMA)
 <p>See <a class="reference internal" href="#dtsh-txt-search"><span class="std std-ref">Text Patterns</span></a>.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">--with-binding-depth</span> <span class="pre">EXPR</span></code></dt><dd><p>Match <code class="docutils literal notranslate"><span class="pre">EXPR</span></code> with the child-binding depths.</p>
-<p>The child-binding depth associated to a node represents <em>how far</em> we should
-walk the devicetree backward until the specifying binding is not a child-binding:</p>
+<p>The child-binding depth associated to a node is a non negative integer
+that represents <em>how far</em> we can walk the devicetree backward until
+the current node is not specified by the child-binding of its parent:</p>
 <ul class="simple">
-<li><p>0: top level binding</p></li>
+<li><p>0: this node is not specified by its parent’s child-binding</p></li>
 <li><p>1: child-binding</p></li>
-<li><p>greater than 1: nested child-binding</p></li>
+<li><p>2: grandchild-binding</p></li>
+<li><p>3 and above: great grandchild-binding</p></li>
 </ul>
 <p>Nodes whose binding is a child-binding:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
@@ -1839,10 +1992,10 @@ the I2C bus (<code class="docutils literal notranslate"><span class="pre">/soc/i
 <li><p><code class="docutils literal notranslate"><span class="pre">format</span> <span class="pre">--psTD</span></code> will output the node’s path and status,
 then the nodes that depend on it, ending with the nodes it depends on</p></li>
 </ul>
-<figure class="align-center" id="id26">
+<figure class="align-center" id="id25">
 <img alt="__device_dts_ord_124" src="_images/dts_ord_error.png" />
 <figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-dep-ord</span> <span class="pre">124</span> <span class="pre">format</span> <span class="pre">--psTD</span></code></span><a class="headerlink" href="#id26" title="Link to this image"></a></p>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">--with-dep-ord</span> <span class="pre">124</span> <span class="pre">format</span> <span class="pre">--psTD</span></code></span><a class="headerlink" href="#id25" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>This example is quite artificial, and <code class="docutils literal notranslate"><span class="pre">find</span></code> is no silver bullet.
@@ -1955,7 +2108,10 @@ flash@0        0x0 (1 MB)                              soc-nv-flash
 </section>
 <section id="cat">
 <span id="dtsh-builtin-cat"></span><h3>cat<a class="headerlink" href="#cat" title="Link to this heading"></a></h3>
-<p><strong>cat</strong> Concatenate and output information about a node and its properties.</p>
+<p>Concatenate and output information about a node and its properties.
+If the user does not set options to explicitly select what to <strong>cat</strong>,
+the command will print all property values of the node parameter
+or of the current working branch.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cat [OPTIONS] [XPATH]
 </pre></div>
@@ -1970,7 +2126,8 @@ flash@0        0x0 (1 MB)                              soc-nv-flash
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">PATH</span></code> is a usual <a class="reference internal" href="#dtsh-fs-metaphor"><span class="std std-ref">devicetree path</span></a>,
 default to the current working branch if unset</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PROP</span></code> is a property name, with support for basic <em>globbing</em> if ending with <code class="docutils literal notranslate"><span class="pre">*</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PROP</span></code> is a property name, with support for basic <em>globbing</em>
+if ending with <code class="docutils literal notranslate"><span class="pre">*</span></code></p></li>
 </ul>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/soc/flash-controller@4001e000/flash@0
 &gt; cat $w*
@@ -2001,29 +2158,21 @@ and <a class="reference external" href="https://devicetree-specification.readthe
 <p>This <em>long listing format</em> is not described by a format string,
 see options <code class="docutils literal notranslate"><span class="pre">-D</span></code>, <code class="docutils literal notranslate"><span class="pre">-B</span></code>, and <code class="docutils literal notranslate"><span class="pre">-Y</span></code> instead.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-D</span></code></dt><dd><p>Print complete description from bindings.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">-D</span></code></dt><dd><p>Print the node or property description from the binding or specification file.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-B</span></code></dt><dd><p>Print detailed view of bindings or property specification.</p>
-<p>If not using a <em>long listing format</em>,
-will output only the bindings file path.</p>
+<dt><code class="docutils literal notranslate"><span class="pre">-B</span></code></dt><dd><p>Print detailed views of node bindings or property specifications.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-Y</span></code></dt><dd><p>Print YAML view of bindings or property specification.</p>
-<figure class="align-center" id="id27">
-<img alt="YAML view" src="_images/yaml.png" />
-<figcaption>
-<p><span class="caption-text">YAML view</span><a class="headerlink" href="#id27" title="Link to this image"></a></p>
+<dt><code class="docutils literal notranslate"><span class="pre">-Y</span></code></dt><dd><p>Show YAML binding or specification files.</p>
+<figure class="align-center" id="id26">
+<img alt="YAML view" src="_images/catY.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">-Yl</span> <span class="pre">&amp;i2c0</span></code></span><a class="headerlink" href="#id26" title="Link to this image"></a></p>
 </figcaption>
 </figure>
-<p>If not using a <em>long listing format</em>,
-will output only the bindings file path.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-A</span></code></dt><dd><p>Show all info about a node or property.</p>
-<figure class="align-center" id="id28">
-<img alt="Detailed view" src="_images/catA.png" />
-<figcaption>
-<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">&amp;qspi/mx25r6435f&#64;0$quad-enable-requirements</span> <span class="pre">-A</span></code></span><a class="headerlink" href="#id28" title="Link to this image"></a></p>
-</figcaption>
-</figure>
+<dt><code class="docutils literal notranslate"><span class="pre">-A</span></code></dt><dd><p>Show summary about a node or property. Shortcut for <code class="docutils literal notranslate"><span class="pre">-DBYl</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--expand-included</span></code></dt><dd><p>Whether to expand the contents of included YAML files.</p>
+<p>Bu default, only the hierarchy of included files is shown.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
 <p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
@@ -2032,7 +2181,7 @@ will output only the bindings file path.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Consider using the pager whenever the output is expected to be longer
-than a short description.</p>
+than a short description, in particular when using <code class="docutils literal notranslate"><span class="pre">-Y</span></code> or <code class="docutils literal notranslate"><span class="pre">-A</span></code>.</p>
 </div>
 </section>
 <section id="dtsh-cat-examples">
@@ -2048,35 +2197,47 @@ erase-block-size: &lt; 0x1000 &gt;
 write-block-size: &lt; 0x04 &gt;
 </pre></div>
 </div>
-<p><em>Cat</em> node bindings:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
-&gt; cat leds/led_0 -lB
-    Compatible: This binding does not define a compatible string.
-           Bus: This binding neither provides nor depends on buses.
-Child-Bindings: gpio-leds
-                └── GPIO LED child node
-
-Property  Type           Description
-────────────────────────────────────────────────────────────────────────────────────────
-gpios     phandle-array
-label     string         Human readable string describing the LED. It can be used by an…
-</pre></div>
-</div>
-<p><em>Cat</em> property bindings:</p>
+<p>Using <strong>cat</strong> to find out <em>properties lineage</em>:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
 &gt; cat &amp;qspi/mx25r6435f@0$quad-enable-requirements -Bl
-           Name: quad-enable-requirements
-           From: nordic,qspi-nor.yaml
-           Type: string
-       Required: No
-     Deprecated: No
-           Enum: &quot;NONE&quot;, &quot;S2B1v1&quot;, &quot;S1B6&quot;, &quot;S2B7&quot;, &quot;S2B1v4&quot;, &quot;S2B1v5&quot;, &quot;S2B1v6&quot;
-          Const: Not a const
-        Default: &quot;S1B6&quot;
-Specifier Space: No specifier space
 </pre></div>
 </div>
-<p>Use <em>globbing</em> to output selected property values:</p>
+<figure class="align-center" id="id27">
+<img alt="catBl-prop.svg" src="_images/catBl-prop.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">&amp;qspi/mx25r6435f&#64;0$quad-enable-requirements</span> <span class="pre">-Bl</span></code></span><a class="headerlink" href="#id27" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In the command above, we read that the property <code class="docutils literal notranslate"><span class="pre">quad-enable-requirements</span></code>
+is introduced in <code class="docutils literal notranslate"><span class="pre">jedec,jesd216.yaml</span></code>,
+and  modified last in <code class="docutils literal notranslate"><span class="pre">nordic,qspi-nor.yaml</span></code> (to set a default value).</p>
+</div>
+<p>Using <strong>cat</strong> to find out <em>bindings genealogy</em>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; cat -B /soc/iomuxc@30330000/pinctrl/i2c1_default/group0
+grandchild-binding of nxp,imx7d-pinctrl
+
+/
+&gt; cat -B /soc/iomuxc@30330000/pinctrl/i2c1_default
+child-binding of nxp,imx7d-pinctrl
+</pre></div>
+</div>
+<p>Or more visually <em>visually</em> (<em>centered</em> on <code class="docutils literal notranslate"><span class="pre">&amp;pinctrl/i2c1_default</span></code>):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; cat -Bl /soc/iomuxc@30330000/pinctrl/i2c1_default
+</pre></div>
+</div>
+<figure class="align-center" id="id28">
+<img alt="catBl-node.svg" src="_images/catBl-node.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">-Bl</span> <span class="pre">&amp;pinctrl/i2c1_default</span></code></span><a class="headerlink" href="#id28" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>In the above command output, we see that the node <code class="docutils literal notranslate"><span class="pre">&amp;pinctrl/i2c1_default</span></code> is specified
+by a binding without compatible string, with description “iMX pin controller pin group”,
+which is a child-binding of the compatible <code class="docutils literal notranslate"><span class="pre">nxp,imx7d-pinctrl</span></code>,
+and has a child-binding with description “iMX pin controller pin configuration node”.</p>
+<p>Use <em>globbing</em> to output selected related property values:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
 &gt; cat &amp;qspi$pin* -l
  Property       Type          Value
@@ -2088,13 +2249,18 @@ Specifier Space: No specifier space
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>To get the most detailed view of a node or property use <code class="docutils literal notranslate"><span class="pre">-Al</span> <span class="pre">--pager</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">-DBl</span></code> is handy for grasping what a node is for:</p>
+<figure class="align-center" id="id29">
+<img alt="catDBl.svg" src="_images/catDBl.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">-DBl</span> <span class="pre">&amp;pinctrl</span></code></span><a class="headerlink" href="#id29" title="Link to this image"></a></p>
+</figcaption>
+</figure>
 </div>
 </section>
 </section>
 <section id="alias">
 <span id="dtsh-builtin-alias"></span><h3>alias<a class="headerlink" href="#alias" title="Link to this heading"></a></h3>
-<p><strong>alias</strong> List aliased nodes.</p>
+<p>List aliased nodes.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>alias [OPTIONS] [NAME]
 </pre></div>
@@ -2148,7 +2314,7 @@ by setting the user preference <code class="docutils literal notranslate"><span 
 </section>
 <section id="chosen">
 <span id="dtsh-builtin-chosen"></span><h3>chosen<a class="headerlink" href="#chosen" title="Link to this heading"></a></h3>
-<p><strong>chosen</strong> List chosen nodes.</p>
+<p>List chosen nodes.</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>chosen [OPTIONS] [NAME]
 </pre></div>
@@ -2195,141 +2361,99 @@ zephyr,sram -&gt; memory  0x20000000 (256 kB)  Generic on-chip SRAM description
 </div>
 </section>
 </section>
-<section id="board">
-<span id="dtsh-builtin-board"></span><h3>board<a class="headerlink" href="#board" title="Link to this heading"></a></h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The <strong>board</strong> builtin is deprecated and will be removed in DTSh 0.2.4.
-Please use the <a class="reference internal" href="#dtsh-builtin-uname"><span class="std std-ref">uname</span></a> command instead.</p>
-</div>
-<p><strong>board</strong> Print board information.</p>
-<p>Synopsis:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>board [OPTIONS]
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Board information is available only when DTSh can find the CMake cache file produced
-when the DTS was generated:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>build
-├── CMakeCache.txt
-└── zephyr
-    └── zephyr.dts
-</pre></div>
-</div>
-</div>
-<section id="dtsh-board-options">
-<span id="id14"></span><h4>Options<a class="headerlink" href="#dtsh-board-options" title="Link to this heading"></a></h4>
-<dl>
-<dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <a class="reference internal" href="#dtsh-format-output"><span class="std std-ref">long listing format</span></a>.</p>
-<p>Rich <em>rich</em> styled output.</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">--board-file</span></code></dt><dd><p>Print board file (DTS).</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
-<p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
-</dd>
-</dl>
-</section>
-<section id="dtsh-board-examples">
-<span id="id15"></span><h4>Examples<a class="headerlink" href="#dtsh-board-examples" title="Link to this heading"></a></h4>
-<p>Board information:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
-&gt; board
-identifier: bbc_microbit
-name: BBC Micro:Bit
-type: mcu
-arch: arm
-toolchain:
-  - zephyr
-  - gnuarmemb
-  - xtools
-ram: 16
-testing:
-ignore_tags:
-  - net
-supported:
-  - ble
-  - i2c
-  - gpio
-  - pwm
-</pre></div>
-</div>
-</section>
-</section>
 <section id="uname">
 <span id="dtsh-builtin-uname"></span><h3>uname<a class="headerlink" href="#uname" title="Link to this heading"></a></h3>
-<p><strong>uname</strong> Print system information (kernel, board, SoC).</p>
+<p>Print system information (board, SoC, kernel, firmware).</p>
 <p>Synopsis:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>uname [OPTIONS]
 </pre></div>
 </div>
-<p>By default, print Zephyr kernel and board name:</p>
+<p>By default, print the board selected at build-time:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
 &gt; uname
-Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840
+nrf52840dk/nrf52840 nRF52840-DK-NRF52840
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>uname</strong> responses are build-time information derived, in one way or another,
+from the contents of the CMake cache file DTSh was able to find.</p>
+<p>Additionally, the available hardware information depends on the Zephyr
+hardware model the devicetree (DTS) was generated with.
+In particular, the SoC, CPU and most board metadata can only
+be reliably retrieved with Zephyr HWMv2.</p>
+<p>Refer to the <a class="reference external" href="https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#board-porting-guide">Board Porting Guide</a>
+for differences between hardware models.</p>
+</div>
 <section id="dtsh-uname-options">
-<span id="id16"></span><h4>Options<a class="headerlink" href="#dtsh-uname-options" title="Link to this heading"></a></h4>
-<p>Only one option among <code class="docutils literal notranslate"><span class="pre">-moin</span></code> is allowed. The option <code class="docutils literal notranslate"><span class="pre">-a</span></code> is not allowed with one of <code class="docutils literal notranslate"><span class="pre">-moin</span></code>.</p>
-<p>Actual output depends on the <code class="docutils literal notranslate"><span class="pre">-l</span></code> flag (<em>long format</em>).</p>
+<span id="id14"></span><h4>Options<a class="headerlink" href="#dtsh-uname-options" title="Link to this heading"></a></h4>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><strong>uname</strong> has two distinct sets of options for setting its output:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-mpro</span></code> (<code class="docutils literal notranslate"><span class="pre">-a</span></code>): resemble their POSIX counterpart, concatenate the
+requested values into a single line output</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--summary</span> <span class="pre">FMT</span></code> (<code class="docutils literal notranslate"><span class="pre">-S</span></code>): print a formatted summary with the requested
+sections</p></li>
+</ul>
+</div>
 <dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">--machine</span></code></dt><dd><p>Print the machine hardware name (aka <code class="docutils literal notranslate"><span class="pre">BOARD</span></code>, and possibly a human
+readable name retrieved from available metadata).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span>
+<span class="o">&gt;</span> <span class="n">uname</span> <span class="o">-</span><span class="n">m</span>
+<span class="n">arduino_portenta_h7</span><span class="o">@</span><span class="mf">4.10.0</span><span class="o">/</span><span class="n">stm32h747xx</span><span class="o">/</span><span class="n">m7</span> <span class="n">Arduino</span> <span class="n">Portenta</span> <span class="n">H7</span> <span class="p">(</span><span class="n">M7</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">--processor</span></code></dt><dd><p>Print the processor (SoC).</p>
+<p>SoC and CPU are available only with HWMv2.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span>
+<span class="o">&gt;</span> <span class="n">uname</span> <span class="o">-</span><span class="n">p</span>
+<span class="n">stm32h747xx</span><span class="p">,</span><span class="n">m7</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-r</span> <span class="pre">--kernel-version</span></code></dt><dd><p>Print Zephyr kernel and HWM versions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span>
+<span class="o">&gt;</span> <span class="n">uname</span> <span class="o">-</span><span class="n">r</span>
+<span class="n">Zephyr</span><span class="o">-</span><span class="n">RTOS</span> <span class="n">v3</span><span class="mf">.7.0</span> <span class="p">(</span><span class="mi">36940</span><span class="n">db938a</span><span class="p">)</span> <span class="n">HWMv2</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">--firmware</span></code></dt><dd><p>Print the firmware version.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span>
+<span class="o">&gt;</span> <span class="n">uname</span> <span class="o">-</span><span class="n">o</span>
+<span class="n">hello_world</span> <span class="mf">3.7.0</span>
+</pre></div>
+</div>
+</dd>
 <dt><code class="docutils literal notranslate"><span class="pre">-l</span></code></dt><dd><p>Use a <em>long format</em> (<em>rich</em> styled output).</p>
+<p>Applicable with <code class="docutils literal notranslate"><span class="pre">-mpro</span></code> options, will print the same basic information
+using colors and styles.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">--machine</span></code></dt><dd><p>Print board name (aka <code class="docutils literal notranslate"><span class="pre">BOARD</span></code>).</p>
+<dt><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">--all</span></code></dt><dd><p>Print all.</p>
+<p>Shortcut for <code class="docutils literal notranslate"><span class="pre">-mpro</span></code>.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">--operating-system</span></code></dt><dd><p>Print Zephyr kernel information.</p>
-<table class="docutils align-center" id="id29">
-<caption><span class="caption-text">Kernel</span><a class="headerlink" href="#id29" title="Link to this table"></a></caption>
-<tbody>
-<tr class="row-odd"><td><p>Default</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">&lt;kernel&gt;/&lt;toolchain&gt;</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">Zephyr-RTOS</span> <span class="pre">v3.7.0-275-gccb616c9673</span> <span class="pre">(gnuarmemb)</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
-<td><p>Detailed view of the Zephyr environment</p></td>
-</tr>
-</tbody>
-</table>
+</dl>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname -a
+nrf52840dk/nrf52840 nRF52840-DK-NRF52840 — nrf52840 — Zephyr-RTOS v3.7.0 (36940db938a) HWMv2 — hello_world 3.7.0
+</pre></div>
+</div>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">--summary</span> <span class="pre">FMT</span></code></dt><dd><p>Summary output format string.</p>
+<p>A summary can contain one or more sections among Board (<code class="docutils literal notranslate"><span class="pre">m</span></code>),
+SoC &amp; CPU (<code class="docutils literal notranslate"><span class="pre">p</span></code>), Kernel (<code class="docutils literal notranslate"><span class="pre">r</span></code>) and Firmware (<code class="docutils literal notranslate"><span class="pre">o</span></code>).</p>
+<p>The summary format string represents the selected sections: for example,
+the option <code class="docutils literal notranslate"><span class="pre">--summary</span> <span class="pre">mp</span></code> requests a summary with the Board
+and SoC &amp; CPU sections.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-i</span> <span class="pre">--board</span></code></dt><dd><p>Print board information.</p>
-<table class="docutils align-center" id="id30">
-<caption><span class="caption-text">Board</span><a class="headerlink" href="#id30" title="Link to this table"></a></caption>
-<tbody>
-<tr class="row-odd"><td><p>Default</p></td>
-<td><p>board name (aka <code class="docutils literal notranslate"><span class="pre">BOARD</span></code>), e.g. <code class="docutils literal notranslate"><span class="pre">nrf52840dk/nrf52840</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
-<td><p>Detailed view of the board</p></td>
-</tr>
-</tbody>
-</table>
+<dt><code class="docutils literal notranslate"><span class="pre">-S</span></code></dt><dd><p>Print hardware and system summary.</p>
+<p>Commodity for <code class="docutils literal notranslate"><span class="pre">--summary</span> <span class="pre">mpro</span></code>.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">--soc</span></code></dt><dd><p>Print SoC information.</p>
-<table class="docutils align-center" id="id31">
-<caption><span class="caption-text">SoC</span><a class="headerlink" href="#id31" title="Link to this table"></a></caption>
-<tbody>
-<tr class="row-odd"><td><p>Default</p></td>
-<td><p>SoC name derived from the board name (HWMv2 only), e.g. <code class="docutils literal notranslate"><span class="pre">nrf52840</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
-<td><p>Detailed view of the SoC</p></td>
-</tr>
-</tbody>
-</table>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">--all</span></code></dt><dd><p>Print <em>all</em> information.</p>
-<table class="docutils align-center" id="id32">
-<caption><span class="caption-text"><em>All</em></span><a class="headerlink" href="#id32" title="Link to this table"></a></caption>
-<tbody>
-<tr class="row-odd"><td><p>Default</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">&lt;kernel&gt;</span> <span class="pre">-</span> <span class="pre">&lt;board&gt;</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">Zephyr-RTOS</span> <span class="pre">v3.7.0-275-gccb616c9673</span> <span class="pre">-</span> <span class="pre">nrf52840dk/nrf52840</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><em>Long format</em> (<code class="docutils literal notranslate"><span class="pre">-l</span></code>)</p></td>
-<td><p>A view of all available information structured into sections</p></td>
-</tr>
-</tbody>
-</table>
+<dt><code class="docutils literal notranslate"><span class="pre">-Y</span></code></dt><dd><p>Show YAML.</p>
+<p>In summaries, expand the contents of YAML metadata files.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">--pager</span></code></dt><dd><p>Page command output.</p>
 <p>See <a class="reference internal" href="#dtsh-pager"><span class="std std-ref">The Pager</span></a>.</p>
@@ -2337,67 +2461,47 @@ Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840
 </dl>
 </section>
 <section id="dtsh-uname-examples">
-<span id="id17"></span><h4>Examples<a class="headerlink" href="#dtsh-uname-examples" title="Link to this heading"></a></h4>
-<p>Show detailed <em>operating system</em> information:</p>
+<span id="id15"></span><h4>Examples<a class="headerlink" href="#dtsh-uname-examples" title="Link to this heading"></a></h4>
+<p>Using <strong>uname</strong> to retrieve hardware information:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
-&gt; uname -ol
-  ZEPHYR_BASE: /path/to/workspace/zephyr [^]
-      Release: Zephyr-RTOS v3.7.0-275-gccb616c9673
-    Toolchain: gnuarmemb [^]
-   Devicetree: /path/to/application/build/zephyr/zephyr.dts [^]
-     Bindings: /path/to/external/module/dts/bindings [^]
-               ZEPHYR_BASE/dts/bindings [^]
- Vendors file: ZEPHYR_BASE/dts/bindings/vendor-prefixes.txt [^]
-  Application: sample-bme68x-iaq [^]
+&gt; uname --summary mp
 </pre></div>
 </div>
+<figure class="align-center" id="id30">
+<img alt="uname-mp.svg" src="_images/uname-mp.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">--summary</span> <span class="pre">mp</span></code></span><a class="headerlink" href="#id30" title="Link to this image"></a></p>
+</figcaption>
+</figure>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p><code class="docutils literal notranslate"><span class="pre">[^]</span></code> are links to the local file or directory fields are related to:</p>
-<ul class="simple">
-<li><p><em>hoover</em> to <em>reveal</em> the file or directory path</p></li>
-<li><p><em>click</em> to open the file or directory</p></li>
-</ul>
+<p>In the above example, the revision is not given as part of
+the <code class="docutils literal notranslate"><span class="pre">BOARD</span></code> target: it’s the default version retrieved from board metadata.</p>
+<p>Similarly, DTSh can retrieve an omitted SoC if unique.</p>
 </div>
-<p>Show detailed board information:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt; uname -il
-     Board: nrf52840dk/nrf52840
- BOARD_DIR: /path/to/workspace/zephyr/boards/nordic/nrf52840dk [^]
-       DTS: BOARD_DIR/nrf52840dk_nrf52840.dts [^]
-      YAML: nrf52840dk_nrf52840.yaml [^]
-            identifier: nrf52840dk/nrf52840
-            name: nRF52840-DK-NRF52840
-            type: mcu
-            arch: arm
-            ram: 256
-            flash: 1024
-            toolchain:
-              - zephyr
-              - gnuarmemb
-              - xtools
-            supported:
-              - adc
-              - arduino_gpio
-              - arduino_i2c
-              - arduino_serial
-              - arduino_spi
-              - ble
-              - counter
-              - gpio
-              - i2c
-              - i2s
-              - pwm
-              - spi
-              - usb_device
-              - usbd
-              - watchdog
-              - netif:openthread
-            vendor: nordic
+<p>With Zephyr hardware model HWMv1, e.g. Zephyr 3.6:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname -r
+Zephyr-RTOS v3.6.0 (468eb56cf24) HWMv1
 </pre></div>
 </div>
-<p>Browse all available <em>system</em> information (Zephyr kernel, board, SoC):</p>
+<figure class="align-center" id="id31">
+<img alt="uname-mp-hwm1.svg" src="_images/uname-mp-hwm1.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">--summary</span> <span class="pre">mp</span></code> (HWMv1)</span><a class="headerlink" href="#id31" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Using <strong>uname</strong> to retrieve software information:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
-&gt; uname -al --pager
+&gt; uname --summary ro
+</pre></div>
+</div>
+<figure class="align-center" id="id32">
+<img alt="uname-ro.svg" src="_images/uname-ro.svg" /><figcaption>
+<p><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">--summary</span> <span class="pre">ro</span></code></span><a class="headerlink" href="#id32" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Browse all available build-time information:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/
+&gt; uname -SY --pager
 </pre></div>
 </div>
 </section>
@@ -2422,11 +2526,11 @@ Zephyr-RTOS v3.7.0-275-gccb616c9673 - nrf52840dk/nrf52840
 </ul>
 </div>
 <section id="dtsh-prompt">
-<span id="id18"></span><h3>The Prompt<a class="headerlink" href="#dtsh-prompt" title="Link to this heading"></a></h3>
+<span id="id16"></span><h3>The Prompt<a class="headerlink" href="#dtsh-prompt" title="Link to this heading"></a></h3>
 <p>Once its configuration is loaded, and the devicetree model is initialized,
 DTSh will clear the Terminal and start an interactive session with the root node
 as current working branch:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dtsh (0.2.3): A Devicetree Shell
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dtsh (0.2.4): A Devicetree Shell
 How to exit: q, or quit, or exit, or press Ctrl-D
 
 /
@@ -2988,7 +3092,7 @@ that will override the default styles.</p>
 <li><p>DTSh loads default values for all defined styles</p></li>
 <li><p>if a user theme file exists, e.g. <code class="docutils literal notranslate"><span class="pre">~/.config/theme.ini</span></code> on GNU Linux,
 it’s loaded, overriding the default styles</p></li>
-<li><p>if an additional theme file is specified with the West command option <code class="docutils literal notranslate"><span class="pre">--theme</span></code>,
+<li><p>if an additional theme file is specified with the command option <code class="docutils literal notranslate"><span class="pre">--theme</span></code>,
 it’s eventually loaded, overriding previous styles</p></li>
 </ol>
 <p>Initialize a theme template with <code class="docutils literal notranslate"><span class="pre">dtsh</span> <span class="pre">-u</span></code> if not already done

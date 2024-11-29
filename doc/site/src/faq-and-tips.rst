@@ -37,7 +37,7 @@ When DTSh can't find this cache file, and ``ZEPHYR_BASE`` is not set, the device
     $ export ZEPHYR_BASE=/path/to/zephyr
     $ dtsh /path/to/foobar.dts
 
-  For more complex use cases, refer to :ref:`dtsh-usage-others` in the Getting Started Guide.
+  For more complex use cases, refer to :ref:`dtsh-other-uses` in the Handbook.
 
 
 .. _dtsh-tips-tui:
@@ -104,7 +104,6 @@ However, the default colors and styles:
 
 Command output redirection
 ***************************
-
 
 .. _dtsh-tips-html-backgrounds:
 
