@@ -122,7 +122,7 @@ def test_dtshconfig_defaults() -> None:
     assert ActionableType.NONE == ActionableType(
         cfg_defaults.pref_tree_actionable_type
     )
-    assert ActionableType.LINK == cfg_defaults.pref_2Sided_actionable_type
+    assert ActionableType.ALT == cfg_defaults.pref_2Sided_actionable_type
     # 2-sided views child marker (disabled).
     assert not cfg_defaults.pref_tree_cb_anchor
 
@@ -131,24 +131,17 @@ def test_dtshconfig_defaults() -> None:
     assert cfg_defaults.pref_actionable_text
 
     # HTML.
-    assert "html" == cfg_defaults.pref_html_theme
-    assert (
-        "'Source Code Pro','DejaVu Sans Mono','Courrier New'"
-        == cfg_defaults.pref_html_font_family
-    )
+    assert "svg" == cfg_defaults.pref_html_theme
+    assert "'DejaVu Sans Mono'" == cfg_defaults.pref_html_font_family
 
     # SVG.
     assert "svg" == cfg_defaults.pref_svg_theme
-    assert (
-        "'Fira Code','DejaVu Sans Mono','Courrier New'"
-        == cfg_defaults.pref_svg_font_family
-    )
+    assert "'Fira Code','DejaVu Sans Mono'" == cfg_defaults.pref_svg_font_family
     assert 0.61 == cfg_defaults.pref_svg_font_ratio
 
     # YAML.
-    assert "monokai" == cfg_defaults.pref_yaml_theme
-    assert cfg_defaults.pref_yaml_expand
-    assert ActionableType.ALT == cfg_defaults.pref_yaml_actionable_type
+    assert "nord" == cfg_defaults.pref_yaml_theme
+    assert ActionableType.LINK == cfg_defaults.pref_yaml_actionable_type
 
     # DTS.
     assert "monokai" == cfg_defaults.pref_dts_theme

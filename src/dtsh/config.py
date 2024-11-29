@@ -399,11 +399,6 @@ class DTShConfig:
         return self.getstr("pref.yaml.theme")
 
     @property
-    def pref_yaml_expand(self) -> bool:
-        """whether to expand included files in YAML views."""
-        return self.getbool("pref.yaml.expand")
-
-    @property
     def pref_yaml_actionable_type(self) -> ActionableType:
         """Actionable type for YAML views."""
         return self.get_actionable_type("pref.yaml.actionable_type")
