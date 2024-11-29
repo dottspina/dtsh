@@ -378,6 +378,16 @@ class DTShOutputFileSVG(DTShOutputFile):
     _maxwidth: int
     _width: int
 
+    # Width of the current console line.
+    # Note: the current line ends when write() is called so that
+    # the rich library will assume end="\n".
+    # This is required for computing the correct width when the output
+    # is written in successive steps:
+    #   out.write(foo, end=None)
+    #   out.write(bar, end=None)
+    #   out.write()
+    _line_width: int
+
     def __init__(self, path: str, append: bool) -> None:
         """Initialize output file.
 
@@ -390,6 +400,8 @@ class DTShOutputFileSVG(DTShOutputFile):
         """
         super().__init__()
         self._append = append
+
+        self._line_width = 0
 
         # Early initialize the redirection stream and fail now on
         # OS errors: we won't run a DTSh command whose result no one
@@ -434,6 +446,8 @@ class DTShOutputFileSVG(DTShOutputFile):
         super().write(*args, **kwargs)
 
         # Update actually required width.
+        #
+        # 1st, add the renderable arguments widths to the current line width.
         for arg in args:
             if (
                 isinstance(arg, str)
@@ -445,10 +459,16 @@ class DTShOutputFileSVG(DTShOutputFile):
                 measure = Measurement.get(
                     self._console, self._console.options, arg
                 )
-                if (measure.maximum > self._width) and not (
-                    measure.maximum > self._maxwidth
-                ):
-                    self._width = measure.maximum
+                self._line_width += measure.maximum
+
+        endl: bool = kwargs.get("end", "\n") == "\n"
+        if endl:
+            # We've reached the end of the current console line: update
+            # the required width up to the allowed maximum.
+            if self._line_width > self._width:
+                self._width = min(self._line_width, self._maxwidth)
+            # Starting a new console line.
+            self._line_width = 0
 
     def flush(self) -> None:
         """Format (SVG) the captured output and write it
