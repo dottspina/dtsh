@@ -804,21 +804,21 @@ DTSH_META_SVG_FORMAT = """\
 
 DTSH_SVG_STYLE_FONT_FACES = """\
     <style>
-    @font-face {{
+    @font-face {
         font-family: "Fira Code";
         src: local("FiraCode-Regular"),
                 url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Regular.woff2") format("woff2"),
                 url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Regular.woff") format("woff");
         font-style: normal;
         font-weight: 400;
-    }}
-    @font-face {{
+    }
+    @font-face {
         font-family: "Fira Code";
         src: local("FiraCode-Bold"),
                 url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Bold.woff2") format("woff2"),
                 url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Bold.woff") format("woff");
         font-style: bold;
         font-weight: 700;
-    }}
+    }
     </style>
 """
