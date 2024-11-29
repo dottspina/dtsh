@@ -2321,7 +2321,7 @@ class ViewYAMLFile(View):
             return
 
         self._view = Tree(
-            self._mk_anchor(fyaml, compact, style or DTShTheme.STYLE_YAML_FILE)
+            self._mk_anchor(fyaml, False, style or DTShTheme.STYLE_YAML_FILE)
         )
         self._treeview_follow_included(self._view, fyaml, compact)
 
