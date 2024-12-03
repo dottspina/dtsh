@@ -148,8 +148,18 @@ class DTShOutputFile(DTShOutput):
     # Records/captures outputs.
     _console: Console
 
-    def __init__(self) -> None:
-        """Initialize console for commands output redirection."""
+    # Redirection file.
+    _path: str
+    # Whether to append (True only when the file actually exist).
+    _append: bool
+
+    def __init__(self, path: str, append: bool) -> None:
+        """Initialize console for commands output redirection.
+
+        Args:
+            path: Path to the file we're redirecting to.
+            append: True when appending to an existing file.
+        """
         self._console = Console(
             highlight=False,
             markup=False,
@@ -162,6 +172,18 @@ class DTShOutputFile(DTShOutput):
             # when redirecting to files.
             file=StringIO(),
         )
+        self._path = path
+        self._append = append
+
+    @property
+    def path(self) -> str:
+        """Path to the file we're redirecting to."""
+        return self._path
+
+    @property
+    def append(self) -> bool:
+        """True when appending to an existing file."""
+        return self._append
 
     def write(self, *args: Any, **kwargs: Any) -> None:
         """Capture and record outputs.
@@ -178,82 +200,53 @@ class DTShOutputFile(DTShOutput):
 class DTShOutputFileText(DTShOutputFile):
     """Text output file for commands output redirection."""
 
-    _out: IO[str]
-
-    def __init__(self, path: str, append: bool) -> None:
-        """Initialize output file.
-
-        Args:
-            path: The output file path.
-            append: Whether to redirect the command's output in "append" mode.
-
-        Raises:
-             DTShRedirect.Error: Invalid path or permission errors.
-        """
-        super().__init__()
-        try:
-            # Early initialize output stream rather than handling that on flush.
-            self._out = open(  # pylint: disable=consider-using-with
-                path,
-                "a" if append else "w",
-                encoding="utf-8",
-            )
-            if append:
-                # Insert blank line between command outputs.
-                self._out.write(os.linesep)
-        except OSError as e:
-            raise DTShRedirect.Error(e.strerror) from e
-
-    def flush(self) -> None:
-        """Format (HTML) the captured output and write it
-        to the redirection file.
-
-        Overrides DTShOutput.flush().
-        """
-        contents = self._console.export_text()
-        # Exported lines are padded up to the (maximum) console width:
-        # strip these trailing whitespaces, which could make the text file
-        # unreadable.
-        for line_nopad in (line.rstrip() for line in contents.splitlines()):
-            print(line_nopad, file=self._out)
-        self._out.close()
-
-
-class DTShOutputFileHtml(DTShOutputFile):
-    """HTML output file for commands output redirection."""
-
-    _out: IO[str]
-    _append: bool
-
     # True until we call write() to actually capture something.
     # If flush() is called before that, e.g. because the DTSh command failed,
     # it will abort early.
     _pending: bool = True
 
-    def __init__(self, path: str, append: bool) -> None:
-        """Initialize output file.
+    def write(self, *args: Any, **kwargs: Any) -> None:
+        """Overrides DTShOutputFile.write()."""
+        if self._pending:
+            self._pending = False
+        super().write(*args, **kwargs)
 
-        Args:
-            path: The output file path.
-            append: Whether to redirect the command's output in "append" mode.
+    def flush(self) -> None:
+        """Format the captured text and write it to the redirection file.
 
-        Raises:
-             DTShRedirect.Error: Invalid path or permission errors.
+        Overrides DTShOutput.flush().
         """
-        super().__init__()
-        self._append = append
+        if self._pending:
+            return
 
-        # Early initialize the redirection stream and fail now on
-        # OS errors: we won't run a DTSh command whose result no one
-        # will ever see.
         try:
-            self._out = open(  # pylint: disable=consider-using-with
-                path,
-                "r+" if append else "w",
-                encoding="utf-8",
-            )
+            with open(
+                self.path, "a" if self.append else "w", encoding="utf-8"
+            ) as out:
+                self._flush(out)
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
+
+    def _flush(self, out: IO[str]) -> None:
+        if self._append:
+            # Insert blank line between command outputs.
+            out.write(os.linesep)
+
+        # Exported lines are padded up to the (maximum) console width:
+        # strip these trailing whitespaces, which could make the text file
+        # unreadable.
+        contents = self._console.export_text()
+        for line_nopad in (line.rstrip() for line in contents.splitlines()):
+            print(line_nopad, file=out)
+
+
+class DTShOutputFileHtml(DTShOutputFile):
+    """HTML output file for commands output redirection."""
+
+    # True until we call write() to actually capture something.
+    # If flush() is called before that, e.g. because the DTSh command failed,
+    # it will abort early.
+    _pending: bool = True
 
     def write(self, *args: Any, **kwargs: Any) -> None:
         """Capture and record outputs.
@@ -286,21 +279,23 @@ class DTShOutputFileHtml(DTShOutputFile):
         Overrides DTShOutput.flush().
         """
         if self._pending:
-            # Calling write() without argument or with empty rich objects
-            # would append an unwanted blank line.
-            self._out.close()
             return
 
-        # Text and background colors.
+        try:
+            with open(
+                self.path, "r+" if self.append else "w", encoding="utf-8"
+            ) as out:
+                self._flush(out)
+        except OSError as e:
+            raise DTShRedirect.Error(e.strerror) from e
+
+    def _flush(self, out: IO[str]) -> None:
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME
         )
-
-        html_fmt = self._mk_html_format()
-
         html = self._console.export_html(
             theme=theme,
-            code_format=html_fmt,
+            code_format=self._mk_html_format(),
             # Use inline CSS styles in "append" mode.
             inline_styles=self._append,
         )
@@ -324,8 +319,8 @@ class DTShOutputFileHtml(DTShOutputFile):
         if self._append:
             # Appending to an existing file: seek to the appropriate
             # point of insertion.
-            self._seek_last_content()
-            self._out.write(os.linesep)
+            self._seek_last_content(out)
+            out.write(os.linesep)
 
             # Find command's output contents.
             for i, line in enumerate(html_lines):
@@ -334,8 +329,7 @@ class DTShOutputFileHtml(DTShOutputFile):
                     break
 
         for line in html_lines[i_output:]:
-            print(line, file=self._out)
-        self._out.close()
+            print(line, file=out)
 
     def _mk_html_format(self) -> str:
         font_family = _dtshconf.pref_html_font_family
@@ -353,27 +347,23 @@ class DTShOutputFileHtml(DTShOutputFile):
 
         return html_fmt
 
-    def _seek_last_content(self) -> None:
-        # Offset for the point of insertion, just before the HTML epilog.
-        offset: int = self._out.tell()
-        line = self._out.readline()
+    def _seek_last_content(self, out: IO[str]) -> None:
+        # Offset for the point of insertion, just before the HTML epilogue.
+        offset: int = out.tell()
+        line = out.readline()
         while line and not line.startswith("</body>"):
-            offset = self._out.tell()
-            line = self._out.readline()
+            offset = out.tell()
+            line = out.readline()
 
         if not line.startswith("</body>"):
-            self._out.close()
             raise DTShRedirect.Error(
                 "invalid HTML file format, redirection canceled"
             )
-        self._out.seek(offset, os.SEEK_SET)
+        out.seek(offset, os.SEEK_SET)
 
 
 class DTShOutputFileSVG(DTShOutputFile):
     """SVG output file for commands output redirection."""
-
-    _out: IO[str]
-    _append: bool
 
     _maxwidth: int
     _width: int
@@ -398,22 +388,8 @@ class DTShOutputFileSVG(DTShOutputFile):
         Raises:
              DTShRedirect.Error: Invalid path or permission errors.
         """
-        super().__init__()
-        self._append = append
-
+        super().__init__(path, append)
         self._line_width = 0
-
-        # Early initialize the redirection stream and fail now on
-        # OS errors: we won't run a DTSh command whose result no one
-        # will ever see.
-        try:
-            self._out = open(  # pylint: disable=consider-using-with
-                path,
-                "r+" if append else "w",
-                encoding="utf-8",
-            )
-        except OSError as e:
-            raise DTShRedirect.Error(e.strerror) from e
 
         # Maximum width allowed in preferences.
         self._maxwidth = _dtshconf.pref_redir2_maxwidth
@@ -479,9 +455,21 @@ class DTShOutputFileSVG(DTShOutputFile):
         if not self._width:
             # Calling write() without argument or with empty rich objects
             # would append an unwanted blank line.
-            self._out.close()
             return
 
+        try:
+            with open(
+                self.path, "r+" if self.append else "w", encoding="utf-8"
+            ) as out:
+                self._flush(out)
+        except OSError as e:
+            raise DTShRedirect.Error(e.strerror) from e
+        except SVGFormat.Error as e:
+            raise DTShRedirect.Error(
+                f"Unexpected SVG format, redirection canceled: {e}"
+            ) from e
+
+    def _flush(self, out: IO[str]) -> None:
         # Text and background colors.
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_svg_theme, DEFAULT_TERMINAL_THEME
@@ -504,33 +492,24 @@ class DTShOutputFileSVG(DTShOutputFile):
         svg_doc: SVGDocument
         if self._append:
             # Load the SVG content we're appending to.
-            try:
-                svg_doc = SVGDocument(
-                    self._out.read().splitlines(),
-                    len(_dtshconf.pref_svg_title) > 0,
-                    _dtshconf.pref_svg_decorations,
-                )
-            except SVGFormat.Error as e:
-                self._out.close()
-                raise DTShRedirect.Error(
-                    "invalid SVG file format, redirection canceled"
-                ) from e
-
-            self._out.seek(0, os.SEEK_SET)
+            svg_doc = SVGDocument(
+                out.read().splitlines(),
+                len(_dtshconf.pref_svg_title) > 0,
+                _dtshconf.pref_svg_decorations,
+            )
+            out.seek(0, os.SEEK_SET)
             # Append the last command output capture.
             svg_doc.append(svg_capture)
         else:
             svg_doc = svg_capture
 
         for line in svg_doc.content:
-            print(line, file=self._out)
+            print(line, file=out)
 
         if self._append:
             # Append mode, cleanup once we're done.
-            offset: int = self._out.tell()
-            self._out.truncate(offset)
-
-        self._out.close()
+            offset: int = out.tell()
+            out.truncate(offset)
 
 
 DTSH_HTML_META_FORMAT = """\
