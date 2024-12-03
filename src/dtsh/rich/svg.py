@@ -280,7 +280,7 @@ class SVGFragment:
     @classmethod
     def ifind(
         cls: Type[TFragment], svg_txt: SVGText, start: int = 0
-    ) -> Tuple[int, TFragment]:
+    ) -> TFragment:
         """Find an SVG fragment.
 
         Args:
@@ -298,7 +298,7 @@ class SVGFragment:
             i_end, _ = SVGFormat.ifind(svg_txt, cls.RE_END, i_begin + 1)
         else:
             i_end = i_begin
-        return (i_end, cls(svg_txt[i_begin : i_end + 1], matched))
+        return cls(i_end, svg_txt[i_begin : i_end + 1], matched)
 
     @staticmethod
     def newline(svg_txt: SVGText) -> None:
@@ -310,10 +310,12 @@ class SVGFragment:
         """
         svg_txt.append("")
 
+    _endl: int
     _content: SVGText
 
     def __init__(
         self,
+        endl: int,
         content: SVGText,
         matched: re.Match[str],  # pylint: disable=unused-argument
     ) -> None:
@@ -323,7 +325,13 @@ class SVGFragment:
             content: The fragment's content.
             matched: The RE match opening this fragment.
         """
+        self._endl = endl
         self._content = content
+
+    @property
+    def i_end(self) -> int:
+        """Index of the last SVG line parsed within this fragment."""
+        return self._endl
 
     @property
     def content(self) -> SVGText:
@@ -337,21 +345,17 @@ class SVGFragment:
 class SVGFragmentViewBox(SVGFragment):
     """Fragment for the viewBox geometry."""
 
-    @classmethod
-    def ifind(
-        cls, svg_txt: SVGText, start: int = 0
-    ) -> Tuple[int, "SVGFragmentViewBox"]:
-        return super().ifind(svg_txt, start)
-
     RE_BEGIN: re.Pattern[str] = SVGFormat.RE_VIEWBOX
 
     # SVG container dimensions.
     _width: int
     _height: int
 
-    def __init__(self, content: SVGText, matched: re.Match[str]) -> None:
+    def __init__(
+        self, endl: int, content: SVGText, matched: re.Match[str]
+    ) -> None:
         """Initialize SVG container geometry."""
-        super().__init__(content, matched)
+        super().__init__(endl, content, matched)
         raw_width: str = matched.group("w")
         raw_height: str = matched.group("h")
 
@@ -436,9 +440,11 @@ class SVGFragmentChrome(SVGFragment):
     _width: int
     _height: int
 
-    def __init__(self, content: SVGText, matched: re.Match[str]) -> None:
+    def __init__(
+        self, endl: int, content: SVGText, matched: re.Match[str]
+    ) -> None:
         """Initialize rectangle geometry."""
-        super().__init__(content, matched)
+        super().__init__(endl, content, matched)
         raw_width: str = matched.group("w")
         raw_height: str = matched.group("h")
 
@@ -485,20 +491,18 @@ class SVGFragmentGTerminal(SVGFragment):
     RE_BEGIN = SVGFormat.RE_GBOX_TERM
 
     @classmethod
-    def ifind(
-        cls, svg_txt: SVGText, start: int = 0
-    ) -> Tuple[int, "SVGFragmentGTerminal"]:
+    def ifind(cls, svg_txt: SVGText, start: int = 0) -> "SVGFragmentGTerminal":
         """Overrides SVGFragment.ifind()."""
         i_begin, matched = SVGFormat.ifind(svg_txt, cls.RE_BEGIN, start)
         i_end, _ = SVGFormat.ifind(svg_txt, SVGFormat.RE_GBOX_END, i_begin + 1)
         # Note: the fragment actually ends by closing two lines of GBox (</g>).
         i_end += 1
-        return (i_end, cls(svg_txt[i_begin : i_end + 1], matched))
+        return cls(i_end, svg_txt[i_begin : i_end + 1], matched)
 
     @classmethod
     def ifind_list(
         cls, svg_txt: SVGText, start: int = 0
-    ) -> Tuple[int, List["SVGFragmentGTerminal"]]:
+    ) -> List["SVGFragmentGTerminal"]:
         """Find successive SVG boxes.
 
         Args:
@@ -508,26 +512,28 @@ class SVGFragmentGTerminal(SVGFragment):
         Returns: A tuple containing the index of the line matching
             the end of the last box, and the matched boxes.
         """
-        i_end, gterminal = cls.ifind(svg_txt, start)
+        gterminal = cls.ifind(svg_txt, start)
         gterminals: List[SVGFragmentGTerminal] = [gterminal]
 
         try:
             while True:
-                i_end, gterminal = cls.ifind(svg_txt, i_end + 1)
+                gterminal = cls.ifind(svg_txt, gterminal.i_end + 1)
                 gterminals.append(gterminal)
         except SVGFormat.Error:
             # Last GBox.
             pass
 
-        return (i_end, gterminals)
+        return gterminals
 
     # GBox coordinates (translation).
     _x: int
     _y: int
 
-    def __init__(self, content: SVGText, matched: re.Match[str]) -> None:
+    def __init__(
+        self, endl: int, content: SVGText, matched: re.Match[str]
+    ) -> None:
         """Initialize GBox geometry."""
-        super().__init__(content, matched)
+        super().__init__(endl, content, matched)
         raw_x: str = matched.group("x")
         raw_y: str = matched.group("y")
 
@@ -568,6 +574,8 @@ class SVGDocument:
     def capture(
         cls,
         console: Console,
+        /,
+        *,
         theme: TerminalTheme,
         font_family: str,
         font_ratio: float,
@@ -619,17 +627,25 @@ class SVGDocument:
         self._show_gcircles = show_gcircles
 
         # Parse content into fragments.
-        i_end, self._viewbox = SVGFragmentViewBox.ifind(svg_txt)
-        i_end, self._style = SVGFragmentStyle.ifind(svg_txt, i_end + 1)
-        i_end, self._defs = SVGFragmentDefs.ifind(svg_txt, i_end + 1)
-        i_end, self._rect = SVGFragmentChrome.ifind(svg_txt, i_end + 1)
+        offset: int
+
+        self._viewbox = SVGFragmentViewBox.ifind(svg_txt)
+        offset = self._viewbox.i_end + 1
+
+        self._style = SVGFragmentStyle.ifind(svg_txt, offset)
+        offset = self._style.i_end + 1
+
+        self._defs = SVGFragmentDefs.ifind(svg_txt, offset)
+        offset = self._defs.i_end + 1
+
+        self._rect = SVGFragmentChrome.ifind(svg_txt, offset)
+        offset = self._rect.i_end + 1
+
         if self._show_gcircles:
-            i_end, self._gcircles = SVGFragmentGCircles.ifind(
-                svg_txt, i_end + 1
-            )
-        i_end, self._gterminals = SVGFragmentGTerminal.ifind_list(
-            svg_txt, i_end + 1
-        )
+            self._gcircles = SVGFragmentGCircles.ifind(svg_txt, offset)
+            offset = self._gcircles.i_end + 1
+
+        self._gterminals = SVGFragmentGTerminal.ifind_list(svg_txt, offset)
 
         if not self.has_titlebar and (self.gterminal.y == SVGFormat.GTERM_Y):
             # No title bar: if we're parsing SVG text generated

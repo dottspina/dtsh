@@ -18,14 +18,14 @@ from dtsh.rich.svg import (
 
 
 def test_svg_fragment_viewbox() -> None:
-    i_end, fragment = SVGFragmentViewBox.ifind(
+    fragment = SVGFragmentViewBox.ifind(
         [
             "<!-- before -->",
             '<svg class="rich-terminal" viewBox="0 0 1434 2563.2" xmlns="http://www.w3.org/2000/svg">',
             "<!-- after -->",
         ]
     )
-    assert 1 == i_end
+    assert 1 == fragment.i_end
     assert 1 == len(fragment.content)
     assert 1434 == fragment.width
     assert 2564 == fragment.height
@@ -42,7 +42,7 @@ def test_svg_fragment_viewbox() -> None:
 
 
 def test_svg_fragment_style() -> None:
-    i_end, fragment = SVGFragmentStyle.ifind(
+    fragment = SVGFragmentStyle.ifind(
         [
             "<!-- before -->",
             '<style type="">',
@@ -51,7 +51,7 @@ def test_svg_fragment_style() -> None:
             "<!-- after -->",
         ]
     )
-    assert 3 == i_end
+    assert 3 == fragment.i_end
     assert 3 == len(fragment.content)
     assert [
         '<style type="">',
@@ -61,7 +61,7 @@ def test_svg_fragment_style() -> None:
 
 
 def test_svg_fragment_defs() -> None:
-    i_end, fragment = SVGFragmentDefs.ifind(
+    fragment = SVGFragmentDefs.ifind(
         [
             "<!-- before -->",
             "<defs>",
@@ -70,7 +70,7 @@ def test_svg_fragment_defs() -> None:
             "<!-- after -->",
         ]
     )
-    assert 3 == i_end
+    assert 3 == fragment.i_end
     assert 3 == len(fragment.content)
     assert [
         "<defs>",
@@ -80,14 +80,14 @@ def test_svg_fragment_defs() -> None:
 
 
 def test_svg_fragment_rect() -> None:
-    i_end, fragment = SVGFragmentChrome.ifind(
+    fragment = SVGFragmentChrome.ifind(
         [
             "<!-- before -->",
             '<rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1432" height="2561.2" rx="8"/>',
             "<!-- after -->",
         ]
     )
-    assert 1 == i_end
+    assert 1 == fragment.i_end
     assert 1 == len(fragment.content)
     assert 1432 == fragment.width
     assert 2562 == fragment.height
@@ -104,7 +104,7 @@ def test_svg_fragment_rect() -> None:
 
 
 def test_svg_fragment_gcircles() -> None:
-    i_end, fragment = SVGFragmentGCircles.ifind(
+    fragment = SVGFragmentGCircles.ifind(
         [
             "<!-- before -->",
             '<g transform="translate(26,22)">',
@@ -113,7 +113,7 @@ def test_svg_fragment_gcircles() -> None:
             "<!-- after -->",
         ]
     )
-    assert 3 == i_end
+    assert 3 == fragment.i_end
     assert 3 == len(fragment.content)
     assert [
         '<g transform="translate(26,22)">',
@@ -123,7 +123,7 @@ def test_svg_fragment_gcircles() -> None:
 
 
 def test_svg_fragment_gterminal() -> None:
-    i_end, fragment = SVGFragmentGTerminal.ifind(
+    fragment = SVGFragmentGTerminal.ifind(
         [
             "<!-- before -->",
             '<g transform="translate(9, 41)" clip-path="url(#terminal-3423481079-clip-terminal)">',
@@ -135,7 +135,7 @@ def test_svg_fragment_gterminal() -> None:
             "<!-- after -->",
         ]
     )
-    assert 6 == i_end
+    assert 6 == fragment.i_end
     assert 6 == len(fragment.content)
     assert [
         '<g transform="translate(9, 41)" clip-path="url(#terminal-3423481079-clip-terminal)">',
