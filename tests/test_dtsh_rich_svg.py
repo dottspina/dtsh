@@ -28,9 +28,9 @@ def test_svg_fragment_viewbox() -> None:
     assert 1 == fragment.i_end
     assert 1 == len(fragment.content)
     assert 1434 == fragment.width
-    assert 2564 == fragment.height
+    assert 2563.2 == fragment.height
     assert [
-        '<svg class="rich-terminal" viewBox="0 0 1434 2564" xmlns="http://www.w3.org/2000/svg">',
+        '<svg class="rich-terminal" viewBox="0 0 1434.0 2563.2" xmlns="http://www.w3.org/2000/svg">',
     ] == fragment.content
 
     fragment.set_width_height(1024, 768)
@@ -90,9 +90,9 @@ def test_svg_fragment_rect() -> None:
     assert 1 == fragment.i_end
     assert 1 == len(fragment.content)
     assert 1432 == fragment.width
-    assert 2562 == fragment.height
+    assert 2561.2 == fragment.height
     assert [
-        '<rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1432" height="2562" rx="8"/>'
+        '<rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1432.0" height="2561.2" rx="8"/>'
     ] == fragment.content
 
     fragment.set_width_height(1024, 768)
@@ -138,7 +138,7 @@ def test_svg_fragment_gterminal() -> None:
     assert 6 == fragment.i_end
     assert 6 == len(fragment.content)
     assert [
-        '<g transform="translate(9, 41)" clip-path="url(#terminal-3423481079-clip-terminal)">',
+        '<g transform="translate(9.0, 41.0)" clip-path="url(#terminal-3423481079-clip-terminal)">',
         "",
         '<g class="terminal-3423481079-matrix">',
         "...",

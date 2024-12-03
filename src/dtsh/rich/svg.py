@@ -13,7 +13,6 @@ Rationale:
 
 from typing import Tuple, List, Type, TypeVar, Optional
 
-import math
 import os
 import re
 
@@ -348,8 +347,8 @@ class SVGFragmentViewBox(SVGFragment):
     RE_BEGIN: re.Pattern[str] = SVGFormat.RE_VIEWBOX
 
     # SVG container dimensions.
-    _width: int
-    _height: int
+    _width: float
+    _height: float
 
     def __init__(
         self, endl: int, content: SVGText, matched: re.Match[str]
@@ -359,21 +358,21 @@ class SVGFragmentViewBox(SVGFragment):
         raw_width: str = matched.group("w")
         raw_height: str = matched.group("h")
 
-        width: int = math.ceil(float(raw_width))
-        height: int = math.ceil(float(raw_height))
+        width = float(raw_width)
+        height = float(raw_height)
         self.set_width_height(width, height)
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """SVG container width."""
         return self._width
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """SVG container height."""
         return self._height
 
-    def set_width_height(self, width: int, height: int) -> None:
+    def set_width_height(self, width: float, height: float) -> None:
         """Update container geometry.
 
         Args:
@@ -437,8 +436,8 @@ class SVGFragmentChrome(SVGFragment):
     RE_BEGIN = SVGFormat.RE_CHROME
 
     # Rectangle dimensions.
-    _width: int
-    _height: int
+    _width: float
+    _height: float
 
     def __init__(
         self, endl: int, content: SVGText, matched: re.Match[str]
@@ -448,21 +447,21 @@ class SVGFragmentChrome(SVGFragment):
         raw_width: str = matched.group("w")
         raw_height: str = matched.group("h")
 
-        width: int = math.ceil(float(raw_width))
-        height: int = math.ceil(float(raw_height))
+        width = float(raw_width)
+        height = float(raw_height)
         self.set_width_height(width, height)
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """SVG rectangle width."""
         return self._width
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """SVG rectangle height."""
         return self._height
 
-    def set_width_height(self, width: int, height: int) -> None:
+    def set_width_height(self, width: float, height: float) -> None:
         """Update rectangle geometry.
 
         Args:
@@ -526,8 +525,8 @@ class SVGFragmentGTerminal(SVGFragment):
         return gterminals
 
     # GBox coordinates (translation).
-    _x: int
-    _y: int
+    _x: float
+    _y: float
 
     def __init__(
         self, endl: int, content: SVGText, matched: re.Match[str]
@@ -537,21 +536,21 @@ class SVGFragmentGTerminal(SVGFragment):
         raw_x: str = matched.group("x")
         raw_y: str = matched.group("y")
 
-        x: int = math.ceil(float(raw_x))
-        y: int = math.ceil(float(raw_y))
+        x = float(raw_x)
+        y = float(raw_y)
         self.set_xy(x, y)
 
     @property
-    def x(self) -> int:
+    def x(self) -> float:
         """Horizontal translation."""
         return self._x
 
     @property
-    def y(self) -> int:
+    def y(self) -> float:
         """Vertical translation."""
         return self._y
 
-    def set_xy(self, x: int, y: int) -> None:
+    def set_xy(self, x: float, y: float) -> None:
         """Update translation.
 
         Args:
@@ -736,8 +735,8 @@ class SVGDocument:
         self.defs.append(svg_next.defs)
 
         # Recompute dimensions.
-        viewbox_width: int = max(self.viewbox.width, svg_next.viewbox.width)
-        viewbox_height: int = self.viewbox.height + svg_next.viewbox.height
+        viewbox_width = max(self.viewbox.width, svg_next.viewbox.width)
+        viewbox_height = self.viewbox.height + svg_next.viewbox.height
         # Remove top padding added by the next SVG,
         # here rely only on the documents' vertical margins
         # to separate captured commands.
@@ -750,8 +749,8 @@ class SVGDocument:
         if self.has_titlebar:
             viewbox_height -= SVGFormat.VSPAN_TITLE_BAR
 
-        rect_width: int = viewbox_width - (SVGFormat.MARGIN_WIDTH)
-        rect_height: int = viewbox_height - (SVGFormat.MARGIN_HEIGHT)
+        rect_width = viewbox_width - SVGFormat.MARGIN_WIDTH
+        rect_height = viewbox_height - SVGFormat.MARGIN_HEIGHT
 
         # Translate the captured output.
         next_term_x = self.gterminal.x
