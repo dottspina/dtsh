@@ -65,15 +65,22 @@ def test_svg_fragment_defs() -> None:
         [
             "<!-- before -->",
             "<defs>",
+            '<clipPath id="terminal-257872858-clip-terminal">',
+            '<rect x="0" y="0" width="755.4" height="299.4" />',
+            "</clipPath>",
             "...",
             "</defs>",
             "<!-- after -->",
         ]
     )
-    assert 3 == fragment.i_end
-    assert 3 == len(fragment.content)
+    assert 6 == fragment.i_end
+    assert 6 == len(fragment.content)
     assert [
         "<defs>",
+        '<clipPath id="terminal-257872858-clip-terminal">',
+        # 307.4 = 299.4 + 8 (rich library issue 3576)
+        '<rect x="0" y="0" width="755.4" height="307.4" />',
+        "</clipPath>",
         "...",
         "</defs>",
     ] == fragment.content
