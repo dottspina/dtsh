@@ -11,7 +11,7 @@ Rich I/O streams implementations are based on the rich.console module.
 """
 
 
-from typing import Any, IO, List, Mapping, Optional, Sequence
+from typing import Any, IO, Mapping, Optional, Sequence
 
 from io import StringIO
 import os
@@ -31,6 +31,7 @@ from rich.terminal_theme import (
 from dtsh.config import DTShConfig
 from dtsh.io import DTShVT, DTShInput, DTShOutput, DTShRedirect
 
+from dtsh.rich.html import HtmlDocument, HtmlFormat
 from dtsh.rich.theme import DTShTheme
 from dtsh.rich.svg import SVGDocument, SVGFormat
 
@@ -259,15 +260,13 @@ class DTShOutputFileHtml(DTShOutputFile):
         """
         if self._pending:
             if self._append:
-                # When appending to an existing content (output file),
-                # insert a blank line before we start to actually
-                # capture the last command output.
-                #
-                # NOTE: we can't do that on flush, it will be too late,
-                # the capture starts right bellow.
+                # NOTE: commands output are formatted as successive HTML <pre>
+                # elements, and inserting an additional vertical space is
+                # very unlikely what the user wants: compact mode is the
+                # default for HTML output redirection.
                 if not _dtshconf.pref_html_compact:
                     super().write()
-            # Capture is ongoing.
+            # Capture is starting.
             self._pending = False
 
         super().write(*args, **kwargs)
@@ -284,82 +283,38 @@ class DTShOutputFileHtml(DTShOutputFile):
         try:
             with open(
                 self.path, "r+" if self.append else "w", encoding="utf-8"
-            ) as out:
-                self._flush(out)
+            ) as redir2io:
+                self._flush(redir2io)
         except OSError as e:
-            raise DTShRedirect.Error(e.strerror) from e
+            raise DTShRedirect.Error(f"{self.path}: {e.strerror}") from e
+        except HtmlFormat.Error as e:
+            raise DTShRedirect.Error(
+                f"unexpected HTML format, redirection canceled: {e}"
+            ) from e
 
-    def _flush(self, out: IO[str]) -> None:
+    def _flush(self, redir2io: IO[str]) -> None:
+        # Get the captured command output we're dealing with.
         theme = DTSH_EXPORT_THEMES.get(
             _dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME
         )
-        html = self._console.export_html(
+        html_capture: HtmlDocument = HtmlDocument.capture(
+            self._console,
             theme=theme,
-            code_format=self._mk_html_format(),
-            # Use inline CSS styles in "append" mode.
-            inline_styles=self._append,
+            font_family=_dtshconf.pref_html_font_family,
+            font_size=_dtshconf.pref_html_font_size,
         )
 
-        # The generated HTML pad lines with withe spaces
-        # up to the console's width, which is ugly if you
-        # want to re-use the HTML source: clean this up.
-        html_lines: List[str] = [line.rstrip() for line in html.splitlines()]
-
-        # Index of the first line we'll write to the HTML output file:
-        # - either 0, pointing to the first line for the current redirection
-        #   contents, if we're creating a new file
-        # - or, in "append" mode, the index of the line containing
-        #   the <pre> tag that represents the actual command's output
-        #
-        # Since this <pre> tag appears immediately before the HTML epilog,
-        # we'll then just have to write the current re-direction's contents
-        # starting from this index.
-        i_output: int = 0
-
+        html_doc: HtmlDocument
         if self._append:
-            # Appending to an existing file: seek to the appropriate
-            # point of insertion.
-            self._seek_last_content(out)
-            out.write(os.linesep)
-
-            # Find command's output contents.
-            for i, line in enumerate(html_lines):
-                if line.find("<pre") != -1:
-                    i_output = i
-                    break
-
-        for line in html_lines[i_output:]:
-            print(line, file=out)
-
-    def _mk_html_format(self) -> str:
-        font_family = _dtshconf.pref_html_font_family
-        if font_family:
-            font_family = f"{font_family},monospace"
+            # Load the HTML file we're appending to.
+            html_doc = HtmlDocument.read(redir2io)
+            # Append the last captured command output.
+            html_doc.append(html_capture)
         else:
-            font_family = "monospace"
-        html_fmt = DTSH_HTML_META_FORMAT.replace("|font_family|", font_family)
+            # Creating new file.
+            html_doc = html_capture
 
-        html_fmt = html_fmt.replace(
-            # "medium" is the default (absolute) size.
-            "|font_size|",
-            _dtshconf.pref_html_font_size or "medium",
-        )
-
-        return html_fmt
-
-    def _seek_last_content(self, out: IO[str]) -> None:
-        # Offset for the point of insertion, just before the HTML epilogue.
-        offset: int = out.tell()
-        line = out.readline()
-        while line and not line.startswith("</body>"):
-            offset = out.tell()
-            line = out.readline()
-
-        if not line.startswith("</body>"):
-            raise DTShRedirect.Error(
-                "invalid HTML file format, redirection canceled"
-            )
-        out.seek(offset, os.SEEK_SET)
+        print(html_doc.content, file=redir2io)
 
 
 class DTShOutputFileSVG(DTShOutputFile):
@@ -511,31 +466,6 @@ class DTShOutputFileSVG(DTShOutputFile):
             offset: int = out.tell()
             out.truncate(offset)
 
-
-DTSH_HTML_META_FORMAT = """\
-<!DOCTYPE html>
-<html>
-
-<head>
-<meta charset="UTF-8">
-
-<style>
-{stylesheet}
-body {{
-    color: {foreground};
-    background-color: {background};
-}}
-</style>
-</head>
-
-<body>
-
-    <pre style="font-family:|font_family|; font-size:|font_size|"><code style="font-family:inherit">{code}</code></pre>
-
-</body>
-
-</html>
-"""
 
 DTSH_EXPORT_THEMES: Mapping[str, TerminalTheme] = {
     "svg": SVG_EXPORT_THEME,
