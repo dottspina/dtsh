@@ -489,11 +489,9 @@ class DTShAutocomp:
         """
         states: List[DTShReadline.CompleterState] = []
         for compatible in sorted(
-            (
-                compat
-                for compat in sh.dt.compatible_strings
-                if compat.startswith(cs_txt)
-            )
+            compat
+            for compat in sh.dt.compatible_strings
+            if compat.startswith(cs_txt)
         ):
             bindings: Set[DTBinding] = set()
             # 1st, try the natural API, with unknown bus.
