@@ -196,7 +196,6 @@ class DTShCli:
         """
         if parser:
             self._parser = parser
-            DTShArgvParser.init(self._parser)
         else:
             self._parser = DTShArgvParser()
 
