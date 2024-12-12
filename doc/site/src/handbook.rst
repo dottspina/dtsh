@@ -2164,7 +2164,7 @@ Options
       This example is quite artificial, and ``find`` is no silver bullet.
       But trying only takes a few seconds and might at least yield some hints.
 
-   See :ref:``dtsh-int-search``.
+   See :ref:`dtsh-int-search`.
 
 
 ``--with-irq-number EXPR``

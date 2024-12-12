@@ -274,7 +274,7 @@ class SVGFragment:
     """Base for SVG fragments."""
 
     RE_BEGIN: re.Pattern[str]
-    """RE matching the begining of the fragment."""
+    """RE matching the beginning of the fragment."""
 
     RE_END: Optional[re.Pattern[str]] = None
     """RE matching the end of the fragment (multi-line fragments only)."""
