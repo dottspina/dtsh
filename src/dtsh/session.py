@@ -10,11 +10,9 @@ A session binds a shell and I/O streams, then enters a loop:
 - exit on EOF or "quit"
 """
 
-from types import FrameType
 from typing import Any, Optional, Sequence, List
 
 import errno
-import signal
 import sys
 
 from devicetree import edtlib
