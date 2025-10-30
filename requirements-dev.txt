@@ -1,9 +1,23 @@
-pycodestyle
-flake8
-pylint
+# Copyright (c) 2025, Christophe Dufaza
+# SPDX-License-Identifier: Apache-2.0
+
+# dtsh package dependencies.
+rich
+gnureadline ; sys_platform == 'darwin'
+PyYAML>=6.0
+
+# devicetree: Would install obsolete version 0.0.2, Apr, 2022.
+# see https://pypi.org/project/devicetree/#history
+# For development, install as local pip project instead:
+# pip install $ZEPHYR_BASE/scripts/dts/python-devicetree
+
+# Dependency of scripts/dtsh_cmd.py.
+# Keep the version identical to the minimum
+# required in zephyr/cmake/modules/west.cmake
+west>=0.14.0
+
+# Development environment.
+ruff
 mypy
 types-PyYAML
 pytest
-
-# Pin black versions to avoid unwanted formatting changes.
-black==23.3.0

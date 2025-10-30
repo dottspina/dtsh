@@ -1,0 +1,7 @@
+manifest:
+  projects:
+    - name: dtsh
+      url: https://github.com/dottspina/dtsh.git
+      revision: zephyr
+      path: modules/tools/dtsh
+      west-commands: scripts/west-commands.yml

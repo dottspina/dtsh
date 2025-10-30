@@ -1,5 +1,0 @@
-python-lsp-server[all]
-pylsp-mypy
-
-# Pin black versions to avoid unwanted formatting changes.
-python-lsp-black==1.3.0

@@ -1,8 +1,0 @@
-sphinx
-sphinx_rtd_theme
-sphinx-tabs
-sphinxcontrib-svg2pdfconverter
-sphinx-notfound-page
-sphinx-copybutton
-sphinx-togglebutton
-pygments

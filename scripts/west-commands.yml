@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Christophe Dufaza
+# SPDX-License-Identifier: Apache-2.0
+
+west-commands:
+  - file: scripts/west_commands/dtsh_cmd.py
+    commands:
+      - name: dtsh
+        class: Dtsh
+        help: Devicetree Shell

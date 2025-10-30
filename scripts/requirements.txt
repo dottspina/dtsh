@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Christophe Dufaza
+# SPDX-License-Identifier: Apache-2.0
+
+# Python dependencies of the West dtsh extension.
+
+PyYAML>=6.0 # Likely already installed, e.g. with Zephyr requirements.
+
+rich
+
+gnureadline ; sys_platform == "darwin"
