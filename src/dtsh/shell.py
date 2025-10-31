@@ -728,7 +728,7 @@ class DTSh:
     - parse command lines and execute command strings
     """
 
-    VERSION_STRING = "0.2.5"
+    VERSION_STRING = "0.2.5-zephyr"
     """The devicetree shell version string.
 
     This version identifies:
@@ -741,7 +741,7 @@ class DTSh:
       and the bundled default configuration
     - the devicetree shell theme file syntax (see rich/theme.ini)
       and the bundled default theme
-    - the bundled Python devicetree package (edtlib)
+    - the bundled or in-tree Python devicetree package (edtlib)
     """
 
     class PathExpansion:
