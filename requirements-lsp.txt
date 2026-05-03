@@ -1,5 +1,3 @@
-python-lsp-server[all]
+python-lsp-server
 pylsp-mypy
-
-# Pin black versions to avoid unwanted formatting changes.
-python-lsp-black==1.3.0
+python-lsp-ruff
