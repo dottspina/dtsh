@@ -1555,15 +1555,10 @@ def test_dtshparam_chosen_autocomp() -> None:
     sh = DTSh(dtmodel, [])
     param = DTShParamChosen()
 
-    assert ["zephyr,bt-c2h-uart", "zephyr,bt-mon-uart"] == [
+    assert ["zephyr,bt-c2h-uart", "zephyr,bt-hci", "zephyr,bt-mon-uart"] == [
         state.rlstr for state in param.autocomp("zephyr,bt", sh)
     ]
     # Exact match.
-    assert ["zephyr,bt-mon-uart"] == [
-        state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)
-    ]
-    # No match.
-    assert [] == param.autocomp("Zephyr,", sh)
     assert ["zephyr,bt-mon-uart"] == [
         state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)
     ]

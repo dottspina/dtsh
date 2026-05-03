@@ -750,7 +750,7 @@ def test_dtnodecriterion_with_node_label() -> None:
 def test_dtnodecriterion_with_alias() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/leds/led_0"]
-    assert ["led0", "bootloader-led0", "mcuboot-led0"] == node.aliases
+    assert ["led0", "mcuboot-led0"] == node.aliases
 
     # Plain text search.
     assert DTNodeWithAlias("led").match(node)
@@ -760,13 +760,11 @@ def test_dtnodecriterion_with_alias() -> None:
 
     # Wild-card substitution.
     assert DTNodeWithAlias("led*").match(node)
-    assert DTNodeWithAlias("boot*").match(node)
     assert not DTNodeWithAlias("MCU*").match(node)
     assert DTNodeWithAlias("MCU*", ignore_case=True).match(node)
 
     # Strict RE.
     assert DTNodeWithAlias("led.*", re_strict=True).match(node)
-    assert DTNodeWithAlias("boot.*", re_strict=True).match(node)
     assert not DTNodeWithAlias("MCU.*", re_strict=True).match(node)
     assert DTNodeWithAlias("MCU.*", re_strict=True, ignore_case=True).match(
         node
@@ -873,23 +871,20 @@ def test_dtnodecriterion_with_aka() -> None:
     node = dtmodel["/leds/led_0"]
     assert "Green LED 0" == node.label
     assert ["led0"] == node.labels
-    assert ["led0", "bootloader-led0", "mcuboot-led0"] == node.aliases
+    assert ["led0", "mcuboot-led0"] == node.aliases
 
     # Plain text search.
     assert DTNodeAlsoKnownAs("LED").match(node)
-    assert DTNodeAlsoKnownAs("boot").match(node)
     assert not DTNodeAlsoKnownAs("MCU").match(node)
     assert DTNodeAlsoKnownAs("MCU", ignore_case=True).match(node)
 
     # Wild-card substitution.
     assert DTNodeAlsoKnownAs("*LED*").match(node)
-    assert DTNodeAlsoKnownAs("boot*").match(node)
     assert not DTNodeAlsoKnownAs("MCU*").match(node)
     assert DTNodeAlsoKnownAs("MCU*", ignore_case=True).match(node)
 
     # Strict RE.
     assert DTNodeAlsoKnownAs(".*LED.*", re_strict=True).match(node)
-    assert DTNodeAlsoKnownAs("boot*", re_strict=True).match(node)
     assert not DTNodeAlsoKnownAs("MCU*", re_strict=True).match(node)
     assert DTNodeAlsoKnownAs("MCU*", re_strict=True, ignore_case=True).match(
         node

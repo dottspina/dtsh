@@ -162,15 +162,14 @@ def test_dtbinding() -> None:
     dt_partition1 = dt_partitions.get_child("partition@c000")
     dt_bme680 = dtmodel["/soc/i2c@40003000/bme680@76"]
 
-    assert dt_partitions.binding
-    assert 0 == dt_partitions.binding.cb_depth
-    assert "fixed-partitions" == dt_partitions.binding.compatible
+    assert not dt_partitions.binding
     assert dt_partition0.binding
-    assert 1 == dt_partition0.binding.cb_depth
-    assert not dt_partition0.binding.compatible
+    assert 0 == dt_partition0.binding.cb_depth
+    assert "zephyr,mapped-partition" == dt_partition0.binding.compatible
     assert dt_partition1.binding
-    assert 1 == dt_partition1.binding.cb_depth
-    assert not dt_partition1.binding.compatible
+    assert 0 == dt_partition1.binding.cb_depth
+    assert "zephyr,mapped-partition" == dt_partition1.binding.compatible
+
     assert dt_bme680.binding
     assert 0 == dt_bme680.binding.cb_depth
     assert "bosch,bme680" == dt_bme680.binding.compatible
@@ -197,16 +196,14 @@ def test_dtbinding() -> None:
     )
 
     # Equality
-    assert dt_partitions.binding == dt_partitions.binding
+    assert dt_partition0.binding == dt_partition0.binding
     assert dt_partition1.binding == dt_partition0.binding
-    assert dt_partitions.binding != dt_partition0.binding
-    assert dt_bme680.binding != dt_partitions.binding
+    assert dt_bme680.binding != dt_partition0.binding
 
     # Default order.
-    assert dt_bme680.binding < dt_partitions.binding
-    assert dt_partitions.binding < dt_partition0.binding
+    assert dt_bme680.binding < dt_partition0.binding
     with pytest.raises(TypeError):
-        dt_partitions.binding < ""
+        dt_partition0.binding < ""
 
 
 def test_dtbinding_buses() -> None:
@@ -248,22 +245,22 @@ def test_dtbinding_includes() -> None:
 
 def test_dtbinding_child_binding() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
-    dt_partitions = dtmodel["/soc/flash-controller@4001e000/flash@0/partitions"]
-    dt_partition0 = dt_partitions.get_child("partition@0")
-    dt_partition1 = dt_partitions.get_child("partition@c000")
-    assert dt_partitions.binding
-    assert 0 == dt_partitions.binding.cb_depth
-    assert dt_partitions.binding.child_binding
+    dt_leds = dtmodel["/leds"]
+    dt_led0 = dt_leds.get_child("led_0")
+    dt_led1 = dt_leds.get_child("led_1")
+    assert dt_leds.binding
+    assert 0 == dt_leds.binding.cb_depth
+    assert dt_leds.binding.child_binding
 
-    assert dt_partition0.binding
-    assert 1 == dt_partition0.binding.cb_depth
-    assert not dt_partition0.binding.child_binding
-    assert dt_partition0.binding == dt_partitions.binding.child_binding
+    assert dt_led0.binding
+    assert 1 == dt_led0.binding.cb_depth
+    assert not dt_led0.binding.child_binding
+    assert dt_led0.binding == dt_leds.binding.child_binding
 
-    assert dt_partition1.binding
-    assert 1 == dt_partition1.binding.cb_depth
-    assert not dt_partition1.binding.child_binding
-    assert dt_partition1.binding == dt_partitions.binding.child_binding
+    assert dt_led1.binding
+    assert 1 == dt_led1.binding.cb_depth
+    assert not dt_led1.binding.child_binding
+    assert dt_led1.binding == dt_leds.binding.child_binding
 
 
 def test_dtinterrupt() -> None:
@@ -350,7 +347,7 @@ def test_dtnode() -> None:
     assert ["button0"] == dt_button0.labels
     assert edt.get_node(dt_button0.path).description
     assert edt.get_node(dt_button0.path).description == dt_button0.description
-    assert sorted(["led0", "bootloader-led0", "mcuboot-led0"]) == sorted(
+    assert sorted(["led0", "mcuboot-led0"]) == sorted(
         dtmodel["/leds/led_0"].aliases
     )
     assert ["zephyr,entropy"] == dtmodel["/soc/random@4000d000"].chosen
@@ -413,15 +410,19 @@ def test_dtnode_binding() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
 
     # Binding for compatible value.
-    dt_partitions = dtmodel["/soc/flash-controller@4001e000/flash@0/partitions"]
-    assert dt_partitions.binding
-    assert "fixed-partitions" == dt_partitions.binding.compatible
+    dt_partition0 = dtmodel[
+        "/soc/flash-controller@4001e000/flash@0/partitions/partition@0"
+    ]
+    assert dt_partition0.binding
+    assert "zephyr,mapped-partition" == dt_partition0.binding.compatible
 
     # Child-binding without compatible value.
-    dt_partition0 = dt_partitions.get_child("partition@0")
-    assert dt_partition0.binding
-    assert not dt_partition0.binding.compatible
-    assert dt_partitions.binding.child_binding == dt_partition0.binding
+    dt_leds = dtmodel["/leds"]
+    assert dt_leds.binding
+    dt_led0 = dt_leds.get_child("led_0")
+    assert dt_led0.binding
+    assert not dt_led0.binding.compatible
+    assert dt_leds.binding.child_binding == dt_led0.binding
 
     # Node without binding (e.g. "/", "/chosen", "/aliases", "/soc", "/cpus").
     assert not dtmodel["/soc"].binding
