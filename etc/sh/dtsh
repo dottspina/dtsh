@@ -10,12 +10,6 @@ DTSH_HOME=$(realpath -m "$thisdir/../..")
 unset thisfile
 unset thisdir
 
-if [ -z "$ZEF" ]; then
-   # shellcheck disable=SC1091
-   . "$DTSH_HOME/etc/sh/zef"
-fi
-
-
 dtsh_clean() {
     if [ -n "$DTSH_HOME" ]; then
         rm -rf "$DTSH_HOME/.pytest_cache"
@@ -43,11 +37,11 @@ dtsh_unittests() {
     echo '**** Setup unit tests environment'
     dtsh_clean
     dtsh_venv "$test_venv"
-    pip install -q ".[test]" || zef_abort
+    pip install -q ".[test]" || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Run unit tests'
-    python3.11 -m pytest tests || zef_abort
+    python3.11 -m pytest tests || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Dispose unit tests environment'
@@ -62,11 +56,11 @@ dtsh_build() {
     local build_venv="$DTSH_HOME/tmp-build/.venv"
     dtsh_clean
     dtsh_venv "$build_venv"
-    pip install -q ".[dist]" || zef_abort
+    pip install -q ".[dist]" || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Build'
-    python3.11 -m build || zef_abort
+    python3.11 -m build || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Dispose build environment'
@@ -78,14 +72,14 @@ dtsh_build() {
 
 dtsh_dist_test() {
     echo "DTSH_HOME: $DTSH_HOME"
-    zef_continue_yn
+    _dtsh_continue_yn
 
     dtsh_build
     echo
     echo '**** Setup dist environment'
     local dist_venv="$DTSH_HOME/tmp-dist/.venv"
     dtsh_venv "$dist_venv"
-    pip install -q ".[dist]" || zef_abort
+    pip install -q ".[dist]" || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Uploading to TestPyPI'
@@ -94,7 +88,7 @@ dtsh_dist_test() {
     local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
     echo "Wheel dist:  $whl_dist"
     echo "WARNING: will publish on TestPyPI!!"
-    python3.11 -m twine upload --repository testpypi "$whl_dist" || zef_abort
+    python3.11 -m twine upload --repository testpypi "$whl_dist" || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Dispose dist environment'
@@ -106,14 +100,14 @@ dtsh_dist_test() {
 
 dtsh_dist_release() {
     echo "DTSH_HOME: $DTSH_HOME"
-    zef_continue_yn
+    _dtsh_continue_yn
 
     dtsh_build
     echo
     echo '**** Setup dist environment'
     local dist_venv="$DTSH_HOME/tmp-dist/.venv"
     dtsh_venv "$dist_venv"
-    pip install -q ".[dist]" || zef_abort
+    pip install -q ".[dist]" || _dtsh_abort
     echo 'done.'
     echo
     local whl_dist=$(find "$DTSH_HOME"/dist/ -name "*.whl")
@@ -121,13 +115,42 @@ dtsh_dist_release() {
     echo "Source dist: $src_dist"
     echo "Wheel dist:  $whl_dist"
     echo "WARNING: will publish on PyPI!!"
-    zef_continue_yn
+    _dtsh_continue_yn
     echo '**** Uploading to PyPI'
-    python3.11 -m twine upload "$src_dist" "$whl_dist" || zef_abort
+    python3.11 -m twine upload "$src_dist" "$whl_dist" || _dtsh_abort
     echo 'done.'
     echo
     echo '**** Dispose dist environment'
     deactivate
     rm -rf "$DTSH_HOME/tmp-dist"
     echo 'done.'
+}
+
+# Continue/abort prompt.
+_dtsh_continue_yn() {
+    local arg_msg="$1"
+    if [ -n "$arg_msg" ]; then
+        echo "$arg_msg"
+    fi
+    echo -n 'Continue [yN]: '
+    read yes_no
+    case "$yes_no" in
+        y|Y)
+            ;;
+        *)
+			echo "Goodbye."
+            # Exit the function stack without exiting shell.
+			_dtsh_abort
+			;;
+    esac
+}
+
+# Output optional message to stderr
+# and exit the function stack without exiting shell.
+_dtsh_abort() {
+    if [ -n "$1" ]; then
+        echo "$1" 1>&2
+    fi
+
+    kill -INT $$
 }
