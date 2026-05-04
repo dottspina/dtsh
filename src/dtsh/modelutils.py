@@ -12,32 +12,22 @@
 Unit tests and examples: tests/test_dtsh_modelutils.py
 """
 
-
-from typing import (
-    cast,
-    Any,
-    Union,
-    Callable,
-    Tuple,
-    Set,
-    List,
-    Optional,
-    Sequence,
-    Iterator,
-    Mapping,
-)
-
 import operator
 import re
 import sys
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import (
+    Any,
+    cast,
+)
 
 from dtsh.model import (
-    DTWalkable,
     DTNode,
-    DTNodeProperty,
-    DTNodePHandleData,
-    DTNodeSorter,
     DTNodeCriterion,
+    DTNodePHandleData,
+    DTNodeProperty,
+    DTNodeSorter,
+    DTWalkable,
 )
 
 
@@ -61,7 +51,7 @@ class DTNodeSortByAttr(DTNodeSorter):
 
     def split_sortable_unsortable(
         self, nodes: Sequence[DTNode]
-    ) -> Tuple[List[DTNode], List[DTNode]]:
+    ) -> tuple[list[DTNode], list[DTNode]]:
         """Overrides DTNodeSorter.split_sortable_unsortable().
 
         Returns:
@@ -120,7 +110,7 @@ class DTNodeSortByAttr(DTNodeSorter):
 
     def sort(
         self, nodes: Sequence[DTNode], reverse: bool = False
-    ) -> List[DTNode]:
+    ) -> list[DTNode]:
         """Overrides DTNodeSorter.sort()."""
         # Set the reverse flag that the weight function will rely on.
         self._reverse = reverse
@@ -574,12 +564,12 @@ class DTNodeIntCriterion(DTNodeCriterion):
     }
 
     _operator: Callable[[int, int], bool]
-    _int: Optional[int]
+    _int: int | None
 
     def __init__(
         self,
-        criter_op: Optional[Callable[[int, int], bool]],
-        criter_int: Optional[int],
+        criter_op: Callable[[int, int], bool] | None,
+        criter_int: int | None,
     ) -> None:
         """Initialize criterion.
 
@@ -681,7 +671,7 @@ class DTWalkableComb(DTWalkable):
     """
 
     _root: DTNode
-    _comb: Set[DTNode]
+    _comb: set[DTNode]
 
     def __init__(self, root: DTNode, leaves: Sequence[DTNode]) -> None:
         """Initialize the virtual devicetree.
@@ -692,19 +682,19 @@ class DTWalkableComb(DTWalkable):
             leaves: The leaf nodes of the virtual devicetree.
         """
         self._root = root
-        self._comb: Set[DTNode] = set()
+        self._comb: set[DTNode] = set()
         for leaf in leaves:
             self._comb.update(list(leaf.rwalk()))
 
     @property
-    def comb(self) -> Set[DTNode]:
+    def comb(self) -> set[DTNode]:
         """All the nodes required to represent this virtual devicetree."""
         return self._comb
 
     def walk(
         self,
         /,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
         fixed_depth: int = 0,
@@ -721,9 +711,9 @@ class DTWalkableComb(DTWalkable):
 
     def _walk(
         self,
-        branch: Optional[DTNode] = None,
+        branch: DTNode | None = None,
         /,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
     ) -> Iterator[DTNode]:
         if branch in self._comb:
@@ -779,26 +769,26 @@ class DTSUtil:
             The property value as it could appear in the DTS.
         """
         if isinstance(value, list):
-            val0: Union[int, str, DTNode, DTNodePHandleData, None] = value[0]
+            val0: int | str | DTNode | DTNodePHandleData | None = value[0]
 
             if isinstance(val0, int):
                 # DTS "type: array".
-                int_array: List[int] = cast(List[int], value)
+                int_array: list[int] = cast(list[int], value)
                 return cls.mk_array(int_array)
 
             if isinstance(val0, str):
                 # DTS "type: string-array".
-                str_array: List[str] = cast(List[str], value)
+                str_array: list[str] = cast(list[str], value)
                 return cls.mk_string_array(str_array)
 
             if isinstance(val0, DTNode):
                 # DTS "type: phandles".
-                phandles: List[DTNode] = cast(List[DTNode], value)
+                phandles: list[DTNode] = cast(list[DTNode], value)
                 return cls.mk_phandles(phandles)
 
             # DTS "type: phandle-array".
-            phandle_array: List[DTNodePHandleData] = cast(
-                List[DTNodePHandleData], value
+            phandle_array: list[DTNodePHandleData] = cast(
+                list[DTNodePHandleData], value
             )
             return cls.mk_phandle_array(phandle_array)
 
@@ -897,18 +887,15 @@ class DTSUtil:
             By default, a cell containing the handle, e.g. "< &spi3_sleep >".
         """
         # These usually have at least one DTS label.
-        if node.labels:
-            strhandle = f"&{node.labels[0]}"
-        else:
-            # Fallback to node's path.
-            strhandle = node.path
+        # Fallback to node's path.
+        strhandle = f"&{node.labels[0]}" if node.labels else node.path
 
         if as_cell:
             strhandle = cls._mk_cell(strhandle)
         return strhandle
 
     @classmethod
-    def mk_array(cls, int_arr: List[int], as_cell: bool = True) -> str:
+    def mk_array(cls, int_arr: list[int], as_cell: bool = True) -> str:
         """Make DTS-like output for values of type "array".
 
         Args:
@@ -929,7 +916,7 @@ class DTSUtil:
         return ", ".join(cls.mk_int(val, as_cell=True) for val in int_arr)
 
     @classmethod
-    def mk_string_array(cls, str_arr: List[str]) -> str:
+    def mk_string_array(cls, str_arr: list[str]) -> str:
         """Make DTS-like output for values of type "string-array".
 
         Args:
@@ -941,7 +928,7 @@ class DTSUtil:
         return ", ".join(cls.mk_string(val) for val in str_arr)
 
     @classmethod
-    def mk_phandles(cls, phandles: List[DTNode]) -> str:
+    def mk_phandles(cls, phandles: list[DTNode]) -> str:
         """Make DTS-like output for values of type "phandles".
 
         Args:
@@ -956,7 +943,7 @@ class DTSUtil:
         return cls._mk_cell(strval)
 
     @classmethod
-    def mk_phandle_array(cls, phandle_array: List[DTNodePHandleData]) -> str:
+    def mk_phandle_array(cls, phandle_array: list[DTNodePHandleData]) -> str:
         """Make DTS-like output for values of type "phandle-array".
 
         Args:
@@ -986,10 +973,12 @@ class DTSUtil:
             Non-integer data values are converted to their default
             string representation.
         """
-        data_values: List[str] = [
-            cls.mk_int(data, as_cell=False)
-            if isinstance(data, int)
-            else str(data)
+        data_values: list[str] = [
+            (
+                cls.mk_int(data, as_cell=False)
+                if isinstance(data, int)
+                else str(data)
+            )
             for data in phdata.data.values()
         ]
 

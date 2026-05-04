@@ -8,22 +8,21 @@ Base view definitions compatible with the rich console protocol, __rich__().
 """
 
 
-from typing import Optional, Union, Sequence
+from collections.abc import Sequence
 
 import rich.box
 from rich.console import RenderableType
-from rich.padding import PaddingDimensions, Padding
+from rich.padding import Padding, PaddingDimensions
 from rich.style import StyleType
 from rich.table import Table
 from rich.text import Text
 
-from dtsh.config import DTShConfig, ActionableType
+from dtsh.config import ActionableType, DTShConfig
 from dtsh.io import DTShOutput
-from dtsh.shell import DTShCommand, DTShCommandError
-from dtsh.shellutils import DTShFlagPager
-
 from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
+from dtsh.shell import DTShCommand, DTShCommandError
+from dtsh.shellutils import DTShFlagPager
 
 
 class View:
@@ -36,7 +35,6 @@ class View:
       typically named ViewXXX
     """
 
-    PrintableType = Union[RenderableType | "View"]
     """Represent anything we may print() to the console,
     custom views, rich segments or ANSI strings.
     """
@@ -84,6 +82,9 @@ class View:
         return view
 
 
+PrintableType = RenderableType | View
+
+
 class GridLayout(View):
     """Base for grid layouts.
 
@@ -128,7 +129,7 @@ class GridLayout(View):
         """
         return self._grid
 
-    def add_row(self, *views: Optional[RenderableType]) -> "GridLayout":
+    def add_row(self, *views: RenderableType | None) -> "GridLayout":
         """Add a row to this grid layout.
 
         Args:
@@ -196,7 +197,7 @@ class TableLayout(View):
         """
         return self._table
 
-    def add_row(self, *views: Optional[RenderableType]) -> None:
+    def add_row(self, *views: RenderableType | None) -> None:
         """Add a row to this table layout.
 
         Args:
@@ -218,9 +219,9 @@ class StatusBar(GridLayout):
 
     def __init__(
         self,
-        text_left: Optional[Union[str, Text]],
-        text_center: Optional[Union[str, Text]],
-        text_right: Optional[Union[str, Text]],
+        text_left: str | Text | None,
+        text_center: str | Text | None,
+        text_right: str | Text | None,
     ) -> None:
         """Initialize status bar.
 
@@ -245,16 +246,16 @@ class FormLayout(GridLayout):
     where <content> may be any renderable type.
     """
 
-    _placeholder: Optional[Union[str, Text]]
-    _style: Optional[StyleType]
+    _placeholder: str | Text | None
+    _style: StyleType | None
     _linktype: ActionableType
 
     def __init__(
         self,
         /,
         *,
-        placeholder: Optional[Union[str, Text]] = None,
-        style: Optional[StyleType] = None,
+        placeholder: str | Text | None = None,
+        style: StyleType | None = None,
     ) -> None:
         """Initialize form.
 
@@ -272,7 +273,7 @@ class FormLayout(GridLayout):
         self._grid.columns[0].justify = "right"
 
     def add_content(
-        self, label: str, content: Optional[Union[View, RenderableType]]
+        self, label: str, content: View | RenderableType | None
     ) -> None:
         """Add en entry to this form.
 
@@ -302,7 +303,7 @@ class HeadingsContentWriter:
     a single complete view before we print something to the console.
     """
 
-    ContentType = Union[RenderableType, View]
+    ContentType = RenderableType | View
 
     class Section:
         """Contents."""
@@ -418,7 +419,7 @@ class RenderableError(BaseException):
         # Body.
         body = GridLayout()
         body.add_row(TextUtil.mk_text(f"{label}"))
-        body.add_row(TextUtil.mk_warning(strerror))
+        body.add_row(TextUtil.mk_warning(strerror or "!?"))
         body.left_indent(2)
         self._grid.add_row(body)
 

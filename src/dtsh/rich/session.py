@@ -10,33 +10,31 @@ Extend the base session with:
 - batch commands to execute on start-up, before or instead of user input
 """
 
-from typing import Any, Sequence, Optional, List, Union
-
 import os
+from collections.abc import Sequence
+from typing import Any
 
 from dtsh.config import DTShConfig
-from dtsh.shell import (
-    DTSh,
-    DTShError,
-    DTShCommandNotFoundError,
-    DTShUsageError,
-    DTShCommandError,
-)
-from dtsh.session import DTShSession
-from dtsh.io import DTShInput, DTShOutput, DTShRedirect, DTShVT, DTShInputFile, DTShInputCmds
-
+from dtsh.io import DTShInput, DTShInputCmds, DTShInputFile, DTShOutput, DTShRedirect, DTShVT
+from dtsh.rich.autocomp import DTShRichAutocomp
 from dtsh.rich.io import (
-    DTShRichVT,
     DTShBatchRichVT,
-    DTShOutputFileText,
     DTShOutputFileHtml,
     DTShOutputFileSVG,
+    DTShOutputFileText,
+    DTShRichVT,
 )
-from dtsh.rich.autocomp import DTShRichAutocomp
-from dtsh.rich.theme import DTShTheme
-from dtsh.rich.text import TextUtil
 from dtsh.rich.modelview import DTModelView
-
+from dtsh.rich.text import TextUtil
+from dtsh.rich.theme import DTShTheme
+from dtsh.session import DTShSession
+from dtsh.shell import (
+    DTSh,
+    DTShCommandError,
+    DTShCommandNotFoundError,
+    DTShError,
+    DTShUsageError,
+)
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -48,8 +46,8 @@ class DTShRichSession(DTShSession):
     def create_batch(
         cls,
         dts_path: str,
-        binding_dirs: Optional[List[str]],
-        batch: Union[str, List[str]],
+        binding_dirs: list[str] | None,
+        batch: str | list[str],
         interactive: bool,
     ) -> DTShSession:
         """Create batch session.
@@ -71,7 +69,7 @@ class DTShRichSession(DTShSession):
         Raises:
             DTShError: Invalid DTS or batch input file.
         """
-        vt: Optional[DTShVT] = None
+        vt: DTShVT | None = None
         batch_is: DTShInput
         if isinstance(batch, str):
             # Batch input file.
@@ -79,7 +77,7 @@ class DTShRichSession(DTShSession):
                 batch_is = DTShInputFile(batch)
             except DTShInputFile.Error as e:
                 raise DTShError(str(e)) from e
-        elif isinstance(batch, List):
+        elif isinstance(batch, list):
             # Batch commands from cli arguments.
             batch_is = DTShInputCmds(batch)
         else:
@@ -93,7 +91,7 @@ class DTShRichSession(DTShSession):
     def __init__(
         self,
         sh: DTSh,
-        vt: Optional[DTShVT] = None,
+        vt: DTShVT | None = None,
     ) -> None:
         """Initialize rich session.
 

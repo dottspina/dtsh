@@ -7,24 +7,21 @@
 Unit tests and examples: tests/test_dtsh_autocomp.py
 """
 
-
-from typing import cast, List, Set
-
 import os
+from typing import cast
 
-from dtsh.model import DTPath, DTNode, DTBinding, DTNodeProperty
-from dtsh.rl import DTShReadline
-from dtsh.io import DTShOutput
 from dtsh.config import DTShConfig
+from dtsh.io import DTShOutput
+from dtsh.model import DTBinding, DTNode, DTNodeProperty, DTPath
+from dtsh.rl import DTShReadline
 from dtsh.shell import (
-    DTSh,
-    DTShCommand,
-    DTShOption,
-    DTShArg,
-    DTShCommandNotFoundError,
     DTPathNotFoundError,
+    DTSh,
+    DTShArg,
+    DTShCommand,
+    DTShCommandNotFoundError,
+    DTShOption,
 )
-
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -111,9 +108,9 @@ class RlStateDTProperty(DTShReadline.CompleterState):
 class RlStateCompatStr(DTShReadline.CompleterState):
     """RL completer state for compatible strings."""
 
-    _bindings: Set[DTBinding]
+    _bindings: set[DTBinding]
 
-    def __init__(self, rlstr: str, bindings: Set[DTBinding]) -> None:
+    def __init__(self, rlstr: str, bindings: set[DTBinding]) -> None:
         """Initialize completer state.
 
         Args:
@@ -128,7 +125,7 @@ class RlStateCompatStr(DTShReadline.CompleterState):
         return self._rlstr
 
     @property
-    def bindings(self) -> Set[DTBinding]:
+    def bindings(self) -> set[DTBinding]:
         """All bindings for this compatible (e.g. for different buses)."""
         return self._bindings
 
@@ -293,7 +290,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtshcmd(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete command name.
 
         Args:
@@ -312,7 +309,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtshopt(
         cs_txt: str, cmd: DTShCommand
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete option name.
 
         Args:
@@ -322,7 +319,7 @@ class DTShAutocomp:
         Returns:
             The options that are valid completer states.
         """
-        states: List[DTShReadline.CompleterState] = []
+        states: list[DTShReadline.CompleterState] = []
 
         if cs_txt.startswith("--"):
             # Only options with a long name.
@@ -334,9 +331,9 @@ class DTShAutocomp:
                         for opt in cmd.options
                         if opt.longname and opt.longname.startswith(prefix)
                     ],
-                    key=lambda x: "-"
-                    if x.rlstr == "--help"
-                    else x.rlstr.lower(),
+                    key=lambda x: (
+                        "-" if x.rlstr == "--help" else x.rlstr.lower()
+                    ),
                 )
             )
         elif cs_txt.startswith("-"):
@@ -349,9 +346,9 @@ class DTShAutocomp:
                             for opt in cmd.options
                             if opt.shortname
                         ],
-                        key=lambda x: "-"
-                        if x.rlstr == "-h"
-                        else x.rlstr.lower(),
+                        key=lambda x: (
+                            "-" if x.rlstr == "-h" else x.rlstr.lower()
+                        ),
                     )
                 )
                 # Then options with only a long name.
@@ -380,9 +377,9 @@ class DTShAutocomp:
                             if opt.shortname
                             and opt.shortname not in already_set
                         ],
-                        key=lambda x: "-"
-                        if x.rlstr == "-h"
-                        else x.rlstr.lower(),
+                        key=lambda x: (
+                            "-" if x.rlstr == "-h" else x.rlstr.lower()
+                        ),
                     )
                 )
 
@@ -391,7 +388,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtpath(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete Devicetree path.
 
         Args:
@@ -417,7 +414,7 @@ class DTShAutocomp:
             # of the completion scope.
             dirname = ""
 
-        states: List[DTShReadline.CompleterState] = []
+        states: list[DTShReadline.CompleterState] = []
         try:
             dirnode = sh.node_at(dirname)
         except DTPathNotFoundError:
@@ -438,7 +435,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtpathx(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete devicetree path with support for properties.
 
         These paths have the form "<path>[$<property-name>]",
@@ -465,7 +462,7 @@ class DTShAutocomp:
             return []
 
         prefix = cs_txt[i_prop + 1 :]
-        states: List[DTShReadline.CompleterState] = [
+        states: list[DTShReadline.CompleterState] = [
             RlStateDTProperty(f"{dtpath}${prop.name}", prop)
             for prop in node.all_dtproperties()
             if prop.name.startswith(prefix)
@@ -476,7 +473,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtcompat(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete compatible string.
 
         Args:
@@ -487,13 +484,13 @@ class DTShAutocomp:
             The compatible string values that are valid completer states,
             associated with the relevant bindings.
         """
-        states: List[DTShReadline.CompleterState] = []
+        states: list[DTShReadline.CompleterState] = []
         for compatible in sorted(
             compat
             for compat in sh.dt.compatible_strings
             if compat.startswith(cs_txt)
         ):
-            bindings: Set[DTBinding] = set()
+            bindings: set[DTBinding] = set()
             # 1st, try the natural API, with unknown bus.
             binding = sh.dt.get_compatible_binding(compatible)
             if binding:
@@ -517,7 +514,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtvendor(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete vendor prefix.
 
         Args:
@@ -536,7 +533,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtbus(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete bus protocol.
 
         Args:
@@ -555,7 +552,7 @@ class DTShAutocomp:
     @staticmethod
     def complete_dtalias(
         cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete alias name.
 
         Args:
@@ -574,7 +571,7 @@ class DTShAutocomp:
     @classmethod
     def complete_dtchosen(
         cls, cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete chosen parameter name.
 
         Args:
@@ -593,7 +590,7 @@ class DTShAutocomp:
     @classmethod
     def complete_dtlabel(
         cls, cs_txt: str, sh: DTSh
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Complete devicetree label.
 
         Args:
@@ -620,7 +617,7 @@ class DTShAutocomp:
 
         # Complete with matching labels.
         pattern = cs_txt[i_label:]
-        states: List[RlStateDTLabel] = [
+        states: list[RlStateDTLabel] = [
             # "&" is retained within the completion state
             # when it's present in the completion scope.
             RlStateDTLabel(f"&{label}" if (i_label > 0) else label, node)
@@ -634,7 +631,7 @@ class DTShAutocomp:
         return sorted(states)
 
     @staticmethod
-    def complete_fspath(cs_txt: str) -> List[DTShReadline.CompleterState]:
+    def complete_fspath(cs_txt: str) -> list[DTShReadline.CompleterState]:
         """Complete file-system path.
 
         Args:
@@ -649,10 +646,7 @@ class DTShAutocomp:
             cs_txt = cs_txt.replace("~", os.path.expanduser("~"), 1)
 
         dirname = os.path.dirname(cs_txt)
-        if dirname:
-            dirpath = os.path.abspath(dirname)
-        else:
-            dirpath = os.getcwd()
+        dirpath = os.path.abspath(dirname) if dirname else os.getcwd()
 
         if not os.path.isdir(dirpath):
             return []
@@ -672,7 +666,7 @@ class DTShAutocomp:
         fs_entries.sort(key=lambda entry: entry.name)
 
         # Directories 1st.
-        states: List[DTShReadline.CompleterState] = [
+        states: list[DTShReadline.CompleterState] = [
             # Append "/" to completion matches for directories.
             RlStateFsEntry(
                 f"{os.path.join(dirname, entry.name)}{os.path.sep}", entry
@@ -699,7 +693,7 @@ class DTShAutocomp:
 
     def complete(
         self, cs_txt: str, rlbuf: str, cs_begin: int, cs_end: int
-    ) -> List[DTShReadline.CompleterState]:
+    ) -> list[DTShReadline.CompleterState]:
         """Auto-complete a DTSh command line.
 
         Derived classes may override this method to post-process
@@ -748,11 +742,10 @@ class DTShAutocomp:
             # Won't auto-complete a command line deemed to fail.
             return []
 
-        if redir2:
-            # Auto-completion is asking for possible redirection file paths
-            # when we're past the last redirection operator.
-            if cs_begin > rlbuf.rfind(">"):
-                return DTShAutocomp.complete_fspath(cs_txt)
+        # Auto-completion is asking for possible redirection file paths
+        # when we're past the last redirection operator.
+        if redir2 and (cs_begin > rlbuf.rfind(">")):
+            return DTShAutocomp.complete_fspath(cs_txt)
 
         # At this point, auto-completion may be asking for:
         # - either a command's option name
@@ -782,7 +775,7 @@ class DTShAutocomp:
     def display(
         self,
         out: DTShOutput,
-        states: List[DTShReadline.CompleterState],
+        states: list[DTShReadline.CompleterState],
     ) -> None:
         """Default DTSh callback for displaying the completion candidates.
 

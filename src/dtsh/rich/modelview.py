@@ -7,26 +7,15 @@
 Stateless view factories of base Devicetree model elements.
 """
 
-from typing import (
-    cast,
-    Type,
-    Optional,
-    Union,
-    Iterable,
-    Sequence,
-    List,
-    Generator,
-    Mapping,
-    Dict,
-    Tuple,
-)
-
-from pathlib import Path
-
 import enum
 import os
-import yaml
+from collections.abc import Generator, Iterable, Mapping, Sequence
+from pathlib import Path
+from typing import (
+    cast,
+)
 
+import yaml
 from rich import box
 from rich.console import RenderableType
 from rich.padding import PaddingDimensions
@@ -35,45 +24,43 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
-from dtsh.config import DTShConfig, ActionableType
+from dtsh.config import ActionableType, DTShConfig
 from dtsh.dts import DTS, DTSFile
 from dtsh.hwm import DTShBoard
-from dtsh.utils import YAMLFile, YAMLFilesystem, DTShToolchain
 from dtsh.model import (
-    DTPath,
-    DTWalkable,
+    DTBinding,
     DTModel,
     DTNode,
-    DTNodeRegister,
     DTNodeInterrupt,
-    DTNodeProperty,
-    DTPropertySpec,
     DTNodePHandleData,
-    DTBinding,
+    DTNodeProperty,
+    DTNodeRegister,
     DTNodeSorter,
+    DTPath,
+    DTPropertySpec,
+    DTWalkable,
 )
 from dtsh.modelutils import (
-    DTNodeSortByNodeLabel,
     DTNodeSortByAlias,
+    DTNodeSortByBus,
     DTNodeSortByCompatible,
-    DTNodeSortByRegSize,
-    DTNodeSortByRegAddr,
     DTNodeSortByIrqNumber,
     DTNodeSortByIrqPriority,
-    DTNodeSortByBus,
+    DTNodeSortByNodeLabel,
+    DTNodeSortByRegAddr,
+    DTNodeSortByRegSize,
     DTSUtil,
-)
-
-from dtsh.rich.tui import (
-    View,
-    TableLayout,
-    GridLayout,
-    FormLayout,
-    RenderableError,
 )
 from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
-
+from dtsh.rich.tui import (
+    FormLayout,
+    GridLayout,
+    RenderableError,
+    TableLayout,
+    View,
+)
+from dtsh.utils import DTShToolchain, YAMLFile, YAMLFilesystem
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -105,7 +92,7 @@ class DTModelView:
         # The devicetree root basename will be empty.
         basename: str = DTPath.basename(pathname)
 
-        tv_branch: Optional[Text]
+        tv_branch: Text | None
         if basename:
             if dirname != "/":
                 # Append the path separator to the branch path
@@ -161,7 +148,7 @@ class DTModelView:
         return TextUtil.assemble(tv_branch, tv_node)
 
     @classmethod
-    def mk_addr(cls, addr: int, style: Optional[StyleType] = None) -> Text:
+    def mk_addr(cls, addr: int, style: StyleType | None = None) -> Text:
         """Base text view factory for addresses.
 
         Address representation is an hexadecimal number,
@@ -177,7 +164,7 @@ class DTModelView:
         return TextUtil.mk_text(straddr, style)
 
     @classmethod
-    def mk_size(cls, size: int, style: Optional[StyleType] = None) -> Text:
+    def mk_size(cls, size: int, style: StyleType | None = None) -> Text:
         """Base text view factory for memory sizes.
 
         Size representation is either:
@@ -404,12 +391,12 @@ class SketchMV:
 
     _layout: "SketchMV.Layout"
     _reversed: bool
-    _sorter: Optional[DTNodeSorter]
+    _sorter: DTNodeSorter | None
 
     def __init__(
         self,
         layout: "SketchMV.Layout",
-        sorter: Optional[DTNodeSorter] = None,
+        sorter: DTNodeSorter | None = None,
         reverse: bool = False,
     ) -> None:
         """Initialize sketch.
@@ -449,13 +436,13 @@ class SketchMV:
             raise ValueError(self._layout)
         return fmt
 
-    def mk_placeholder(self) -> Optional[Text]:
+    def mk_placeholder(self) -> Text | None:
         """Make a placeholder.
 
         The actual placeholder character depends on the rendering layout
         and user preferences.
         """
-        placeholder: Optional[str] = None
+        placeholder: str | None = None
         if self._layout == SketchMV.Layout.LIST_VIEW:
             placeholder = _dtshconf.pref_list_placeholder
         elif self._layout == SketchMV.Layout.TREE_VIEW:
@@ -471,7 +458,7 @@ class SketchMV:
 
         return TextUtil.mk_text(placeholder) if placeholder else None
 
-    def link(self, text: Union[str, Text], uri: str) -> Text:
+    def link(self, text: str | Text, uri: str) -> Text:
         """Link text.
 
         The actual actionable view link depends on
@@ -497,7 +484,7 @@ class SketchMV:
             raise ValueError(self._layout)
         return TextUtil.link(text, uri, action_type)
 
-    def with_sorter(self, sorter_t: Type[DTNodeSorter]) -> bool:
+    def with_sorter(self, sorter_t: type[DTNodeSorter]) -> bool:
         """Check if the rendering context includes a sorter.
 
         Args:
@@ -529,7 +516,7 @@ class NodeMV:
     - build the final view depending on the rendering layout
     """
 
-    T = Type["NodeMV"]
+    T = type["NodeMV"]
     """Type to represent a concrete stateless factory."""
 
     @classmethod
@@ -550,7 +537,7 @@ class NodeMV:
     @classmethod
     def mk_view(
         cls, node: DTNode, sketch: SketchMV
-    ) -> Optional[RenderableType]:
+    ) -> RenderableType | None:
         """Make the view that represents this node aspect.
 
         Args:
@@ -614,7 +601,7 @@ class NodeColumnMV:
 
     def mk_view(
         self, node: DTNode, sketch: SketchMV
-    ) -> Optional[RenderableType]:
+    ) -> RenderableType | None:
         """Shortcut to call view factory.
 
         Args:
@@ -667,7 +654,7 @@ class ViewNodeTable(TableLayout):
 
         NOTE: Won't check for duplicates.
         """
-        cols: List[Optional[RenderableType]] = [
+        cols: list[RenderableType | None] = [
             col.mk_view(node, self._sketch) for col in self._cols
         ]
         self.add_row(*cols)
@@ -688,7 +675,7 @@ class ViewNodeList(ViewNodeTable):
         self,
         cols: Sequence[NodeColumnMV],
         sketch: SketchMV,
-        no_wrap: Optional[bool] = None,
+        no_wrap: bool | None = None,
     ) -> None:
         """Initialize view.
 
@@ -716,7 +703,7 @@ class ViewNodeList(ViewNodeTable):
 class ViewDTWalkable(View):
     """Base view for DT walk-able."""
 
-    _tree: Optional[Tree]
+    _tree: Tree | None
     _walkable: DTWalkable
 
     def __init__(self, walkable: DTWalkable) -> None:
@@ -739,7 +726,7 @@ class ViewDTWalkable(View):
 
     def walk_layout(
         self,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
         fixed_depth: int = 0,
@@ -762,7 +749,7 @@ class ViewDTWalkable(View):
             The added nodes in order of traversal.
         """
         # Map devicetree branches (nodes) to their Tree representation.
-        branch2tree: Dict[DTNode, Tree] = {}
+        branch2tree: dict[DTNode, Tree] = {}
 
         walker = self._walkable.walk(
             order_by=order_by,
@@ -788,7 +775,7 @@ class ViewDTWalkable(View):
 
     def do_layout(
         self,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
         fixed_depth: int = 0,
@@ -856,7 +843,7 @@ class ViewDTWalkableMV(ViewDTWalkable):
     """
 
     # Initialized on walk_layout().
-    _sketch: Optional[SketchMV]
+    _sketch: SketchMV | None
 
     def __init__(
         self,
@@ -875,7 +862,7 @@ class ViewDTWalkableMV(ViewDTWalkable):
 
     def walk_layout(
         self,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
         fixed_depth: int = 0,
@@ -917,7 +904,7 @@ class ViewNodeTwoSided(GridLayout):
 
     def do_layout(
         self,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
         fixed_depth: int = 0,
@@ -1063,9 +1050,9 @@ class CompatibleNodeMV(NodeMV):
         else:
             compats = node.compatibles
 
-        tvs_compats: List[Text] = []
+        tvs_compats: list[Text] = []
         for compat in compats:
-            binding_path: Optional[str] = None
+            binding_path: str | None = None
             if compat == node.compatible:
                 txt_compat = DTModelView.mk_binding_compat(compat)
                 binding_path = node.binding_path
@@ -1099,7 +1086,7 @@ class BindingNodeMV(NodeMV):
         if not (binding.compatible or binding.description):
             return []
 
-        tv_binding: Optional[Text] = None
+        tv_binding: Text | None = None
         if binding.compatible:
             tv_binding = DTModelView.mk_binding_compat(binding.compatible)
         elif binding.description:
@@ -1112,7 +1099,7 @@ class BindingNodeMV(NodeMV):
         # Child-bindings layout.
         cb_depth: int = binding.cb_depth
         # Should we anchor child-bindings to their parent node's binding ?
-        cb_anchor: Optional[str] = _dtshconf.pref_tree_cb_anchor
+        cb_anchor: str | None = _dtshconf.pref_tree_cb_anchor
         cb_anchored = (
             sketch.layout == SketchMV.Layout.TWO_SIDED
             and cb_depth
@@ -1269,7 +1256,7 @@ class BusNodeMV(NodeMV):
     @classmethod
     def mk_text(cls, node: DTNode, sketch: SketchMV) -> Sequence[Text]:
         """Overrides NodeMV.mk_text()."""
-        tv_businfo: Optional[Text] = None
+        tv_businfo: Text | None = None
         tvs_buses = BusesNodeMV.mk_text(node, sketch)
         tvs_on_bus = OnBusNodeMV.mk_text(node, sketch)
 
@@ -1384,7 +1371,7 @@ class DepOnNodeMV(NodeMV):
         if not node.depends_on:
             return []
 
-        tvs_dep_on: List[Text] = []
+        tvs_dep_on: list[Text] = []
         for dep in node.depends_on:
             dep_failed = False
             if node.enabled:
@@ -1479,27 +1466,27 @@ class DTTypesMV:
             A styled text representation of the property's value.
         """
         if isinstance(dtvalue, list):
-            val0: Union[int, str, DTNode, DTNodePHandleData, None] = dtvalue[0]
+            val0: int | str | DTNode | DTNodePHandleData | None = dtvalue[0]
 
             if isinstance(val0, int):
                 # DTS "type: array".
-                int_array: List[int] = cast(List[int], dtvalue)
+                int_array: list[int] = cast(list[int], dtvalue)
                 return cls.mk_array(int_array)
 
             if isinstance(val0, str):
                 # DTS "type: string-array".
-                str_array: List[str] = cast(List[str], dtvalue)
+                str_array: list[str] = cast(list[str], dtvalue)
                 return cls.mk_string_array(str_array)
 
             if isinstance(val0, DTNode):
                 # DTS "type: phandles".
-                phandles: List[DTNode] = cast(List[DTNode], dtvalue)
+                phandles: list[DTNode] = cast(list[DTNode], dtvalue)
                 return cls.mk_phandles(phandles)
 
             if isinstance(val0, DTNodePHandleData):
                 # DTS "type: phandle-array".
-                phandle_array: List[DTNodePHandleData] = cast(
-                    List[DTNodePHandleData], dtvalue
+                phandle_array: list[DTNodePHandleData] = cast(
+                    list[DTNodePHandleData], dtvalue
                 )
                 return cls.mk_phandle_array(phandle_array)
 
@@ -1523,7 +1510,7 @@ class DTTypesMV:
         return TextUtil.mk_text(str(dtvalue))
 
     @classmethod
-    def mk_property_value(cls, dtprop: DTNodeProperty) -> Optional[Text]:
+    def mk_property_value(cls, dtprop: DTNodeProperty) -> Text | None:
         """Make a styled text representation of a property value.
 
         Args:
@@ -1630,7 +1617,7 @@ class DTTypesMV:
         return txt_phandle
 
     @classmethod
-    def mk_array(cls, int_arr: List[int], as_cell: bool = True) -> Text:
+    def mk_array(cls, int_arr: list[int], as_cell: bool = True) -> Text:
         """Make styled text for DT values of type "array".
 
         See also DTSUtil.mk_array().
@@ -1658,7 +1645,7 @@ class DTTypesMV:
         )
 
     @classmethod
-    def mk_string_array(cls, str_arr: List[str]) -> Text:
+    def mk_string_array(cls, str_arr: list[str]) -> Text:
         """Make styled text for DT values of type "string-array".
 
         See also DTSUtil.mk_string_array().
@@ -1674,7 +1661,7 @@ class DTTypesMV:
         )
 
     @classmethod
-    def mk_phandles(cls, phandles: List[DTNode]) -> Text:
+    def mk_phandles(cls, phandles: list[DTNode]) -> Text:
         """Make styled text for DT values of type "phandles".
 
         See also DTSUtil.mk_phandles().
@@ -1692,7 +1679,7 @@ class DTTypesMV:
         return cls._mk_cell(txt_phandles)
 
     @classmethod
-    def mk_phandle_array(cls, phandle_array: List[DTNodePHandleData]) -> Text:
+    def mk_phandle_array(cls, phandle_array: list[DTNodePHandleData]) -> Text:
         """Make styled text for DT values of type "phandle-array".
 
         See also DTSUtil.mk_phandle_array().
@@ -1723,7 +1710,7 @@ class DTTypesMV:
         Returns:
             A styled text representation of the "phandle-array" entry.
         """
-        data_values: List[str] = [
+        data_values: list[str] = [
             DTSUtil.mk_int(data, as_cell=False)
             if isinstance(data, int)
             else str(data)
@@ -1777,7 +1764,7 @@ class NodePropertyMV:
     @classmethod
     def mk_headline(
         cls, prop: DTNodeProperty, link_spec: bool = True
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Make styled property description's headline."""
         if prop.description:
             txt_desc = TextUtil.mk_headline(
@@ -1791,7 +1778,7 @@ class NodePropertyMV:
     @classmethod
     def mk_value(
         cls, dtprop: DTNodeProperty, hint_status: bool = True
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Make styled property value."""
         txt_value = DTTypesMV.mk_property_value(dtprop)
         if txt_value and (hint_status and not dtprop.node.enabled):
@@ -1812,7 +1799,7 @@ class FormPropertySpec(FormLayout):
         # NOTE: We should cache these and:
         # - change API to mk_dttype(dttype: str)
         # - return dttypes[dttype]
-        style: Optional[StyleType] = None
+        style: StyleType | None = None
         if spec.dttype == "boolean":
             style = DTShTheme.STYLE_DTVALUE_BOOL
         elif spec.dttype in ("int", "array"):
@@ -1869,12 +1856,12 @@ class FormPropertySpec(FormLayout):
     def _mk_name(self) -> Text:
         return TextUtil.mk_text(self._spec.name, DTShTheme.STYLE_DT_PROPERTY)
 
-    def _mk_required(self) -> Optional[Text]:
+    def _mk_required(self) -> Text | None:
         if self._spec.required:
             return TextUtil.bold("Yes")
         return TextUtil.dim("No")
 
-    def _mk_deprecated(self) -> Optional[Text]:
+    def _mk_deprecated(self) -> Text | None:
         if self._spec.deprecated:
             return TextUtil.strike("Yes")
         return TextUtil.dim("No")
@@ -1894,12 +1881,12 @@ class FormPropertySpec(FormLayout):
             return DTTypesMV.mk_value(self._spec.default)
         return TextUtil.mk_apologies("No default value")
 
-    def _mk_specifier_space(self) -> Optional[Text]:
+    def _mk_specifier_space(self) -> Text | None:
         if self._spec.specifier_space:
             return TextUtil.mk_text(self._spec.specifier_space)
         return TextUtil.mk_apologies("No specifier space")
 
-    def _mk_files(self) -> Optional[RenderableType]:
+    def _mk_files(self) -> RenderableType | None:
         lineage = self._dt.backtrack_property(self._spec)
         if lineage.fyaml_last:
             tree = Tree(
@@ -1956,8 +1943,8 @@ class ViewDescription(View):
 
     def __init__(
         self,
-        description: Optional[str],
-        style: Optional[StyleType] = DTShTheme.STYLE_DT_DESCRIPTION,
+        description: str | None,
+        style: StyleType | None = DTShTheme.STYLE_DT_DESCRIPTION,
     ) -> None:
         """Initialize view.
 
@@ -2016,12 +2003,12 @@ class ViewNodeChildBindings(View):
         """Overrides View.renderable()."""
         return self._tree
 
-    def _init_bindings(self, node: DTNode) -> Tuple[DTBinding, DTBinding]:
+    def _init_bindings(self, node: DTNode) -> tuple[DTBinding, DTBinding]:
         binding = node.binding
         if not binding:
             raise ValueError(node)
 
-        ancestor: Optional[DTBinding] = node.get_child_binding_ancestor()
+        ancestor: DTBinding | None = node.get_child_binding_ancestor()
         return (binding, ancestor or binding)
 
     def _add_child_binding(self, binding: DTBinding, parent: Tree) -> Tree:
@@ -2087,7 +2074,7 @@ class ViewPropertySpecTable(TableLayout):
 
     def _mk_description(
         self, spec: DTPropertySpec, dt: DTModel
-    ) -> Optional[Text]:
+    ) -> Text | None:
         if spec.description:
             txt_desc = TextUtil.mk_headline(
                 spec.description, DTShTheme.STYLE_DT_DESCRIPTION
@@ -2156,7 +2143,7 @@ class FormNodeBinding(FormLayout):
             "This binding neither provides nor depends on buses"
         )
 
-    def _mk_child_bindings(self) -> Union[View, Text]:
+    def _mk_child_bindings(self) -> View | Text:
         if self._binding.cb_depth or self._binding.child_binding:
             return ViewNodeChildBindings(self._node)
 
@@ -2201,15 +2188,15 @@ class ViewNodeBinding(GridLayout):
 class ViewYAMLContent(View):
     """View of YAML content with syntax highlighting and optional titlebar."""
 
-    _view: Union[GridLayout, Syntax]
+    _view: GridLayout | Syntax
 
     def __init__(
         self,
         content: str,
         /,
         *,
-        titlebar: Optional[Text] = None,
-        lexer_theme: Optional[str] = None,
+        titlebar: Text | None = None,
+        lexer_theme: str | None = None,
     ) -> None:
         """Initialize view.
 
@@ -2257,8 +2244,8 @@ class ViewYAMLFile(View):
         /,
         *,
         compact: bool = True,
-        style: Optional[StyleType] = None,
-        linktype: Optional[ActionableType] = None,
+        style: StyleType | None = None,
+        linktype: ActionableType | None = None,
     ) -> "ViewYAMLFile":
         """YAML file view factory.
 
@@ -2282,7 +2269,7 @@ class ViewYAMLFile(View):
         )
 
     # Fully initialized YAML include files.
-    _yaml_includes: Dict[str, YAMLFile]
+    _yaml_includes: dict[str, YAMLFile]
 
     # Either YAML files treeview or error view.
     _view: RenderableType
@@ -2296,8 +2283,8 @@ class ViewYAMLFile(View):
         /,
         *,
         compact: bool = True,
-        style: Optional[StyleType] = None,
-        linktype: Optional[ActionableType] = None,
+        style: StyleType | None = None,
+        linktype: ActionableType | None = None,
     ) -> None:
         """Initialize view.
 
@@ -2315,7 +2302,7 @@ class ViewYAMLFile(View):
         self._linktype = linktype or _dtshconf.pref_yaml_actionable_type
 
         self._yaml_includes = {}
-        err_fyaml: Optional[YAMLFile] = self._init_follow_included(
+        err_fyaml: YAMLFile | None = self._init_follow_included(
             fyaml, yamlfs
         )
         if err_fyaml:
@@ -2334,12 +2321,12 @@ class ViewYAMLFile(View):
 
     def _init_follow_included(
         self, fyaml: YAMLFile, yamlfs: YAMLFilesystem
-    ) -> Optional[YAMLFile]:
+    ) -> YAMLFile | None:
         inc_names: Sequence[str] = fyaml.includes
         if fyaml.lasterr:
             return fyaml
 
-        err_fyaml: Optional[YAMLFile] = None
+        err_fyaml: YAMLFile | None = None
         for inc_name in inc_names:
             inc_file = yamlfs.find_file(inc_name)
             if not inc_file:
@@ -2408,7 +2395,7 @@ class ViewDTSContent(View):
 
     _view: Syntax
 
-    def __init__(self, content: str, theme: Optional[str] = None) -> None:
+    def __init__(self, content: str, theme: str | None = None) -> None:
         """Initialize view.
 
         Args:
@@ -2498,10 +2485,10 @@ class BoardModelView:
     @staticmethod
     def mk_board_dir(
         board: DTShBoard,
-        zephyr_base: Optional[str] = None,
+        zephyr_base: str | None = None,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Board directory (aka BOARD_DIR).
 
@@ -2515,7 +2502,7 @@ class BoardModelView:
             A rich Text view.
         """
         # BOARD_DIR is usually a sub-directory of ZEPHYR_BASE.
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if zephyr_base:
             board_dir = str(board.board_dir)
             flabel = board_dir.replace(zephyr_base, "ZEPHYR_BASE")
@@ -2529,11 +2516,11 @@ class BoardModelView:
     @staticmethod
     def mk_soc_dir(
         board: DTShBoard,
-        zephyr_base: Optional[str] = None,
+        zephyr_base: str | None = None,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """The SoC directory (HWMv2 only, SOC_FULL_DIR).
 
         Args:
@@ -2545,7 +2532,7 @@ class BoardModelView:
         if not board.soc_dir:
             return None
         # SOC_FULL_DIR is usually a sub-directory of ZEPHYR_BASE.
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if zephyr_base:
             soc_dir: str = str(board.soc_dir)
             flabel = soc_dir.replace(zephyr_base, "ZEPHYR_BASE")
@@ -2561,7 +2548,7 @@ class BoardModelView:
         board: DTShBoard,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Board's DTS.
 
@@ -2589,8 +2576,8 @@ class BoardModelView:
         board: DTShBoard,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """SoC SVD.
 
         Args:
@@ -2612,7 +2599,7 @@ class BoardModelView:
         board: DTShBoard,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Test runner metadata file.
 
@@ -2640,8 +2627,8 @@ class BoardModelView:
         board: DTShBoard,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """Board metadata file (HWMv2).
 
         Args:
@@ -2670,8 +2657,8 @@ class BoardModelView:
         board: DTShBoard,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """SoC metadata file (HWMv2).
 
         Args:
@@ -2708,10 +2695,7 @@ class BoardModelView:
         if hwm == DTShBoard.HWM.UNKNOWN:
             return TextUtil.mk_apologies(hwm.version)
 
-        if hwm == DTShBoard.HWM.V2:
-            style = DTShTheme.STYLE_INF_HWM2
-        else:
-            style = DTShTheme.STYLE_INF_HWM1
+        style = DTShTheme.STYLE_INF_HWM2 if hwm == DTShBoard.HWM.V2 else DTShTheme.STYLE_INF_HWM1
         return TextUtil.mk_text(hwm.value, style=style)
 
     @staticmethod
@@ -2727,7 +2711,7 @@ class BoardModelView:
         return TextUtil.mk_text(board.target, style=DTShTheme.STYLE_INF_BOARD)
 
     @staticmethod
-    def mk_shield(board: DTShBoard) -> Optional[Text]:
+    def mk_shield(board: DTShBoard) -> Text | None:
         """The selected shield (aka SHIELD).
 
         Args:
@@ -2741,7 +2725,7 @@ class BoardModelView:
         return TextUtil.mk_text(board.shield, DTShTheme.STYLE_INF_BOARD_SHIELD)
 
     @staticmethod
-    def mk_full_name(board: DTShBoard) -> Optional[Text]:
+    def mk_full_name(board: DTShBoard) -> Text | None:
         """Full name retrieved from the board metadata (HWMv2, board.yml).
 
         Args:
@@ -2757,7 +2741,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_runner_name(board: DTShBoard) -> Optional[Text]:
+    def mk_runner_name(board: DTShBoard) -> Text | None:
         """Name retrieved from the test runner metadata (Twister).
 
         Args:
@@ -2773,7 +2757,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_board_name(board: DTShBoard) -> Optional[Text]:
+    def mk_board_name(board: DTShBoard) -> Text | None:
         """HWMv2 board name.
 
         Args:
@@ -2789,7 +2773,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_board_revision(board: DTShBoard) -> Optional[Text]:
+    def mk_board_revision(board: DTShBoard) -> Text | None:
         """HWMv2 board revision.
 
         Args:
@@ -2805,7 +2789,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_soc(board: DTShBoard) -> Optional[Text]:
+    def mk_soc(board: DTShBoard) -> Text | None:
         """HWMv2 SoC.
 
         Args:
@@ -2819,7 +2803,7 @@ class BoardModelView:
         return None
 
     @staticmethod
-    def mk_cpus(board: DTShBoard) -> Optional[Text]:
+    def mk_cpus(board: DTShBoard) -> Text | None:
         """HWMv2 CPU cluster.
 
         Args:
@@ -2833,7 +2817,7 @@ class BoardModelView:
         return None
 
     @staticmethod
-    def mk_variant(board: DTShBoard) -> Optional[Text]:
+    def mk_variant(board: DTShBoard) -> Text | None:
         """HWMv2 board variant.
 
         Args:
@@ -2849,7 +2833,7 @@ class BoardModelView:
         return None
 
     @staticmethod
-    def mk_qualifiers(board: DTShBoard) -> Optional[Text]:
+    def mk_qualifiers(board: DTShBoard) -> Text | None:
         """HWMv2 board qualifiers.
 
         Args:
@@ -2865,7 +2849,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_board_v2(board: DTShBoard) -> Optional[Text]:
+    def mk_board_v2(board: DTShBoard) -> Text | None:
         """HWMv2 board name and qualifiers.
 
         Args:
@@ -2874,7 +2858,7 @@ class BoardModelView:
         Returns:
             A rich Text view, or None if the board name is unavailable (HWMv1).
         """
-        txt_parts: List[Text] = [
+        txt_parts: list[Text] = [
             txt
             for txt in (
                 BoardModelView.mk_board_name(board),
@@ -2885,7 +2869,7 @@ class BoardModelView:
         return TextUtil.join(" ", txt_parts) if txt_parts else None
 
     @staticmethod
-    def mk_runner_arch(board: DTShBoard) -> Optional[Text]:
+    def mk_runner_arch(board: DTShBoard) -> Text | None:
         """Architecture (e.g. arm, xtensa) retrieved from
         the test runner metadata.
 
@@ -2903,7 +2887,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_runner_type(board: DTShBoard) -> Optional[Text]:
+    def mk_runner_type(board: DTShBoard) -> Text | None:
         """Target type (e.g. mcu, native, qemu) retrieved from
         the test runner metadata.
 
@@ -2921,7 +2905,7 @@ class BoardModelView:
         )
 
     @staticmethod
-    def mk_runner_arch_type(board: DTShBoard) -> Optional[Text]:
+    def mk_runner_arch_type(board: DTShBoard) -> Text | None:
         """Concatenate runner arch and type metadata.
 
         Args:
@@ -2930,7 +2914,7 @@ class BoardModelView:
         Returns:
             A rich Text view, or None if no metadata available.
         """
-        txt_parts: List[Text] = [
+        txt_parts: list[Text] = [
             txt
             for txt in (
                 BoardModelView.mk_runner_arch(board),
@@ -2947,7 +2931,7 @@ class FormBoardInfo(FormLayout):
     @staticmethod
     def create(
         board: DTShBoard,
-        zephyr_base: Optional[str],
+        zephyr_base: str | None,
         /,
         *,
         compact: bool = True,
@@ -2976,14 +2960,14 @@ class FormBoardInfo(FormLayout):
         )
 
     _board: DTShBoard
-    _zephyr_base: Optional[str]
+    _zephyr_base: str | None
     _compact: bool
     _expand_included: bool
 
     def __init__(
         self,
         board: DTShBoard,
-        zephyr_base: Optional[str],
+        zephyr_base: str | None,
         /,
         *,
         compact: bool = True,
@@ -3022,11 +3006,11 @@ class FormBoardInfo(FormLayout):
         self.add_content("Board", BoardModelView.mk_board(self._board))
 
     def _init_name(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_runner_name(self._board)
+        content: Text | None = BoardModelView.mk_runner_name(self._board)
         self.add_content("Name", content)  # Or "unavailable".
 
     def _init_shield(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_shield(self._board)
+        content: Text | None = BoardModelView.mk_shield(self._board)
         self.add_content("Shield", content or "")
 
     def _init_board_dir(self) -> None:
@@ -3078,25 +3062,23 @@ class FormBoardInfoV2(FormBoardInfo):
         self.add_content("Target", BoardModelView.mk_board(self._board))
 
     def _init_board_v2(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_board_v2(self._board)
+        content: Text | None = BoardModelView.mk_board_v2(self._board)
         self.add_content("Board", content)
 
     def _init_revision(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_board_revision(self._board)
+        content: Text | None = BoardModelView.mk_board_revision(self._board)
         self.add_content("Revision", content or "")
 
     def _init_name(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_full_name(
+        content: Text | None = BoardModelView.mk_full_name(
             self._board
         ) or BoardModelView.mk_runner_name(self._board)
         self.add_content("Full name", content)  # Or "unavailable".
 
     def _init_board_metadata(self) -> None:
-        content: Optional[Text | ViewYAMLContent] = None
+        content: Text | ViewYAMLContent | None = None
         if self._board.board_metadata:
-            titlebar: Optional[
-                Text
-            ] = BoardModelView.mk_board_metadata_pathname(
+            titlebar: Text | None = BoardModelView.mk_board_metadata_pathname(
                 self._board, linktype=self._linktype
             )
 
@@ -3115,7 +3097,7 @@ class FormSoCInfo(FormLayout):
     @staticmethod
     def create(
         board: DTShBoard,
-        zephyr_base: Optional[str],
+        zephyr_base: str | None,
         /,
         *,
         compact: bool = True,
@@ -3144,14 +3126,14 @@ class FormSoCInfo(FormLayout):
         )
 
     _board: DTShBoard
-    _zephyr_base: Optional[str]
+    _zephyr_base: str | None
     _compact: bool
     _expand_included: bool
 
     def __init__(
         self,
         board: DTShBoard,
-        zephyr_base: Optional[str],
+        zephyr_base: str | None,
         /,
         *,
         compact: bool = True,
@@ -3183,13 +3165,13 @@ class FormSoCInfo(FormLayout):
         )
 
     def _init_arch_type(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_runner_arch_type(
+        content: Text | None = BoardModelView.mk_runner_arch_type(
             self._board
         )
         self.add_content("Twister metadata", content)
 
     def _init_soc_svd(self) -> None:
-        content: Optional[Text] = None
+        content: Text | None = None
         if self._board.soc_svd:
             content = BoardModelView.mk_soc_svd_pathname(
                 self._board, linktype=self._linktype
@@ -3211,19 +3193,19 @@ class FormSoCInfoV2(FormSoCInfo):
         self._init_soc_metadata()
 
     def _init_soc(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_soc(self._board)
+        content: Text | None = BoardModelView.mk_soc(self._board)
         self.add_content("SoC", content)
 
     def _init_cpus(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_cpus(self._board)
+        content: Text | None = BoardModelView.mk_cpus(self._board)
         self.add_content("CPU cluster", content or "")
 
     def _init_variant(self) -> None:
-        content: Optional[Text] = BoardModelView.mk_variant(self._board)
+        content: Text | None = BoardModelView.mk_variant(self._board)
         self.add_content("Variant", content or "")
 
     def _init_soc_dir(self) -> None:
-        content: Optional[Text] = None
+        content: Text | None = None
         if self._board.soc_dir:
             content = BoardModelView.mk_soc_dir(
                 self._board,
@@ -3233,9 +3215,9 @@ class FormSoCInfoV2(FormSoCInfo):
         self.add_content("SoC directory", content)
 
     def _init_soc_metadata(self) -> None:
-        content: Optional[Text | ViewYAMLContent] = None
+        content: Text | ViewYAMLContent | None = None
         if self._board.soc_metadata:
-            titlebar: Optional[Text] = BoardModelView.mk_soc_metadata_pathname(
+            titlebar: Text | None = BoardModelView.mk_soc_metadata_pathname(
                 self._board, linktype=self._linktype
             )
             if self._compact:
@@ -3255,8 +3237,8 @@ class KernelModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """ZEPHYR_BASE directory.
 
         Args:
@@ -3276,7 +3258,7 @@ class KernelModelView:
         )
 
     @staticmethod
-    def mk_kernel_version(dts: DTS) -> Optional[Text]:
+    def mk_kernel_version(dts: DTS) -> Text | None:
         """Zephyr project version (Git head).
 
         Args:
@@ -3285,7 +3267,7 @@ class KernelModelView:
         Returns:
             A rich Text view, or None if unavailable.
         """
-        kernel_rev: Optional[str] = dts.get_zephyr_head()
+        kernel_rev: str | None = dts.get_zephyr_head()
         if kernel_rev:
             return TextUtil.mk_text(
                 kernel_rev, style=DTShTheme.STYLE_INF_KERNEL_VERSION
@@ -3297,8 +3279,8 @@ class KernelModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[GridLayout]:
+        linktype: ActionableType | None = None,
+    ) -> GridLayout | None:
         """Bindings search path.
 
         Args:
@@ -3313,7 +3295,7 @@ class KernelModelView:
             return None
 
         layout = GridLayout()
-        flabel: Optional[str] = None
+        flabel: str | None = None
         for binding_dir in dts.bindings_search_path:
             if dts.zephyr_base:
                 flabel = binding_dir.replace(dts.zephyr_base, "ZEPHYR_BASE")
@@ -3331,8 +3313,8 @@ class KernelModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """SoC metadata file (HWMv2).
 
         Args:
@@ -3346,7 +3328,7 @@ class KernelModelView:
         if not dts.vendors_file:
             return None
 
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if dts.zephyr_base:
             flabel = dts.vendors_file.replace(dts.zephyr_base, "ZEPHYR_BASE")
         return TextUtil.mk_pathname(
@@ -3361,8 +3343,8 @@ class KernelModelView:
         toolchain: DTShToolchain,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """Toolchain directory.
 
         Args:
@@ -3397,7 +3379,7 @@ class KernelModelView:
         )
 
     @staticmethod
-    def mk_toolchain_name(toolchain: DTShToolchain) -> Optional[Text]:
+    def mk_toolchain_name(toolchain: DTShToolchain) -> Text | None:
         """Toolchain friendly name (variants zephyr and gnuarmemb only).
 
         Args:
@@ -3416,7 +3398,7 @@ class KernelModelView:
         return TextUtil.mk_text(toolchain.name, style=style)
 
     @staticmethod
-    def mk_toolchain_release(toolchain: DTShToolchain) -> Optional[Text]:
+    def mk_toolchain_release(toolchain: DTShToolchain) -> Text | None:
         """Toolchain version (variants zephyr and gnuarmemb only).
 
         Args:
@@ -3442,7 +3424,7 @@ class KernelModelView:
         Returns:
             A rich Text view.
         """
-        txt_parts: List[Text]
+        txt_parts: list[Text]
         if toolchain.name:
             txt_name = KernelModelView.mk_toolchain_name(toolchain) or Text()
             txt_variant = TextUtil.mk_text(f"({toolchain.variant})")
@@ -3457,7 +3439,7 @@ class FormKernelInfo(FormLayout):
     """Form for Zephyr kernel information."""
 
     _dts: DTS
-    _toolchain: Optional[DTShToolchain]
+    _toolchain: DTShToolchain | None
 
     def __init__(self, dts: DTS) -> None:
         """Initialize view.
@@ -3480,41 +3462,41 @@ class FormKernelInfo(FormLayout):
         self._init_toolchain_dir()
 
     def _init_zephyr_base(self) -> None:
-        content: Optional[Text] = KernelModelView.mk_zephyr_base(
+        content: Text | None = KernelModelView.mk_zephyr_base(
             self._dts, linktype=self._linktype
         )
         self.add_content("ZEPHYR_BASE", content)
 
     def _init_kernel_version(self) -> None:
-        content: Optional[Text] = KernelModelView.mk_kernel_version(self._dts)
+        content: Text | None = KernelModelView.mk_kernel_version(self._dts)
         self.add_content("Kernel version", content)
 
     def _init_binding_dirs(self) -> None:
-        content: Optional[GridLayout] = KernelModelView.mk_binding_dirs(
+        content: GridLayout | None = KernelModelView.mk_binding_dirs(
             self._dts, linktype=self._linktype
         )
         self.add_content("Bindings", content)
 
     def _init_vendors_file(self) -> None:
-        content: Optional[Text] = KernelModelView.mk_vendors_pathname(
+        content: Text | None = KernelModelView.mk_vendors_pathname(
             self._dts, linktype=self._linktype
         )
         self.add_content("Vendors", content)
 
     def _init_toolchain(self) -> None:
-        content: Optional[Text] = None
+        content: Text | None = None
         if self._toolchain:
             content = KernelModelView.mk_toolchain(self._toolchain)
         self.add_content("Toolchain", content)
 
     def _init_toolchain_release(self) -> None:
-        content: Optional[Text] = None
+        content: Text | None = None
         if self._toolchain:
             content = KernelModelView.mk_toolchain_release(self._toolchain)
         self.add_content("Toolchain release", content)
 
     def _init_toolchain_dir(self) -> None:
-        content: Optional[Text] = None
+        content: Text | None = None
         if self._toolchain:
             content = KernelModelView.mk_toolchain_dir(
                 self._toolchain, linktype=self._linktype
@@ -3530,8 +3512,8 @@ class FirmwareModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """Source directory.
 
         Args:
@@ -3545,7 +3527,7 @@ class FirmwareModelView:
         if not dts.app_source_dir:
             return None
 
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if dts.zephyr_base:
             flabel = dts.app_source_dir.replace(dts.zephyr_base, "ZEPHYR_BASE")
 
@@ -3561,8 +3543,8 @@ class FirmwareModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """Build directory.
 
         Args:
@@ -3576,7 +3558,7 @@ class FirmwareModelView:
         if not dts.app_binary_dir:
             return None
 
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if dts.app_source_dir:
             flabel = dts.app_binary_dir.replace(
                 dts.app_source_dir, "APPLICATION_SOURCE_DIR"
@@ -3594,7 +3576,7 @@ class FirmwareModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Firmware devicetree.
 
@@ -3619,8 +3601,8 @@ class FirmwareModelView:
         dts: DTS,
         /,
         *,
-        linktype: Optional[ActionableType] = None,
-    ) -> Optional[Text]:
+        linktype: ActionableType | None = None,
+    ) -> Text | None:
         """Application configuration file.
 
         Args:
@@ -3634,7 +3616,7 @@ class FirmwareModelView:
         if not dts.app_conf_file:
             return None
 
-        flabel: Optional[str] = None
+        flabel: str | None = None
         if dts.app_source_dir:
             flabel = dts.app_conf_file.replace(
                 dts.app_source_dir, "APPLICATION_SOURCE_DIR"
@@ -3647,7 +3629,7 @@ class FirmwareModelView:
         )
 
     @staticmethod
-    def mk_fw_name(dts: DTS) -> Optional[Text]:
+    def mk_fw_name(dts: DTS) -> Text | None:
         """Firmware name.
 
         Args:
@@ -3661,7 +3643,7 @@ class FirmwareModelView:
         return TextUtil.mk_text(dts.fw_name, style=DTShTheme.STYLE_INF_FW_NAME)
 
     @staticmethod
-    def mk_fw_version(dts: DTS) -> Optional[Text]:
+    def mk_fw_version(dts: DTS) -> Text | None:
         """Firmware version.
 
         Args:
@@ -3704,33 +3686,33 @@ class FormFirmwareInfo(FormLayout):
         self._init_conf_file()
 
     def _init_app_src_dir(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_app_src_dir(
+        content: Text | None = FirmwareModelView.mk_app_src_dir(
             self._dts, linktype=self._linktype
         )
         self.add_content("Source directory", content)
 
     def _init_app_bin_dir(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_app_bin_dir(
+        content: Text | None = FirmwareModelView.mk_app_bin_dir(
             self._dts, linktype=self._linktype
         )
         self.add_content("Build directory", content)
 
     def _init_fw_name(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_fw_name(self._dts)
+        content: Text | None = FirmwareModelView.mk_fw_name(self._dts)
         self.add_content("Firmware name", content)
 
     def _init_fw_version(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_fw_version(self._dts)
+        content: Text | None = FirmwareModelView.mk_fw_version(self._dts)
         self.add_content("Firmware version", content)
 
     def _init_devicetree(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_dts_pathname(
+        content: Text | None = FirmwareModelView.mk_dts_pathname(
             self._dts, linktype=self._linktype
         )
         self.add_content("Devicetree", content)
 
     def _init_conf_file(self) -> None:
-        content: Optional[Text] = FirmwareModelView.mk_app_conf_pathname(
+        content: Text | None = FirmwareModelView.mk_app_conf_pathname(
             self._dts, linktype=self._linktype
         )
         self.add_content("Configuration file", content)

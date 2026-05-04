@@ -11,30 +11,27 @@ from the /proc filesystem on Linux.
 Unit tests and examples: tests/test_dtsh_builtin_cat.py
 """
 
-from typing import Sequence, List, Optional
-
+from collections.abc import Sequence
 from enum import Enum
 
-from dtsh.utils import YAMLFile
-from dtsh.model import DTNode, DTNodeProperty, DTModel, DTBinding
-from dtsh.modelutils import DTSUtil
-from dtsh.io import DTShOutput
-from dtsh.shell import DTSh, DTShCommand, DTShFlag, DTShCommandError
-from dtsh.shellutils import DTShFlagPager, DTShParamDTPathX
 from dtsh.config import DTShConfig
-
+from dtsh.io import DTShOutput
+from dtsh.model import DTBinding, DTModel, DTNode, DTNodeProperty
+from dtsh.modelutils import DTSUtil
+from dtsh.rich.modelview import (
+    FormPropertySpec,
+    ViewDescription,
+    ViewNodeBinding,
+    ViewPropertyValueTable,
+    ViewYAMLFile,
+)
 from dtsh.rich.shellutils import DTShFlagLongList
 from dtsh.rich.text import TextUtil
 from dtsh.rich.theme import DTShTheme
-from dtsh.rich.tui import HeadingsContentWriter, View
-from dtsh.rich.modelview import (
-    ViewPropertyValueTable,
-    FormPropertySpec,
-    ViewNodeBinding,
-    ViewDescription,
-    ViewYAMLFile,
-)
-
+from dtsh.rich.tui import HeadingsContentWriter, PrintableType
+from dtsh.shell import DTSh, DTShCommand, DTShCommandError, DTShFlag
+from dtsh.shellutils import DTShFlagPager, DTShParamDTPathX
+from dtsh.utils import YAMLFile
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -171,12 +168,11 @@ class DTShBuiltinCat(DTShCommand):
         super().parse_argv(argv)
 
         # Folding requires some YAML to fold ('-Y' or '-A').
-        if self.flag_expand_includes:
-            if not (self.flag_show_all or self.option_yaml):
-                raise DTShCommandError(
-                    self,
-                    "option '--fold-yaml' requires '-Y' or '-A",
-                )
+        if self.flag_expand_includes and not (self.flag_show_all or self.option_yaml):
+            raise DTShCommandError(
+                self,
+                "option '--fold-yaml' requires '-Y' or '-A",
+            )
 
         # Cat output options parsed from the command line.
         cnt_options: int = sum(
@@ -210,7 +206,7 @@ class DTShBuiltinCat(DTShCommand):
         super().execute(argv, sh, out)
 
         param_node: DTNode
-        param_props: Optional[List[DTNodeProperty]]
+        param_props: list[DTNodeProperty] | None
         # Command will fail here if the xpath parameter is invalid
         # (node or property not found).
         param_node, param_props = self.param_xpath.xsplit(self, sh)
@@ -230,11 +226,11 @@ class DTShBuiltinCat(DTShCommand):
 
     def _cat_pvalues(
         self,
-        param_props: List[DTNodeProperty],
+        param_props: list[DTNodeProperty],
         param_node: DTNode,
         out: DTShOutput,
     ) -> None:
-        props: List[DTNodeProperty] = param_props
+        props: list[DTNodeProperty] = param_props
         if not props and not self.param_xpath.is_globexpr():
             # If the user hasn't explicitly selected one or more properties,
             # dump all node property values.
@@ -245,16 +241,16 @@ class DTShBuiltinCat(DTShCommand):
             self._cat_pvalues_ascii(props, out)
 
     def _cat_pvalues_ascii(
-        self, props: List[DTNodeProperty], out: DTShOutput
+        self, props: list[DTNodeProperty], out: DTShOutput
     ) -> None:
         for prop in props:
             strval = DTSUtil.mk_property_value(prop)
             out.write(f"{prop.name}: {strval}")
 
     def _cat_pvalues_rich(
-        self, props: List[DTNodeProperty], node: DTNode, out: DTShOutput
+        self, props: list[DTNodeProperty], node: DTNode, out: DTShOutput
     ) -> None:
-        view: View.PrintableType
+        view: PrintableType
         if props:
             view = ViewPropertyValueTable(props, node.dt)
             view.left_indent(1)
@@ -267,7 +263,7 @@ class DTShBuiltinCat(DTShCommand):
     def _cat_summary(
         self,
         param_node: DTNode,
-        param_props: Optional[List[DTNodeProperty]],
+        param_props: list[DTNodeProperty] | None,
         out: DTShOutput,
     ) -> None:
         if param_props:
@@ -293,7 +289,7 @@ class DTShBuiltinCat(DTShCommand):
         dt: DTModel,
         out: DTShOutput,
     ) -> None:
-        sections: List[HeadingsContentWriter.Section] = []
+        sections: list[HeadingsContentWriter.Section] = []
 
         if self.flag_show_all or self.option_description:
             sections.append(
@@ -311,7 +307,7 @@ class DTShBuiltinCat(DTShCommand):
 
         if self.flag_show_all or self.option_yaml:
             content: HeadingsContentWriter.ContentType
-            fyaml: Optional[YAMLFile] = dt.find_property(prop.dtspec)
+            fyaml: YAMLFile | None = dt.find_property(prop.dtspec)
             if fyaml:
                 path: str = str(fyaml.path)
                 if path == prop.path:
@@ -345,7 +341,7 @@ class DTShBuiltinCat(DTShCommand):
                 out.write(prop.description)
 
         elif self.option_bindings:
-            parts: List[str] = [prop.dtspec.dttype]
+            parts: list[str] = [prop.dtspec.dttype]
             if prop.dtspec.required:
                 parts.append("(required)")
             if prop.dtspec.default is not None:
@@ -354,7 +350,7 @@ class DTShBuiltinCat(DTShCommand):
             out.write(" ".join(parts))
 
         elif self.option_yaml:
-            fyaml: Optional[YAMLFile] = dt.find_property(prop.dtspec)
+            fyaml: YAMLFile | None = dt.find_property(prop.dtspec)
             if fyaml:
                 path: str = str(fyaml.path)
                 if self.flag_expand_includes:
@@ -384,7 +380,7 @@ class DTShBuiltinCat(DTShCommand):
         elif self.option_bindings:
             if node.binding:
                 binding: DTBinding = node.binding
-                parts: List[str] = []
+                parts: list[str] = []
                 if binding.compatible:
                     parts.append(binding.compatible)
                 if binding.buses:
@@ -401,9 +397,7 @@ class DTShBuiltinCat(DTShCommand):
                     else:
                         cblevel = "great-grandchild-binding"
 
-                    ancestor: Optional[
-                        DTBinding
-                    ] = node.get_child_binding_ancestor()
+                    ancestor: DTBinding | None = node.get_child_binding_ancestor()
                     if ancestor:
                         cbof: str
                         if ancestor.compatible:
@@ -419,17 +413,16 @@ class DTShBuiltinCat(DTShCommand):
 
                 out.write(f" {_dtshconf.wchar_dash} ".join(parts))
 
-        elif self.option_yaml:
-            if node.binding_path:
-                fyaml = YAMLFile(node.binding_path)
-                out.write(fyaml.content)
+        elif self.option_yaml and node.binding_path:
+            fyaml = YAMLFile(node.binding_path)
+            out.write(fyaml.content)
 
     def _cat_summary_of_node_rich(
         self,
         node: DTNode,
         out: DTShOutput,
     ) -> None:
-        sections: List[HeadingsContentWriter.Section] = []
+        sections: list[HeadingsContentWriter.Section] = []
 
         if self.flag_show_all or self.option_description:
             sections.append(
@@ -442,7 +435,7 @@ class DTShBuiltinCat(DTShCommand):
 
         if self.flag_show_all:
             # Show property values only when '-A' is set.
-            props: List[DTNodeProperty] = node.all_dtproperties()
+            props: list[DTNodeProperty] = node.all_dtproperties()
             if props:
                 content = ViewPropertyValueTable(props, node.dt)
             else:
@@ -476,7 +469,7 @@ class DTShBuiltinCat(DTShCommand):
         self._write_rich_sections(sections, out)
 
     def _write_rich_sections(
-        self, sections: List[HeadingsContentWriter.Section], out: DTShOutput
+        self, sections: list[HeadingsContentWriter.Section], out: DTShOutput
     ) -> None:
         if len(sections) == 1:
             # If only on section, just write its content.

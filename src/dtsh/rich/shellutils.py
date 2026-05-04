@@ -12,53 +12,50 @@ Unit tests and examples: tests/test_dtsh_rich_shellutils.py
 """
 
 
-from typing import Optional, Sequence, List, Mapping
-
 import sys
+from collections.abc import Mapping, Sequence
 
+from dtsh.autocomp import RlStateEnum
 from dtsh.config import DTShConfig
 from dtsh.model import DTNode, DTNodeSorter
+from dtsh.rich.modelview import (
+    AliasesNodeMV,
+    AlsoKnownAsNodeMV,
+    BindingDepthNodeMV,
+    BindingNodeMV,
+    BusesNodeMV,
+    BusNodeMV,
+    CompatibleNodeMV,
+    DepOnNodeMV,
+    DepOrdinalNodeMV,
+    DescriptionNodeMV,
+    DeviceLabelNodeMV,
+    InterruptsNodeMV,
+    NodeColumnMV,
+    NodeLabelsNodeMV,
+    NodeNameNodeMV,
+    OnBusNodeMV,
+    PathNameNodeMV,
+    RegisterRangesNodeMV,
+    RegistersNodeMV,
+    ReqByNodeMV,
+    SketchMV,
+    StatusNodeMV,
+    UnitAddrNodeMV,
+    UnitNameNodeMV,
+    VendorNodeMV,
+)
 from dtsh.rl import DTShReadline
 from dtsh.shell import (
     DTSh,
+    DTShArg,
+    DTShCommand,
+    DTShError,
+    DTShFlag,
     DTShOption,
     DTShParameter,
-    DTShFlag,
-    DTShArg,
-    DTShError,
-    DTShCommand,
 )
-from dtsh.shellutils import DTShFlagReverse, DTShFlagEnabledOnly, DTShArgOrderBy
-from dtsh.autocomp import RlStateEnum
-
-from dtsh.rich.modelview import (
-    SketchMV,
-    NodeColumnMV,
-    PathNameNodeMV,
-    NodeNameNodeMV,
-    UnitNameNodeMV,
-    UnitAddrNodeMV,
-    DepOrdinalNodeMV,
-    DeviceLabelNodeMV,
-    NodeLabelsNodeMV,
-    CompatibleNodeMV,
-    BindingNodeMV,
-    BindingDepthNodeMV,
-    DescriptionNodeMV,
-    VendorNodeMV,
-    StatusNodeMV,
-    AliasesNodeMV,
-    AlsoKnownAsNodeMV,
-    OnBusNodeMV,
-    BusesNodeMV,
-    BusNodeMV,
-    InterruptsNodeMV,
-    RegistersNodeMV,
-    RegisterRangesNodeMV,
-    DepOnNodeMV,
-    ReqByNodeMV,
-)
-
+from dtsh.shellutils import DTShArgOrderBy, DTShFlagEnabledOnly, DTShFlagReverse
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -175,13 +172,13 @@ class DTShArgLongFmt(DTShArg):
     BRIEF = "node output format"
     LONGNAME = "format"
 
-    _fmt: Optional[DTShNodeFmt.T]
+    _fmt: DTShNodeFmt.T | None
 
     def __init__(self) -> None:
         super().__init__(argname="fmt")
 
     @property
-    def fmt(self) -> Optional[DTShNodeFmt.T]:
+    def fmt(self) -> DTShNodeFmt.T | None:
         """The parsed node output format."""
         return self._fmt
 
@@ -190,13 +187,13 @@ class DTShArgLongFmt(DTShArg):
         super().reset()
         self._fmt = None
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Overrides DTShArg.parsed()."""
         super().parsed(value)
         if self._raw:
             self._fmt = DTShNodeFmt.parse(self._raw)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Overrides DTShArg.autocomp().
 
         Auto-complete argument with format specifiers.
@@ -233,8 +230,8 @@ class DTShCommandLongFmt(DTShCommand):
         self,
         name: str,
         brief: str,
-        options: Optional[Sequence[DTShOption]],
-        parameter: Optional[DTShParameter],
+        options: Sequence[DTShOption] | None,
+        parameter: DTShParameter | None,
     ) -> None:
         """Initialize command.
 
@@ -270,7 +267,7 @@ class DTShCommandLongFmt(DTShCommand):
         return False
 
     @property
-    def arg_sorter(self) -> Optional[DTNodeSorter]:
+    def arg_sorter(self) -> DTNodeSorter | None:
         """Shortcut to the "order-by" argument's value if supported."""
         try:
             return self.with_arg(DTShArgOrderBy).sorter
@@ -333,7 +330,7 @@ class DTShCommandLongFmt(DTShCommand):
 
         return SketchMV(layout, self.arg_sorter, self.flag_reverse)
 
-    def get_longfmt(self, default_fmt: Optional[str] = None) -> DTShNodeFmt.T:
+    def get_longfmt(self, default_fmt: str | None = None) -> DTShNodeFmt.T:
         """Get the node output format to use.
 
         Args:

@@ -10,68 +10,68 @@ Unit tests and examples: tests/test_dtsh_shellutils.py
 """
 
 
-from typing import Any, Type, Optional, Sequence, Mapping, List, Tuple
-
 import re
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-from dtsh.model import DTNode, DTNodeProperty, DTNodeSorter, DTNodeCriterion
+from dtsh.autocomp import DTShAutocomp, RlStateEnum
+from dtsh.model import DTNode, DTNodeCriterion, DTNodeProperty, DTNodeSorter
 from dtsh.modelutils import (
-    DTNodeSortByPathName,
-    DTNodeSortByNodeName,
-    DTNodeSortByUnitName,
-    DTNodeSortByUnitAddr,
-    DTNodeSortByDeviceLabel,
-    DTNodeSortByNodeLabel,
-    DTNodeSortByAlias,
-    DTNodeSortByCompatible,
-    DTNodeSortByBinding,
-    DTNodeSortByVendor,
-    DTNodeSortByBus,
-    DTNodeSortByOnBus,
-    DTNodeSortByDepOrdinal,
-    DTNodeSortByIrqNumber,
-    DTNodeSortByIrqPriority,
-    DTNodeSortByRegSize,
-    DTNodeSortByRegAddr,
-    DTNodeSortByBindingDepth,
-    # Text-based criteria.
-    DTNodeTextCriterion,
-    DTNodeWithPath,
-    DTNodeWithStatus,
-    DTNodeWithName,
-    DTNodeWithUnitName,
-    DTNodeWithCompatible,
-    DTNodeWithBinding,
-    DTNodeWithVendor,
-    DTNodeWithDeviceLabel,
-    DTNodeWithNodeLabel,
-    DTNodeWithAlias,
-    DTNodeWithChosen,
     DTNodeAlsoKnownAs,
-    DTNodeWithBus,
-    DTNodeWithOnBus,
-    DTNodeWithDescription,
     # Integer-based criteria.
     DTNodeIntCriterion,
-    DTNodeWithUnitAddr,
-    DTNodeWithIrqPriority,
+    DTNodeSortByAlias,
+    DTNodeSortByBinding,
+    DTNodeSortByBindingDepth,
+    DTNodeSortByBus,
+    DTNodeSortByCompatible,
+    DTNodeSortByDepOrdinal,
+    DTNodeSortByDeviceLabel,
+    DTNodeSortByIrqNumber,
+    DTNodeSortByIrqPriority,
+    DTNodeSortByNodeLabel,
+    DTNodeSortByNodeName,
+    DTNodeSortByOnBus,
+    DTNodeSortByPathName,
+    DTNodeSortByRegAddr,
+    DTNodeSortByRegSize,
+    DTNodeSortByUnitAddr,
+    DTNodeSortByUnitName,
+    DTNodeSortByVendor,
+    # Text-based criteria.
+    DTNodeTextCriterion,
+    DTNodeWithAlias,
+    DTNodeWithBinding,
+    DTNodeWithBindingDepth,
+    DTNodeWithBus,
+    DTNodeWithChosen,
+    DTNodeWithCompatible,
+    DTNodeWithDepOrd,
+    DTNodeWithDescription,
+    DTNodeWithDeviceLabel,
     DTNodeWithIrqNumber,
+    DTNodeWithIrqPriority,
+    DTNodeWithName,
+    DTNodeWithNodeLabel,
+    DTNodeWithOnBus,
+    DTNodeWithPath,
     DTNodeWithRegAddr,
     DTNodeWithRegSize,
-    DTNodeWithBindingDepth,
-    DTNodeWithDepOrd,
+    DTNodeWithStatus,
+    DTNodeWithUnitAddr,
+    DTNodeWithUnitName,
+    DTNodeWithVendor,
 )
 from dtsh.rl import DTShReadline
-from dtsh.autocomp import DTShAutocomp, RlStateEnum
 from dtsh.shell import (
-    DTSh,
-    DTShCommand,
-    DTShFlag,
-    DTShArg,
-    DTShParameter,
-    DTShError,
     DTPathNotFoundError,
+    DTSh,
+    DTShArg,
+    DTShCommand,
     DTShCommandError,
+    DTShError,
+    DTShFlag,
+    DTShParameter,
 )
 
 
@@ -172,7 +172,7 @@ class DTShArgFixedDepth(DTShArg):
     LONGNAME = "fixed-depth"
 
     # Argument state: depth parsed on the command line.
-    _depth: Optional[int]
+    _depth: int | None
 
     def __init__(self) -> None:
         super().__init__(argname="depth")
@@ -195,7 +195,7 @@ class DTShArgFixedDepth(DTShArg):
         super().reset()
         self._depth = None
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Overrides DTShOption.parsed()."""
         super().parsed(value)
         if self._raw:
@@ -217,7 +217,7 @@ class DTShArgCriterion(DTShArg):
 
     def get_criterion(  # pylint: disable=useless-return
         self, **kwargs: Any
-    ) -> Optional[DTNodeCriterion]:
+    ) -> DTNodeCriterion | None:
         """Get the criterion set by this argument.
 
         Args:
@@ -250,12 +250,12 @@ class DTShArgIntCriterion(DTShArgCriterion):
     )
 
     # Concrete criterion class.
-    _criter_cls: Type[DTNodeIntCriterion]
+    _criter_cls: type[DTNodeIntCriterion]
 
     # Parsed criterion instance.
-    _criterion: Optional[DTNodeIntCriterion]
+    _criterion: DTNodeIntCriterion | None
 
-    def __init__(self, criter_cls: Type[DTNodeIntCriterion]) -> None:
+    def __init__(self, criter_cls: type[DTNodeIntCriterion]) -> None:
         """Initialize criterion.
 
         Args:
@@ -264,7 +264,7 @@ class DTShArgIntCriterion(DTShArgCriterion):
         super().__init__(argname="expr")
         self._criter_cls = criter_cls
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Overrides DTShArg.parsed()."""
         super().parsed(value)
         if not self._raw:
@@ -315,7 +315,7 @@ class DTShArgIntCriterion(DTShArgCriterion):
         super().reset()
         self._criterion = None
 
-    def get_criterion(self, **kwargs: Any) -> Optional[DTNodeCriterion]:
+    def get_criterion(self, **kwargs: Any) -> DTNodeCriterion | None:
         """Overrides DTShArgCriterion.get_criterion()."""
         return self._criterion
 
@@ -397,9 +397,9 @@ class DTShArgTextCriterion(DTShArgCriterion):
     """
 
     # Concrete criterion class.
-    _criter_cls: Type[DTNodeTextCriterion]
+    _criter_cls: type[DTNodeTextCriterion]
 
-    def __init__(self, criter_cls: Type[DTNodeTextCriterion]) -> None:
+    def __init__(self, criter_cls: type[DTNodeTextCriterion]) -> None:
         """Initialize criterion.
 
         Args:
@@ -408,7 +408,7 @@ class DTShArgTextCriterion(DTShArgCriterion):
         super().__init__(argname="pattern")
         self._criter_cls = criter_cls
 
-    def get_criterion(self, **kwargs: Any) -> Optional[DTNodeCriterion]:
+    def get_criterion(self, **kwargs: Any) -> DTNodeCriterion | None:
         """Overrides DTShArgCriterion.get_criterion()."""
         if self._raw:
             try:
@@ -471,7 +471,7 @@ class DTShArgNodeWithCompatible(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithCompatible)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with compatible strings.
 
         Overrides DTShArg.autocomp().
@@ -488,7 +488,7 @@ class DTShArgNodeWithBinding(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithBinding)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with compatible strings.
 
         Overrides DTShArg.autocomp().
@@ -505,7 +505,7 @@ class DTShArgNodeWithVendor(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithVendor)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with vendor prefixes.
 
         Overrides DTShArg.autocomp().
@@ -532,7 +532,7 @@ class DTShArgNodeWithBus(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithBus)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with bus protocols.
 
         Overrides DTShArg.autocomp().
@@ -549,7 +549,7 @@ class DTShArgNodeWithOnBus(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithOnBus)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with bus protocols.
 
         Overrides DTShArg.autocomp().
@@ -576,7 +576,7 @@ class DTShArgNodeWithNodeLabel(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithNodeLabel)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with node labels.
 
         Overrides DTShArg.autocomp().
@@ -596,7 +596,7 @@ class DTShArgNodeWithAlias(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithAlias)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with alias names.
 
         Overrides DTShArg.autocomp().
@@ -613,7 +613,7 @@ class DTShArgNodeWithChosen(DTShArgTextCriterion):
     def __init__(self) -> None:
         super().__init__(DTNodeWithChosen)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with parameter names.
 
         Overrides DTShArg.autocomp().
@@ -751,7 +751,7 @@ class DTShArgOrderBy(DTShArg):
     LONGNAME = "order-by"
 
     # Argument state: sorter implementation, no default value.
-    _sorter: Optional[DTNodeSorter]
+    _sorter: DTNodeSorter | None
 
     def __init__(self) -> None:
         super().__init__(argname="key")
@@ -761,7 +761,7 @@ class DTShArgOrderBy(DTShArg):
         super().reset()
         self._sorter = None
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Overrides DTShOption.parsed()."""
         super().parsed(value)
         if self._raw:
@@ -771,11 +771,11 @@ class DTShArgOrderBy(DTShArg):
                 raise DTShError(f"invalid sort key: '{self._raw}'") from e
 
     @property
-    def sorter(self) -> Optional[DTNodeSorter]:
+    def sorter(self) -> DTNodeSorter | None:
         """The sorter argument parsed on the command line."""
         return self._sorter
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with the predefined sorter definitions.
 
         Overrides DTShArg.autocomp().
@@ -814,7 +814,7 @@ class DTShParamDTPath(DTShParameter):
         """
         return self._raw[0] if self._raw else ""
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with Devicetree paths.
 
         Overrides DTShParameter.autocomp().
@@ -846,7 +846,7 @@ class DTShParamDTPaths(DTShParameter):
         """
         return self._raw if self._raw else [""]
 
-    def expand(self, cmd: DTShCommand, sh: DTSh) -> List[DTSh.PathExpansion]:
+    def expand(self, cmd: DTShCommand, sh: DTSh) -> list[DTSh.PathExpansion]:
         """Expand this parameter.
 
         Args:
@@ -876,7 +876,7 @@ class DTShParamDTPaths(DTShParameter):
         except DTPathNotFoundError as e:
             raise DTShCommandError(cmd, e.msg) from e
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with Devicetree paths.
 
         Overrides DTShParameter.autocomp().
@@ -894,7 +894,7 @@ class DTShParamDTPathX(DTShParameter):
     """
 
     _parm_path: str
-    _parm_prop: Optional[str]
+    _parm_prop: str | None
 
     def __init__(self) -> None:
         super().__init__(
@@ -909,7 +909,7 @@ class DTShParamDTPathX(DTShParameter):
         or an empty string."""
         return self._raw[0] if self._raw else ""
 
-    def parsed(self, values: List[str]) -> None:
+    def parsed(self, values: list[str]) -> None:
         """Overrides DTShParameter.parsed()."""
         super().parsed(values)
         self._parm_path, self._parm_prop = self._xparse()
@@ -926,7 +926,7 @@ class DTShParamDTPathX(DTShParameter):
 
     def xsplit(
         self, cmd: DTShCommand, sh: DTSh
-    ) -> Tuple[DTNode, Optional[List[DTNodeProperty]]]:
+    ) -> tuple[DTNode, list[DTNodeProperty] | None]:
         """Actually split the parameter into node and properties.
 
         Args:
@@ -949,7 +949,7 @@ class DTShParamDTPathX(DTShParameter):
             raise DTShCommandError(cmd, e.msg) from e
 
         if self._parm_prop is not None:
-            props: List[DTNodeProperty]
+            props: list[DTNodeProperty]
 
             if self._parm_prop.endswith("*"):
                 props = [
@@ -969,14 +969,14 @@ class DTShParamDTPathX(DTShParameter):
 
         return (node, None)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete with extended devicetree paths (either nodes or props).
 
         Overrides DTShParameter.autocomp().
         """
         return DTShAutocomp.complete_dtpathx(txt, sh)
 
-    def _xparse(self) -> Tuple[str, Optional[str]]:
+    def _xparse(self) -> tuple[str, str | None]:
         # Parse parameter value as a (PATH, PROP) tuple:
         # - PATH: the DT path, may be empty
         # - PROP: None if XPATH is a node path,
@@ -1007,7 +1007,7 @@ class DTShParamAlias(DTShParameter):
         """
         return self._raw[0] if self._raw else ""
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete parameter with alias names.
 
         Overrides DTShParameter.autocomp().
@@ -1033,7 +1033,7 @@ class DTShParamChosen(DTShParameter):
         """
         return self._raw[0] if self._raw else ""
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Auto-complete argument value with chosen names.
 
         Overrides DTShParameter.autocomp().

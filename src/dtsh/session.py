@@ -10,37 +10,35 @@ A session binds a shell and I/O streams, then enters a loop:
 - exit on EOF or "quit"
 """
 
-from typing import Any, Optional, Sequence, List
-
 import errno
 import sys
+from collections.abc import Sequence
+from typing import Any
 
 from devicetree import edtlib
-
+from dtsh.autocomp import DTShAutocomp
+from dtsh.builtins.alias import DTShBuiltinAlias
+from dtsh.builtins.cat import DTShBuiltinCat
+from dtsh.builtins.cd import DTShBuiltinCd
+from dtsh.builtins.chosen import DTShBuiltinChosen
+from dtsh.builtins.find import DTShBuiltinFind
+from dtsh.builtins.ls import DTShBuiltinLs
+from dtsh.builtins.pwd import DTShBuiltinPwd
+from dtsh.builtins.tree import DTShBuiltinTree
+from dtsh.builtins.uname import DTShBuiltinUname
+from dtsh.config import DTShConfig
+from dtsh.io import DTShOutput, DTShOutputFile, DTShRedirect, DTShVT
 from dtsh.model import DTModel
 from dtsh.rl import DTShReadline
-from dtsh.config import DTShConfig
-from dtsh.autocomp import DTShAutocomp
-from dtsh.io import DTShOutput, DTShOutputFile, DTShRedirect, DTShVT
 from dtsh.shell import (
     DTSh,
     DTShCommand,
-    DTShFlagHelp,
-    DTShError,
-    DTShUsageError,
     DTShCommandError,
     DTShCommandNotFoundError,
+    DTShError,
+    DTShFlagHelp,
+    DTShUsageError,
 )
-from dtsh.builtins.pwd import DTShBuiltinPwd
-from dtsh.builtins.cd import DTShBuiltinCd
-from dtsh.builtins.ls import DTShBuiltinLs
-from dtsh.builtins.tree import DTShBuiltinTree
-from dtsh.builtins.find import DTShBuiltinFind
-from dtsh.builtins.alias import DTShBuiltinAlias
-from dtsh.builtins.chosen import DTShBuiltinChosen
-from dtsh.builtins.cat import DTShBuiltinCat
-from dtsh.builtins.uname import DTShBuiltinUname
-
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -54,11 +52,11 @@ class DTShSession:
     _rl: DTShReadline
     _autocomp: DTShAutocomp
 
-    _last_err: Optional[BaseException]
+    _last_err: BaseException | None
 
     @classmethod
     def create(
-        cls, dts_path: str, binding_dirs: Optional[Sequence[str]] = None
+        cls, dts_path: str, binding_dirs: Sequence[str] | None = None
     ) -> "DTShSession":
         """Create a new devicetree shell session.
 
@@ -81,8 +79,8 @@ class DTShSession:
     def __init__(
         self,
         sh: DTSh,
-        vt: Optional[DTShVT] = None,
-        autocomp: Optional[DTShAutocomp] = None,
+        vt: DTShVT | None = None,
+        autocomp: DTShAutocomp | None = None,
     ) -> None:
         """Initialize a session.
 
@@ -132,7 +130,7 @@ class DTShSession:
         self._last_err = None
 
         while True:
-            cmdline: Optional[str] = None
+            cmdline: str | None = None
             try:
                 cmdline = self._vt.readline(self.mk_prompt())
             except KeyboardInterrupt:
@@ -156,8 +154,8 @@ class DTShSession:
                     self.close(interactive)
 
                 cmd: DTShCommand
-                argv: List[str]
-                redir2: Optional[str]
+                argv: list[str]
+                redir2: str | None
                 try:
                     # Parse command line into the command to execute,
                     # its arguments, and the redirection directive, if any.
@@ -331,7 +329,7 @@ class DTShSession:
 
     @classmethod
     def _create_dtmodel(
-        cls, dts_path: str, binding_dirs: Optional[Sequence[str]]
+        cls, dts_path: str, binding_dirs: Sequence[str] | None
     ) -> DTModel:
         try:
             return DTModel.create(dts_path, binding_dirs)

@@ -1,0 +1,41 @@
+# Copyright (c) 2025, Christophe Dufaza
+# SPDX-License-Identifier: Apache-2.0
+
+# See:
+# https://docs.astral.sh/ruff/configuration
+# https://docs.astral.sh/ruff/settings
+
+line-length = 100
+indent-width = 4
+target-version = "py312"
+include = ["pyproject.toml", "src/**/*.py"]
+
+[lint]
+select = [
+    "B",      # flake8-bugbear
+    "E",      # pycodestyle
+    "F",      # pyflakes
+    "I",      # isort
+    "SIM",    # flake8-simplify
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warnings
+]
+
+[lint.per-file-ignores]
+"src/dtsh/rl.py" = [
+    "E402",  # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file/
+]
+"src/dtsh/io.py" = [
+    "SIM115",  # https://docs.astral.sh/ruff/rules/open-file-with-context-handler/
+]
+"src/dtsh/rich/svg.py" = [
+    "B007",  # https://docs.astral.sh/ruff/rules/unused-loop-control-variable/
+    "E501",  # https://docs.astral.sh/ruff/rules/line-too-long/
+]
+"src/dtsh/rich/html.py" = [
+    "E501",  # https://docs.astral.sh/ruff/rules/line-too-long/
+]
+
+[format]
+quote-style = "preserve"
+line-ending = "lf"

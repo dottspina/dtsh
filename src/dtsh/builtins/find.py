@@ -10,36 +10,35 @@ Unit tests and examples: tests/test_dtsh_builtin_find.py
 """
 
 
-from typing import List, Sequence, Dict, Mapping, Tuple
+from collections.abc import Mapping, Sequence
 
-from dtsh.model import DTWalkable, DTNode, DTNodeCriterion, DTNodeCriteria
-from dtsh.modelutils import DTWalkableComb
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh, DTShError, DTShCommandError
-from dtsh.shellutils import (
-    DTShFlagReverse,
-    DTShFlagEnabledOnly,
-    DTShFlagPager,
-    DTShFlagRegex,
-    DTShFlagIgnoreCase,
-    DTShFlagCount,
-    DTShFlagTreeLike,
-    DTShFlagLogicalOr,
-    DTShFlagLogicalNot,
-    DTShArgOrderBy,
-    DTShArgCriterion,
-    DTSH_ARG_NODE_CRITERIA,
-    DTShParamDTPaths,
-)
-
-from dtsh.rich.shellutils import DTShCommandLongFmt
+from dtsh.model import DTNode, DTNodeCriteria, DTNodeCriterion, DTWalkable
+from dtsh.modelutils import DTWalkableComb
 from dtsh.rich.modelview import (
     SketchMV,
     ViewNodeList,
     ViewNodeTreePOSIX,
     ViewNodeTwoSided,
 )
+from dtsh.rich.shellutils import DTShCommandLongFmt
 from dtsh.rich.text import TextUtil
+from dtsh.shell import DTSh, DTShCommandError, DTShError
+from dtsh.shellutils import (
+    DTSH_ARG_NODE_CRITERIA,
+    DTShArgCriterion,
+    DTShArgOrderBy,
+    DTShFlagCount,
+    DTShFlagEnabledOnly,
+    DTShFlagIgnoreCase,
+    DTShFlagLogicalNot,
+    DTShFlagLogicalOr,
+    DTShFlagPager,
+    DTShFlagRegex,
+    DTShFlagReverse,
+    DTShFlagTreeLike,
+    DTShParamDTPaths,
+)
 
 
 class DTShBuiltinFind(DTShCommandLongFmt):
@@ -117,7 +116,7 @@ class DTShBuiltinFind(DTShCommandLongFmt):
         # Collect criterion chain.
         criteria = self._get_criteria()
 
-        path2node: Dict[str, DTNode] = {}
+        path2node: dict[str, DTNode] = {}
         for expansion in path_expansions:
             for branch in self.sort(expansion.nodes):
                 for node in branch.find(
@@ -230,13 +229,13 @@ class DTShBuiltinFind(DTShCommandLongFmt):
         self,
         path_expansions: Sequence[DTSh.PathExpansion],
         sh: DTSh,
-    ) -> Tuple[int, Mapping[str, DTWalkable]]:
+    ) -> tuple[int, Mapping[str, DTWalkable]]:
         # Collect criterion chain.
         criteria = self._get_criteria()
 
         # One tree per root: for each expanded path, map its pathway
         # to a subtree containing the nodes found there.
-        path2walkable: Dict[str, DTWalkable] = {}
+        path2walkable: dict[str, DTWalkable] = {}
         count: int = 0
         for expansion in path_expansions:
             for branch in self.sort(expansion.nodes):
@@ -267,14 +266,14 @@ class DTShBuiltinFind(DTShCommandLongFmt):
 
     def _get_criteria(self) -> DTNodeCriteria:
         # All defined command arguments that may participate in the search.
-        args_criterion: List[DTShArgCriterion] = [
+        args_criterion: list[DTShArgCriterion] = [
             self.with_arg(type(option))
             for option in self.options
             if isinstance(option, DTShArgCriterion)
         ]
 
         try:
-            arg_criteria: List[DTNodeCriterion] = [
+            arg_criteria: list[DTNodeCriterion] = [
                 criterion
                 for criterion in (
                     arg_criterion.get_criterion(

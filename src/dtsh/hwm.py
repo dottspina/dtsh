@@ -25,13 +25,13 @@ Paths returned by the API may not point to an existing file or directory:
 See also: tests/test_dtsh_hwm.py
 """
 
-from typing import Any, Optional, Tuple, List, Dict, Mapping
-
-from enum import Enum
-from pathlib import Path
-
 import re
 import sys
+from collections.abc import Mapping
+from enum import Enum
+from pathlib import Path
+from typing import Any, Optional
+
 import yaml
 
 from dtsh.utils import CMakeCache
@@ -40,7 +40,7 @@ from dtsh.utils import CMakeCache
 class HWMetaData:
     """Commodity for the simple YAML metadata we'll need here."""
 
-    Content = Dict[Any, Any]
+    Content = dict[Any, Any]
     """Commodity type hint for YAML files content."""
 
     # Absolute path to metadata file.
@@ -50,7 +50,7 @@ class HWMetaData:
     _text: str
 
     # Structured YAML content.
-    _raw: Dict[Any, Any]
+    _raw: dict[Any, Any]
 
     def __init__(self, path: Path) -> None:
         """Initialize metadata.
@@ -62,7 +62,7 @@ class HWMetaData:
         self._path = path
         if self._path.is_file():
             try:
-                with open(path.absolute(), "r", encoding="utf-8") as f:
+                with open(path.absolute(), encoding="utf-8") as f:
                     self._text = f.read().strip()
                     self._raw = yaml.safe_load(self._text)
             except (OSError, yaml.YAMLError) as e:
@@ -98,27 +98,27 @@ class BoardMetadata(HWMetaData):
         self._raw_board = self._raw.get("board", {})
 
     @property
-    def full_name(self) -> Optional[str]:
+    def full_name(self) -> str | None:
         """Board full name."""
         if "full_name" in self._raw_board:
             return str(self._raw_board["full_name"])
         return None
 
     @property
-    def socs(self) -> List[str]:
+    def socs(self) -> list[str]:
         """SoC names."""
         socs = self._raw_board.get("socs", [])
         return [str(soc["name"]) for soc in socs if "name" in soc]
 
     @property
-    def vendor(self) -> Optional[str]:
+    def vendor(self) -> str | None:
         """Vendor prefix."""
         if "vendor" in self._raw_board:
             return str(self._raw_board["vendor"])
         return None
 
     @property
-    def revisions(self) -> List[str]:
+    def revisions(self) -> list[str]:
         """Available board revisions."""
         revisions: HWMetaData.Content = self._raw_board.get("revision", {}).get(
             "revisions", []
@@ -126,7 +126,7 @@ class BoardMetadata(HWMetaData):
         return [str(rev["name"]) for rev in revisions if rev in "name"]
 
     @property
-    def default_revision(self) -> Optional[str]:
+    def default_revision(self) -> str | None:
         """Default board revision."""
         revision: HWMetaData.Content = self._raw_board.get("revision", {})
         return str(revision["default"]) if "default" in revision else None
@@ -141,22 +141,22 @@ class TestRunnerMetadata(HWMetaData):
     """
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """Board name used by the test runner."""
         return str(self._raw["name"]) if "name" in self._raw else None
 
     @property
-    def vendor(self) -> Optional[str]:
+    def vendor(self) -> str | None:
         """Vendor metadata (vendor prefix)."""
         return str(self._raw["vendor"]) if "vendor" in self._raw else None
 
     @property
-    def run_arch(self) -> Optional[str]:
+    def run_arch(self) -> str | None:
         """Architecture metadata (arm, xtensa, etc)."""
         return str(self._raw["arch"]) if "arch" in self._raw else None
 
     @property
-    def run_type(self) -> Optional[str]:
+    def run_type(self) -> str | None:
         """Target type metadata (mcu, native or qemu)."""
         return str(self._raw["type"]) if "type" in self._raw else None
 
@@ -176,8 +176,8 @@ class DTShBoard:
             """HWM version string."""
             return self.value
 
-    Qualifiers = Tuple[
-        str, Optional[str], Optional[str], Optional[str], Optional[str]
+    Qualifiers = tuple[
+        str, str | None, str | None, str | None, str | None
     ]
     """Commodity for (name, version, soc, cpus, variant)."""
 
@@ -290,7 +290,7 @@ class DTShBoard:
     _dts: Path
 
     # Selected shield
-    _shield: Optional[str] = None
+    _shield: str | None = None
 
     # YAML file with miscellaneous metadata used by the Test Runner (Twister).
     # HWMv1: ${BOARD_DIR}/${BOARD}.yaml
@@ -298,22 +298,22 @@ class DTShBoard:
     _runner_metadata: TestRunnerMetadata
 
     # CMSIS-SVD file
-    _soc_svd: Optional[Path] = None
+    _soc_svd: Path | None = None
 
     # YAML file describing the high-level meta data of the board.
     # HWMv2 only: ${BOARD_DIR}/board.yml
-    _board_metadata: Optional[BoardMetadata] = None
+    _board_metadata: BoardMetadata | None = None
 
     # HWMv2 only.
-    _name: Optional[str] = None
-    _revision: Optional[str] = None
-    _soc: Optional[str] = None
-    _cpus: Optional[str] = None
-    _variant: Optional[str] = None
+    _name: str | None = None
+    _revision: str | None = None
+    _soc: str | None = None
+    _cpus: str | None = None
+    _variant: str | None = None
     # SoC directory (SOC_FULL_DIR defined only for HWMv2)
-    _soc_dir: Optional[Path] = None
+    _soc_dir: Path | None = None
     # ${SOC_FULL_DIR}/soc.yml
-    _soc_metadata: Optional[HWMetaData] = None
+    _soc_metadata: HWMetaData | None = None
 
     def __init__(self, cmake_cache: CMakeCache) -> None:
         """Initialize board from CMake cache variables.
@@ -360,12 +360,12 @@ class DTShBoard:
         return self._dts
 
     @property
-    def shield(self) -> Optional[str]:
+    def shield(self) -> str | None:
         """Selected shield."""
         return self._shield
 
     @property
-    def soc_svd(self) -> Optional[Path]:
+    def soc_svd(self) -> Path | None:
         """Absolute path to the SoC SVD (SOC_SVD_FILE)."""
         return self._soc_svd
 
@@ -379,7 +379,7 @@ class DTShBoard:
         return self._runner_metadata
 
     @property
-    def board_metadata(self) -> Optional[BoardMetadata]:
+    def board_metadata(self) -> BoardMetadata | None:
         """YAML metadata describing the high-level meta data
         of the board.
 
@@ -388,7 +388,7 @@ class DTShBoard:
         return self._board_metadata
 
     @property
-    def soc_metadata(self) -> Optional[HWMetaData]:
+    def soc_metadata(self) -> HWMetaData | None:
         """YAML metadata describing the SoC.
 
         HWMv2 only: ${SOC_FULL_DIR}/soc.yml
@@ -396,22 +396,22 @@ class DTShBoard:
         return self._soc_metadata
 
     @property
-    def full_name(self) -> Optional[str]:
+    def full_name(self) -> str | None:
         """Board full name retrieved from the board metadata (HWMv2 only)."""
         return self._board_metadata.full_name if self._board_metadata else None
 
     @property
-    def runner_name(self) -> Optional[str]:
+    def runner_name(self) -> str | None:
         """Board name retrieved from the test runner metadata."""
         return self._runner_metadata.name
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """HWMv2 board name."""
         return self._name
 
     @property
-    def revision(self) -> Optional[str]:
+    def revision(self) -> str | None:
         """HWMv2 board revision.
 
         If unset, the default revision is retrieved from the board metadata.
@@ -419,7 +419,7 @@ class DTShBoard:
         return self._revision
 
     @property
-    def soc(self) -> Optional[str]:
+    def soc(self) -> str | None:
         """HWMv2 SoC.
 
         If the SoC can't be parsed from the BOARD target,
@@ -429,24 +429,24 @@ class DTShBoard:
         return self._soc
 
     @property
-    def cpus(self) -> Optional[str]:
+    def cpus(self) -> str | None:
         """HWMv2 CPU cluster."""
         return self._cpus
 
     @property
-    def variant(self) -> Optional[str]:
+    def variant(self) -> str | None:
         """HWMv2 variant."""
         return self._variant
 
     @property
-    def soc_dir(self) -> Optional[Path]:
+    def soc_dir(self) -> Path | None:
         """Absolute path to the SoC main directory (aka SOC_FULL_DIR)."""
         return self._soc_dir
 
     @property
     def qualifiers(self) -> str:
         """Coma separated list of the HWMv2 qualifiers."""
-        qualifiers: List[str] = [
+        qualifiers: list[str] = [
             q for q in (self._soc, self._cpus, self._variant) if q is not None
         ]
         return ",".join(qualifiers)
@@ -514,18 +514,18 @@ class DTShBoard:
             return Path(path).absolute()
         raise KeyError("BOARD_DIR")
 
-    def _get_soc_svd(self, cmake_cache: CMakeCache) -> Optional[Path]:
+    def _get_soc_svd(self, cmake_cache: CMakeCache) -> Path | None:
         path = cmake_cache.getstr(DTShBoard.CMAKE_SOC_SVD)
         if path:
             return Path(path).absolute()
         return None
 
-    def _get_shield(self, cmake_cache: CMakeCache) -> Optional[str]:
+    def _get_shield(self, cmake_cache: CMakeCache) -> str | None:
         return cmake_cache.getstr(DTShBoard.CMAKE_SHIELD) or cmake_cache.getstr(
             DTShBoard.CMAKE_CACHED_SHIELD
         )
 
-    def _v2_get_soc_dir(self, cmake_cache: CMakeCache) -> Optional[Path]:
+    def _v2_get_soc_dir(self, cmake_cache: CMakeCache) -> Path | None:
         path = cmake_cache.getstr(DTShBoard.CMAKE_SOC_DIR)
         if path:
             return Path(path).absolute()
@@ -537,7 +537,7 @@ class DTShBoard:
 
     def _v2_get_soc_metadata(
         self,
-    ) -> Optional[HWMetaData]:
+    ) -> HWMetaData | None:
         if self._soc_dir:
             path = self._soc_dir / "soc.yml"
             return HWMetaData(path)
@@ -551,11 +551,11 @@ class DTShBoard:
         return TestRunnerMetadata(path)
 
     def _v2_get_board_qualifiers(self) -> Qualifiers:
-        name: Optional[str] = None
-        revision: Optional[str] = None
-        soc: Optional[str] = None
-        cpus: Optional[str] = None
-        variant: Optional[str] = None
+        name: str | None = None
+        revision: str | None = None
+        soc: str | None = None
+        cpus: str | None = None
+        variant: str | None = None
         (name, revision, soc, cpus, variant) = DTShBoard.v2_parse_board(
             self._target
         )
@@ -563,7 +563,7 @@ class DTShBoard:
         if self._board_metadata:
             if not soc:
                 # Unique SoC omitted, trying meta-data file.
-                socs: List[str] = self._board_metadata.socs
+                socs: list[str] = self._board_metadata.socs
                 if len(socs) == 1:
                     soc = socs[0]
             if not revision:
@@ -599,7 +599,7 @@ class DTShBoard:
         return path
 
     def _flat_qualifiers(self, strip_soc: bool = False) -> str:
-        qualifiers: List[str] = [
+        qualifiers: list[str] = [
             q for q in (self._soc, self._cpus, self._variant) if q is not None
         ]
         if strip_soc and self._soc:

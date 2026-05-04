@@ -19,12 +19,12 @@ Unit tests and examples: tests/test_dtsh_dts.py
 """
 
 
-from typing import cast, Optional, List, Sequence
-
 import os
+from collections.abc import Sequence
+from typing import Optional, cast
 
 from dtsh.hwm import DTShBoard
-from dtsh.utils import CMakeCache, GitUtil, YAMLFilesystem, DTShToolchain
+from dtsh.utils import CMakeCache, DTShToolchain, GitUtil, YAMLFilesystem
 
 
 class DTS:
@@ -72,28 +72,28 @@ class DTS:
     _dts_path: str
 
     # See bindings_search_path().
-    _binding_dirs: List[str]
+    _binding_dirs: list[str]
 
     # See zephyr_base().
-    _zephyr_base: Optional[str]
+    _zephyr_base: str | None
 
     # See vendors_file().
-    _vendors_file: Optional[str]
+    _vendors_file: str | None
 
     _cmake: Optional["CMakeCache"]
     _yamlfs: "YAMLFilesystem"
 
     # Board/SoC and hardware model.
-    _board: Optional[DTShBoard] = None
+    _board: DTShBoard | None = None
 
     # Toolchain used at build-time.
-    _toolchain: Optional[DTShToolchain] = None
+    _toolchain: DTShToolchain | None = None
 
     def __init__(
         self,
         dts_path: str,
-        binding_dirs: Optional[Sequence[str]] = None,
-        vendors_file: Optional[str] = None,
+        binding_dirs: Sequence[str] | None = None,
+        vendors_file: str | None = None,
     ) -> None:
         """Define a devicetree source.
 
@@ -121,7 +121,7 @@ class DTS:
         return self._dts_path
 
     @property
-    def vendors_file(self) -> Optional[str]:
+    def vendors_file(self) -> str | None:
         "Path to the vendors file." ""
         return self._vendors_file
 
@@ -176,7 +176,7 @@ class DTS:
         return self._yamlfs
 
     @property
-    def board(self) -> Optional[DTShBoard]:
+    def board(self) -> DTShBoard | None:
         """Hardware information (board, SoC, HWM)."""
         return self._board
 
@@ -189,7 +189,7 @@ class DTS:
         return os.path.dirname(os.path.dirname(self._dts_path))
 
     @property
-    def app_source_dir(self) -> Optional[str]:
+    def app_source_dir(self) -> str | None:
         """Application source directory (aka project directory).
 
         Retrieved from the CMake cache (APPLICATION_SOURCE_DIR).
@@ -199,7 +199,7 @@ class DTS:
         return None
 
     @property
-    def app_conf_file(self) -> Optional[str]:
+    def app_conf_file(self) -> str | None:
         """Application configuration file.
 
         Retrieved from the CMake cache (CONF_FILE),
@@ -209,7 +209,7 @@ class DTS:
         return None
 
     @property
-    def fw_name(self) -> Optional[str]:
+    def fw_name(self) -> str | None:
         """Application name.
 
         Retrieved from the CMake cache (CMAKE_PROJECT_NAME).
@@ -219,7 +219,7 @@ class DTS:
         return None
 
     @property
-    def fw_version(self) -> Optional[str]:
+    def fw_version(self) -> str | None:
         """Application version.
 
         Retrieved from the CMake cache (CMAKE_PROJECT_VERSION).
@@ -229,7 +229,7 @@ class DTS:
         return None
 
     @property
-    def zephyr_base(self) -> Optional[str]:
+    def zephyr_base(self) -> str | None:
         """Path to Zephyr repository.
 
         Either:
@@ -242,14 +242,14 @@ class DTS:
         return self._zephyr_base
 
     @property
-    def toolchain(self) -> Optional[DTShToolchain]:
+    def toolchain(self) -> DTShToolchain | None:
         """The toolchain used at build-time.
 
         Retrieved from the CMake cache.
         """
         return self._toolchain
 
-    def get_zephyr_head(self) -> Optional[str]:
+    def get_zephyr_head(self) -> str | None:
         """Retrieve Zephyr repository HEAD version.
 
         Returns:
@@ -274,7 +274,7 @@ class DTS:
             return CMakeCache.open(path)
         return None
 
-    def _init_zephyr_base(self) -> Optional[str]:
+    def _init_zephyr_base(self) -> str | None:
         if self._cmake:
             zephyr_base = self._cmake.getstr("ZEPHYR_BASE")
         else:
@@ -292,7 +292,7 @@ class DTS:
 
         return zephyr_base
 
-    def _init_vendors_file(self, vendors_file: Optional[str]) -> Optional[str]:
+    def _init_vendors_file(self, vendors_file: str | None) -> str | None:
         if not vendors_file:
             if self._zephyr_base:
                 # If we have a valid ZEPHYR_BASE, we assume the expected vendors
@@ -312,8 +312,8 @@ class DTS:
         return vendors_file
 
     def _init_binding_dirs(
-        self, binding_dirs: Optional[Sequence[str]]
-    ) -> List[str]:
+        self, binding_dirs: Sequence[str] | None
+    ) -> list[str]:
         if binding_dirs:
             binding_dirs = [os.path.abspath(path) for path in binding_dirs]
         else:
@@ -331,7 +331,7 @@ class DTS:
                 # - is available, and we should be able to get all bindings
                 #   from the CACHED_DTS_ROOT_BINDINGS value
                 # - is unavailable, and we won't access any build settings
-                dts_roots: List[Optional[str]] = [
+                dts_roots: list[str | None] = [
                     self.app_source_dir,
                     self.zephyr_base,
                 ]
@@ -345,7 +345,7 @@ class DTS:
                 ]
         # cast() is required to avoid type hinting error since
         # binding_dirs is first typed as an optional Sequence.
-        return cast(List[str], binding_dirs)
+        return cast(list[str], binding_dirs)
 
 
 class DTSFile:
@@ -358,7 +358,7 @@ class DTSFile:
     _content: str
 
     # If set, we've failed to load the DTS file (IO error).
-    _lasterr: Optional[OSError]
+    _lasterr: OSError | None
 
     def __init__(self, path: str) -> None:
         """Initialize wrapper.
@@ -384,7 +384,7 @@ class DTSFile:
         return self._content
 
     @property
-    def lasterr(self) -> Optional[OSError]:
+    def lasterr(self) -> OSError | None:
         """Last error that happened while loading this DTS file.
 
         Possible values:
@@ -396,7 +396,7 @@ class DTSFile:
 
     def _init_content(self) -> str:
         try:
-            with open(self._path, mode="r", encoding="utf-8") as f:
+            with open(self._path, encoding="utf-8") as f:
                 return f.read().strip()
         except OSError as e:
             self._lasterr = e

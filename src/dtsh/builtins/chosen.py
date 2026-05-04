@@ -10,15 +10,14 @@ Unit tests and examples: tests/test_dtsh_builtin_chosen.py
 """
 
 
-from typing import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 
-from dtsh.model import DTNode
 from dtsh.io import DTShOutput
+from dtsh.model import DTNode
+from dtsh.rich.modelview import ViewNodeAkaList
+from dtsh.rich.shellutils import DTShCommandLongFmt
 from dtsh.shell import DTSh
 from dtsh.shellutils import DTShFlagEnabledOnly, DTShParamChosen
-
-from dtsh.rich.shellutils import DTShCommandLongFmt
-from dtsh.rich.modelview import ViewNodeAkaList
 
 
 class DTShBuiltinChosen(DTShCommandLongFmt):

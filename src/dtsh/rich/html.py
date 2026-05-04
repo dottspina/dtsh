@@ -10,10 +10,9 @@ and DTSh commands output redirection to HTML files.
 Unit tests and examples: tests/test_dtsh_rich_html.py
 """
 
-from typing import List, Tuple, IO
-
 import os
 import re
+from typing import IO
 
 from rich.console import Console
 from rich.terminal_theme import TerminalTheme
@@ -38,8 +37,8 @@ class HtmlFormat:
 
     @staticmethod
     def ifind(
-        txt: List[str], pattern: re.Pattern[str], start: int
-    ) -> Tuple[int, re.Match[str]]:
+        txt: list[str], pattern: re.Pattern[str], start: int
+    ) -> tuple[int, re.Match[str]]:
         """Find match in a multi-line text.
 
         Stops on the first matching line.
@@ -85,9 +84,9 @@ class HtmlFragment:
 
     # Initialized with the parsed content lines.
     # May be overwritten by sub-classes.
-    _txt: List[str]
+    _txt: list[str]
 
-    def __init__(self, endl: int, txt: List[str]) -> None:
+    def __init__(self, endl: int, txt: list[str]) -> None:
         self._endl = endl
         self._txt = txt
 
@@ -97,7 +96,7 @@ class HtmlFragment:
         return self._endl
 
     @property
-    def content(self) -> List[str]:
+    def content(self) -> list[str]:
         """HTML formatted content (multi-line)."""
         return self._txt
 
@@ -117,7 +116,7 @@ class HtmlStyle(HtmlFragment):
     """
 
     @staticmethod
-    def ifind(txt: List[str], start: int = 0) -> "HtmlStyle":
+    def ifind(txt: list[str], start: int = 0) -> "HtmlStyle":
         """Find HTML <style> element.
 
         Args:
@@ -130,15 +129,15 @@ class HtmlStyle(HtmlFragment):
 
     # One per line:
     # .r(?P<n>[\d]+)
-    _rclasses: List[str]
+    _rclasses: list[str]
 
     # body {
     #     color: {foreground};
     #     background-color: {background};
     # }
-    _body: List[str]
+    _body: list[str]
 
-    def __init__(self, endl: int, txt: List[str]) -> None:
+    def __init__(self, endl: int, txt: list[str]) -> None:
         super().__init__(endl, txt)
 
         # Skip the opening <style> line.
@@ -157,7 +156,7 @@ class HtmlStyle(HtmlFragment):
         self._body = txt[offset:-1]
 
     @property
-    def rclasses(self) -> List[str]:
+    def rclasses(self) -> list[str]:
         """Style classes definitions."""
         return self._rclasses
 
@@ -167,12 +166,12 @@ class HtmlStyle(HtmlFragment):
         return len(self._rclasses)
 
     @property
-    def body(self) -> List[str]:
+    def body(self) -> list[str]:
         """Style <body>."""
         return self._body
 
     @property
-    def content(self) -> List[str]:
+    def content(self) -> list[str]:
         # Content in self._txt may have been obsoleted
         # by calling shift_rclasses().
         return ["<style>", *self._rclasses, *self._body, "</style>"]
@@ -206,7 +205,7 @@ class HtmlPreformatted(HtmlFragment):
     """
 
     @staticmethod
-    def ifind(txt: List[str], start: int = 0) -> "HtmlPreformatted":
+    def ifind(txt: list[str], start: int = 0) -> "HtmlPreformatted":
         """Find HTML <style> element."""
         i_begin, _ = HtmlFormat.ifind(txt, HtmlFormat.RE_CODE_BEGIN, start)
         # May be on the same line.
@@ -214,7 +213,7 @@ class HtmlPreformatted(HtmlFragment):
         return HtmlPreformatted(i_end, txt[i_begin : i_end + 1])
 
     @staticmethod
-    def ifind_list(txt: List[str], start: int = 0) -> List["HtmlPreformatted"]:
+    def ifind_list(txt: list[str], start: int = 0) -> list["HtmlPreformatted"]:
         """Find successive <pre><code>s in a file we're appending to.
 
         Args:
@@ -225,7 +224,7 @@ class HtmlPreformatted(HtmlFragment):
             the end of the last <pre><code>, and the matched fragments.
         """
         pre_code: HtmlPreformatted = HtmlPreformatted.ifind(txt, start)
-        pre_codes: List[HtmlPreformatted] = [pre_code]
+        pre_codes: list[HtmlPreformatted] = [pre_code]
         try:
             while True:
                 pre_code = HtmlPreformatted.ifind(txt, pre_code.i_end + 1)
@@ -326,7 +325,7 @@ class HtmlDocument:
         return HtmlDocument(html)
 
     _style: HtmlStyle
-    _codes: List[HtmlPreformatted]
+    _codes: list[HtmlPreformatted]
 
     def __init__(self, html: str) -> None:
         """Initialize HTML document.
@@ -340,7 +339,7 @@ class HtmlDocument:
         # The generated HTML pads lines with withe spaces
         # up to the console's width, which is ugly if you
         # want to edit the HTML source: clean this up.
-        html_lines: List[str] = [line.rstrip() for line in html.splitlines()]
+        html_lines: list[str] = [line.rstrip() for line in html.splitlines()]
 
         # Parse HTML text into our fragments of interest.
         self._style = HtmlStyle.ifind(html_lines)
@@ -354,7 +353,7 @@ class HtmlDocument:
         return self._style
 
     @property
-    def codes(self) -> List[HtmlPreformatted]:
+    def codes(self) -> list[HtmlPreformatted]:
         """HTML <pre><code>s in this document."""
         return self._codes
 

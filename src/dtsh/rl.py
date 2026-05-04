@@ -21,11 +21,10 @@ The GNU Readline integration with Python is initialized:
 On windows, the readline support will likely be disabled.
 """
 
-
-from typing import Callable, Sequence, List, Optional
-
 import os
 import sys
+from collections.abc import Callable, Sequence
+from typing import Optional
 
 from dtsh.config import DTShConfig
 from dtsh.io import DTShOutput
@@ -64,9 +63,9 @@ class DTShReadline:
         """
 
         _rlstr: str
-        _item: Optional[object]
+        _item: object | None
 
-        def __init__(self, rlstr: str, item: Optional[object]) -> None:
+        def __init__(self, rlstr: str, item: object | None) -> None:
             """Initialize completer state.
 
             Args:
@@ -85,7 +84,7 @@ class DTShReadline:
             return self._rlstr
 
         @property
-        def item(self) -> Optional[object]:
+        def item(self) -> object | None:
             """The corresponding model object, if any."""
             return self._item
 
@@ -105,7 +104,7 @@ class DTShReadline:
             return self._rlstr
 
     CompletionCallback = Callable[
-        [str, str, int, int], List["DTShReadline.CompleterState"]
+        [str, str, int, int], list["DTShReadline.CompleterState"]
     ]
     """Completer states provider callback prototype.
 
@@ -126,7 +125,7 @@ class DTShReadline:
     """
 
     DisplayCallback = Callable[
-        [DTShOutput, List["DTShReadline.CompleterState"]], None
+        [DTShOutput, list["DTShReadline.CompleterState"]], None
     ]
     """Completer states display callback prototype.
 
@@ -142,10 +141,10 @@ class DTShReadline:
 
     # Optional completion views provider.
     # If unset, defaults to the readline module's implementation.
-    _display_callback: Optional[DisplayCallback]
+    _display_callback: DisplayCallback | None
 
     # Completer states, See rl_complete().
-    _completer_states: List["DTShReadline.CompleterState"]
+    _completer_states: list["DTShReadline.CompleterState"]
 
     # Where to display completion matches and restore the command line.
     _stdout: DTShOutput
@@ -179,24 +178,21 @@ class DTShReadline:
             self._rl_init()
             self.read_history()
 
-    def read_history(self) -> Optional[str]:
+    def read_history(self) -> str | None:
         """Load command history file.
 
         Returns:
             The history file path, or None if the history file is unavailable.
         """
-        if _has_readline:
-            if os.path.isfile(self._histfile):
-                try:
-                    readline.read_history_file(self._histfile)
-                    return self._histfile
-                except OSError as e:
-                    print(
-                        f"Failed to read command history: {e}", file=sys.stderr
-                    )
+        if _has_readline and os.path.isfile(self._histfile):
+            try:
+                readline.read_history_file(self._histfile)
+                return self._histfile
+            except OSError as e:
+                print(f"Failed to read command history: {e}", file=sys.stderr)
         return None
 
-    def save_history(self) -> Optional[str]:
+    def save_history(self) -> str | None:
         """Write command history file.
 
         Returns:
@@ -210,7 +206,7 @@ class DTShReadline:
                 print(f"Failed to write command history: {e}", file=sys.stderr)
         return None
 
-    def rl_complete(self, cs_txt: str, state: int) -> Optional[str]:
+    def rl_complete(self, cs_txt: str, state: int) -> str | None:
         """Setup the GNU readline's completion hook.
 
         Actual completion is delegated to the completions provider callback.

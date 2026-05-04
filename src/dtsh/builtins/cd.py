@@ -10,10 +10,10 @@ Unit tests and examples: tests/test_dtsh_builtin_cd.py
 """
 
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh, DTShCommand, DTPathNotFoundError, DTShCommandError
+from dtsh.shell import DTPathNotFoundError, DTSh, DTShCommand, DTShCommandError
 from dtsh.shellutils import DTShParamDTPath
 
 

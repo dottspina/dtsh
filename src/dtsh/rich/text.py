@@ -8,19 +8,17 @@ Factories for styled and actionable (aka linked) rich text views,
 and miscellaneous text related helpers.
 """
 
-from typing import Optional, Union, Iterable
-
-from urllib.parse import urlparse
 import os
 import pathlib
+from collections.abc import Iterable
+from urllib.parse import urlparse
 
 from rich.console import JustifyMethod
 from rich.style import Style, StyleType
 from rich.text import Text
 
-from dtsh.config import DTShConfig, ActionableType
+from dtsh.config import ActionableType, DTShConfig
 from dtsh.rich.theme import DTShTheme
-
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -32,8 +30,8 @@ class TextUtil:
     def mk_text(
         cls,
         content: str,
-        style: Optional[StyleType] = None,
-        justify: Optional[JustifyMethod] = None,
+        style: StyleType | None = None,
+        justify: JustifyMethod | None = None,
     ) -> Text:
         """Text view factory.
 
@@ -52,7 +50,7 @@ class TextUtil:
         )
 
     @classmethod
-    def dim(cls, txt: Union[str, Text]) -> Text:
+    def dim(cls, txt: str | Text) -> Text:
         """Dim an existing text view or create a new "dim" text.
 
         Args:
@@ -67,7 +65,7 @@ class TextUtil:
         return txt
 
     @classmethod
-    def bold(cls, text: Union[str, Text]) -> Text:
+    def bold(cls, text: str | Text) -> Text:
         """Bold an existing text view or create a new "bold" text.
 
         Args:
@@ -82,7 +80,7 @@ class TextUtil:
         return text
 
     @classmethod
-    def italic(cls, text: Union[str, Text]) -> Text:
+    def italic(cls, text: str | Text) -> Text:
         """Emphasize an existing text view or create a "italic" text.
 
         Args:
@@ -97,7 +95,7 @@ class TextUtil:
         return text
 
     @classmethod
-    def underline(cls, text: Union[str, Text]) -> Text:
+    def underline(cls, text: str | Text) -> Text:
         """Underline an existing text view or create a new "underline" text.
 
         Args:
@@ -112,7 +110,7 @@ class TextUtil:
         return text
 
     @classmethod
-    def strike(cls, text: Union[str, Text]) -> Text:
+    def strike(cls, text: str | Text) -> Text:
         """Strike an existing text view or create a new "strike" text.
 
         Args:
@@ -127,7 +125,7 @@ class TextUtil:
         return text
 
     @classmethod
-    def disabled(cls, text: Union[str, Text]) -> Text:
+    def disabled(cls, text: str | Text) -> Text:
         """Style text item as disabled.
 
         Args:
@@ -144,9 +142,9 @@ class TextUtil:
     @classmethod
     def link(
         cls,
-        text: Union[str, Text],
+        text: str | Text,
         uri: str,
-        linktype: Optional[ActionableType] = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Link text to file or URI.
 
@@ -188,7 +186,7 @@ class TextUtil:
 
     @classmethod
     def mk_headline(
-        cls, content: str, style: Optional[Union[str, Style]] = None
+        cls, content: str, style: str | Style | None = None
     ) -> Text:
         """Extract headline of a multi-line content.
 
@@ -252,9 +250,9 @@ class TextUtil:
         path: pathlib.Path,
         /,
         *,
-        flabel: Optional[str] = None,
-        style: Optional[Union[str, Style]] = None,
-        linktype: Optional[ActionableType] = None,
+        flabel: str | None = None,
+        style: str | Style | None = None,
+        linktype: ActionableType | None = None,
     ) -> Text:
         """Make a file or directory text view.
 
@@ -269,10 +267,7 @@ class TextUtil:
         """
         linktype = linktype or _dtshconf.pref_actionable_type
         style = style or DTShTheme.STYLE_FS_FILE
-        if flabel:
-            name = flabel
-        else:
-            name = str(path.absolute())
+        name = flabel or str(path.absolute())
 
         fs_found = path.exists()
         txt = cls.mk_text(
@@ -284,14 +279,14 @@ class TextUtil:
         return txt
 
     @classmethod
-    def join(cls, sep: Union[str, Text], parts: Iterable[Text]) -> Text:
+    def join(cls, sep: str | Text, parts: Iterable[Text]) -> Text:
         """Join rich text elements."""
         if isinstance(sep, str):
             sep = cls.mk_text(sep)
         return sep.join(parts)
 
     @classmethod
-    def assemble(cls, *parts: Union[Text, str]) -> Text:
+    def assemble(cls, *parts: Text | str) -> Text:
         """Assemble Text views into one.
 
         Args:

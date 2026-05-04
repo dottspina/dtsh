@@ -13,16 +13,15 @@ This module permits to open a DTSh session:
   for parsing the command line
 """
 
-from typing import cast, Optional, Union, List
-
 import argparse
 import os
 import sys
+from typing import cast
 
 from dtsh.config import DTShConfig
-from dtsh.shell import DTShError
-from dtsh.rich.theme import DTShTheme
 from dtsh.rich.session import DTShRichSession
+from dtsh.rich.theme import DTShTheme
+from dtsh.shell import DTShError
 
 
 class DTShArgvParser(argparse.ArgumentParser):
@@ -106,10 +105,10 @@ class DTShCliArgs:
         self._args = args
 
     @property
-    def binding_dirs(self) -> Optional[List[str]]:
+    def binding_dirs(self) -> list[str] | None:
         """Directories to search for binding files."""
         if self._args.bindings:
-            return cast(List[str], self._args.bindings)
+            return cast(list[str], self._args.bindings)
         return None
 
     @property
@@ -125,24 +124,24 @@ class DTShCliArgs:
         return bool(self._args.user_files)
 
     @property
-    def preferences(self) -> Optional[str]:
+    def preferences(self) -> str | None:
         """Additional preferences file."""
         if self._args.preferences:
             return cast(str, self._args.preferences)
         return None
 
     @property
-    def theme(self) -> Optional[str]:
+    def theme(self) -> str | None:
         """Additional styles file."""
         if self._args.theme:
             return cast(str, self._args.theme)
         return None
 
     @property
-    def batch_source(self) -> Optional[Union[str, List[str]]]:
+    def batch_source(self) -> str | list[str] | None:
         """Batch command source, if defined."""
         if self._args.c:
-            return cast(List[str], self._args.c)
+            return cast(list[str], self._args.c)
         if self._args.f:
             return cast(str, self._args.f)
         return None
@@ -186,7 +185,7 @@ class DTShCli:
             raise DTShError(f"failed to load theme file: {path}") from e
 
     def __init__(
-        self, parser: Optional[argparse.ArgumentParser] = None
+        self, parser: argparse.ArgumentParser | None = None
     ) -> None:
         """Initialize CLI.
 
@@ -199,7 +198,7 @@ class DTShCli:
         else:
             self._parser = DTShArgvParser()
 
-    def run(self, args: Optional[argparse.Namespace] = None) -> None:
+    def run(self, args: argparse.Namespace | None = None) -> None:
         """Run the command line interface.
 
         Args:

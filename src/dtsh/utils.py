@@ -8,25 +8,18 @@ The herein CMake cache reader implementation is adapted
 from the zcmake.py module in zephyr/scripts/west_commands.
 """
 
-from collections import defaultdict
-from typing import (
-    Any,
-    Optional,
-    Union,
-    List,
-    Sequence,
-    Dict,
-    Mapping,
-    Iterator,
-    Tuple,
-)
-
-from pathlib import Path
-
 import os
 import re
 import subprocess
 import sys
+from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
+from pathlib import Path
+from typing import (
+    Any,
+    Optional,
+)
+
 import yaml
 
 # NOTE: not sure we still need to support the legacy "!include",
@@ -39,14 +32,14 @@ class YAMLInclude:
     """YAML 'include:' entry."""
 
     _name: str
-    _allow_list: Optional[List[str]]
-    _block_list: Optional[List[str]]
+    _allow_list: list[str] | None
+    _block_list: list[str] | None
 
     def __init__(
         self,
         name: str,
-        allow_list: Optional[List[str]] = None,
-        block_list: Optional[List[str]] = None,
+        allow_list: list[str] | None = None,
+        block_list: list[str] | None = None,
     ) -> None:
         self._name = name
         self._allow_list = allow_list
@@ -86,22 +79,22 @@ class YAMLFile:
     _path: Path
 
     # Lazy-initialized file content.
-    _content: Optional[str]
+    _content: str | None
 
     # Lazy-initialized YAML model.
-    _raw: Optional[Dict[str, Any]]
+    _raw: dict[str, Any] | None
 
     # Lazy-initialized YAML "include:",
     # sorted by child-binding depth of inclusion (i.e. top-level,
     # child-binding, grandchild-binding, etc).
-    _depth2included: Optional[Dict[int, List[YAMLInclude]]]
+    _depth2included: dict[int, list[YAMLInclude]] | None
 
     # If set, we've failed to load the YAML file at some point:
     # - OSError: all kinds of file system errors
     # - YAMLError: invalid YAML content
-    _lasterr: Optional[Union[OSError, yaml.YAMLError]]
+    _lasterr: OSError | yaml.YAMLError | None
 
-    def __init__(self, path: Union[str, Path]) -> None:
+    def __init__(self, path: str | Path) -> None:
         """Lazy-initialize wrapper.
 
         Args:
@@ -130,7 +123,7 @@ class YAMLFile:
         return self._content or ""
 
     @property
-    def raw(self) -> Dict[str, Any]:
+    def raw(self) -> dict[str, Any]:
         """YAML model.
 
         If empty, see lasterr().
@@ -144,15 +137,13 @@ class YAMLFile:
         self._init_includes()
         if not self._depth2included:
             return []
-        yaml_includes: List[YAMLInclude] = [
-            yaml_inc
-            for included in self._depth2included.values()
-            for yaml_inc in included
+        yaml_includes: list[YAMLInclude] = [
+            yaml_inc for included in self._depth2included.values() for yaml_inc in included
         ]
         return [yaml_inc.name for yaml_inc in yaml_includes]
 
     @property
-    def lasterr(self) -> Optional[Union[OSError, yaml.YAMLError]]:
+    def lasterr(self) -> OSError | yaml.YAMLError | None:
         """Last error that happened while loading this YAML file.
 
         Possible values:
@@ -163,7 +154,7 @@ class YAMLFile:
         """
         return self._lasterr
 
-    def includes_at_depth(self, cb_depth: int) -> List[YAMLInclude]:
+    def includes_at_depth(self, cb_depth: int) -> list[YAMLInclude]:
         """Get the YAML files included at a given child-binding depth.
 
         Args:
@@ -186,7 +177,7 @@ class YAMLFile:
         self._content = ""
 
         try:
-            with open(self._path, mode="r", encoding="utf-8") as f:
+            with open(self._path, encoding="utf-8") as f:
                 self._content = f.read().strip()
         except OSError as e:
             self._lasterr = e
@@ -254,12 +245,8 @@ class YAMLFile:
                 elif isinstance(inc, dict):
                     basename = inc.get("name")
                     if isinstance(basename, str):
-                        allowlist: List[str] = [
-                            str(p) for p in inc.get("property-allowlist", [])
-                        ]
-                        blocklist: List[str] = [
-                            str(p) for p in inc.get("property-blocklist", [])
-                        ]
+                        allowlist: list[str] = [str(p) for p in inc.get("property-allowlist", [])]
+                        blocklist: list[str] = [str(p) for p in inc.get("property-blocklist", [])]
                         self._depth2included[cb_depth].append(
                             YAMLInclude(basename, allowlist, blocklist)
                         )
@@ -268,8 +255,8 @@ class YAMLFile:
 class PropertyLineage:
     """Property specifications lineage."""
 
-    fyaml_last: Optional[YAMLFile] = None
-    fyaml_spec: Optional[YAMLFile] = None
+    fyaml_last: YAMLFile | None = None
+    fyaml_spec: YAMLFile | None = None
 
     def __init__(self) -> None:
         self.reset()
@@ -301,7 +288,7 @@ class YAMLFilesystem:
       objects initialization
     """
 
-    _name2path: Dict[str, str]
+    _name2path: dict[str, str]
 
     def __init__(self, yaml_dirs: Sequence[str]) -> None:
         """Initialize the YAML file system.
@@ -325,7 +312,7 @@ class YAMLFilesystem:
         """
         return self._name2path
 
-    def find_path(self, name: str) -> Optional[str]:
+    def find_path(self, name: str) -> str | None:
         """Find a YAML file by name.
 
         Args:
@@ -337,7 +324,7 @@ class YAMLFilesystem:
         """
         return self._name2path.get(name)
 
-    def find_file(self, name: str) -> Optional[YAMLFile]:
+    def find_file(self, name: str) -> YAMLFile | None:
         """Find a YAML file by name.
 
         Args:
@@ -350,9 +337,7 @@ class YAMLFilesystem:
         path = self.find_path(name)
         return YAMLFile(path) if path else None
 
-    def find_property(
-        self, name: str, fyaml: YAMLFile, cb_depth: int
-    ) -> Optional[YAMLFile]:
+    def find_property(self, name: str, fyaml: YAMLFile, cb_depth: int) -> YAMLFile | None:
         """Find where the property was last modified.
 
         Starting from the given "top-level" YAML file,
@@ -414,9 +399,7 @@ class YAMLFilesystem:
             cb_depth: Child-binding depth at which we'll search
                 for the property.
         """
-        raw: Optional[Dict[Any, Any]] = self._fyaml_get_property(
-            name, fyaml, cb_depth
-        )
+        raw: dict[Any, Any] | None = self._fyaml_get_property(name, fyaml, cb_depth)
         if raw:
             if not lineage.fyaml_last:
                 lineage.fyaml_last = fyaml
@@ -437,8 +420,8 @@ class YAMLFilesystem:
 
     def _fyaml_get_property(
         self, name: str, fyaml: YAMLFile, cb_depth: int
-    ) -> Optional[Dict[Any, Any]]:
-        raw: Dict[Any, Any] = fyaml.raw
+    ) -> dict[Any, Any] | None:
+        raw: dict[Any, Any] = fyaml.raw
         for _ in range(cb_depth):
             raw = raw.get("child-binding", {})
         prop = raw.get("properties", {}).get(name)
@@ -451,7 +434,7 @@ class CMakeCache:
     Adapted from zcmake.CMakeCache.
     """
 
-    _entries: Dict[str, "CMakeCacheEntry"]
+    _entries: dict[str, "CMakeCacheEntry"]
 
     @classmethod
     def open(cls, path: str) -> Optional["CMakeCache"]:
@@ -481,7 +464,7 @@ class CMakeCache:
             OSError: CMakeCache file error.
             ValueError: CMakeCache content error.
         """
-        with open(path, "r", encoding="utf-8") as cache:
+        with open(path, encoding="utf-8") as cache:
             entries = [
                 CMakeCacheEntry.from_line(line, line_no)
                 for line_no, line in enumerate(cache)
@@ -515,7 +498,7 @@ class CMakeCache:
         # May not be Pythonic, but is consistent with type hinting.
         return val is True
 
-    def getstr(self, name: str) -> Optional[str]:
+    def getstr(self, name: str) -> str | None:
         """Access a cache entry as string.
 
         Arg:
@@ -530,7 +513,7 @@ class CMakeCache:
             return val
         return None
 
-    def getstrs(self, name: str) -> List[str]:
+    def getstrs(self, name: str) -> list[str]:
         """Access a cache entry as a list of strings.
 
         Arg:
@@ -600,7 +583,7 @@ class CMakeCacheEntry:
         re.X,
     )
 
-    ValueType = Union[str, List[str], bool]
+    ValueType = str | list[str] | bool
 
     _name: str
     _value: "CMakeCacheEntry.ValueType"
@@ -640,11 +623,10 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + (f"on line {line_no}: {line}",)
                 raise ValueError(args) from exc
-        elif type_ in {"STRING", "INTERNAL", "STATIC", "UNINITIALIZED"}:
-            # If the value is a CMake list (i.e. is a string which
-            # contains a ';'), convert to a Python list.
-            if ";" in value:
-                value = value.split(";")
+        elif type_ in {"STRING", "INTERNAL", "STATIC", "UNINITIALIZED"} and ";" in value:
+            # If the value is a CMake list (i.e. is a string which contains a ';'),
+            # convert to a Python list.
+            value = value.split(";")
 
         return CMakeCacheEntry(name, value)
 
@@ -724,26 +706,26 @@ class GitUtil:
         """True when we should be able to execute Git commands."""
         return self._enabled
 
-    def head_get_tag(self) -> Optional[str]:
+    def head_get_tag(self) -> str | None:
         """Get the tag of the repository HEAD, if any."""
-        (ret, output) = self._git_exec(["describe", "--exact-match", "--tags"])
+        ret, output = self._git_exec(["describe", "--exact-match", "--tags"])
         if ret == 0:
             return output
         return None
 
-    def head_get_short(self) -> Optional[str]:
+    def head_get_short(self) -> str | None:
         """Get the short commit hash of the repository HEAD."""
-        (ret, output) = self._git_exec(["rev-parse", "--short", "HEAD"])
+        ret, output = self._git_exec(["rev-parse", "--short", "HEAD"])
         if ret == 0:
             return output
         return None
 
     def _git_check_enabled(self) -> bool:
-        (ret, _) = self._git_exec(["rev-parse", "--is-inside-work-tree"])
+        ret, _ = self._git_exec(["rev-parse", "--is-inside-work-tree"])
         return ret == 0
 
     # Execute a Git command and answer result as a tuple (return value, output).
-    def _git_exec(self, args: Sequence[str]) -> Tuple[int, str]:
+    def _git_exec(self, args: Sequence[str]) -> tuple[int, str]:
         git_cmd: Sequence[str] = [
             "git.exe" if os.name == "nt" else "git",
             *args,
@@ -760,7 +742,7 @@ class GitUtil:
                 output = proc.stdout.read().decode("utf-8").strip()  # type: ignore
                 return (ret, output)
         except OSError as e:
-            return (e.errno, e.strerror)
+            return (e.errno or -1, e.strerror or "!?")
 
 
 class DTShToolchain:
@@ -792,9 +774,9 @@ class DTShToolchain:
         return None
 
     _variant: str
-    _name: Optional[str] = None
-    _path: Optional[Path] = None
-    _release: Optional[str] = None
+    _name: str | None = None
+    _path: Path | None = None
+    _release: str | None = None
 
     def __init__(self, cmake_cache: CMakeCache) -> None:
         """Initialize toolchain metadata with CMake cache content.
@@ -823,19 +805,19 @@ class DTShToolchain:
         return self._variant
 
     @property
-    def path(self) -> Optional[Path]:
+    def path(self) -> Path | None:
         """Toolchain path.
         Either ZEPHYR_SDK_INSTALL_DIR or ${VARIANT}_TOOLCHAIN_PATH.
         """
         return self._path
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """A toolchain name variant (zephyr, gnuarmemb only)."""
         return self._name
 
     @property
-    def release(self) -> Optional[str]:
+    def release(self) -> str | None:
         """The toolchain release (zephyr, gnuarmemb only)."""
         return self._release
 
@@ -855,46 +837,44 @@ class DTShToolchain:
     # Path to build toolchain.
     # Either retrieved from the CMake cache or the shell
     # environment (${TOOLCHAIN_VARIANT}_TOOLCHAIN_PATH).
-    def _get_toolchain_path(self, cmake_cache: CMakeCache) -> Optional[Path]:
+    def _get_toolchain_path(self, cmake_cache: CMakeCache) -> Path | None:
         var = DTShToolchain.CMAKE_TOOLCHAIN_PATH_FMT.format(
             VARIANT=self._variant.upper()
         )
-        path: Optional[str] = cmake_cache.getstr(var)
+        path: str | None = cmake_cache.getstr(var)
         return Path(path) if path else None
 
     # Path to Zephyr SDK.
     # Either retrieved from the CMake cache or the shell
     # environment (ZEPHYR_SDK_INSTALL_DIR).
-    def _get_zephyr_sdk_dir(self, cmake_cache: CMakeCache) -> Optional[Path]:
-        zephyr_sdk_dir = cmake_cache.getstr(
+    def _get_zephyr_sdk_dir(self, cmake_cache: CMakeCache) -> Path | None:
+        zephyr_sdk_dir = cmake_cache.getstr("ZEPHYR_SDK_INSTALL_DIR") or os.getenv(
             "ZEPHYR_SDK_INSTALL_DIR"
-        ) or os.getenv("ZEPHYR_SDK_INSTALL_DIR")
+        )
         return Path(zephyr_sdk_dir) if zephyr_sdk_dir else None
 
     # Zephyr SDK version.
     # Retrieved from SDV version file.
-    def _get_zephyr_sdk_release(self) -> Optional[str]:
+    def _get_zephyr_sdk_release(self) -> str | None:
         if not self._path:
             return None
         version_path: Path = self._path / "sdk_version"
-        release: Optional[str] = None
+        release: str | None = None
         try:
-            with open(version_path, mode="r", encoding="utf-8") as f:
+            with open(version_path, encoding="utf-8") as f:
                 release = f.readline().strip()
         except OSError as e:
             print(f"dubious Zephyr SDK: {e}")
         return release
 
-    def _get_gnuarm_release(self) -> Optional[str]:
+    def _get_gnuarm_release(self) -> str | None:
         if not self._path:
             return None
-        gcc_exe = (
-            "arm-none-eabi-gcc.exe" if os.name == "nt" else "arm-none-eabi-gcc"
-        )
+        gcc_exe = "arm-none-eabi-gcc.exe" if os.name == "nt" else "arm-none-eabi-gcc"
         gcc_path = self._path / "bin" / gcc_exe
         gcc_cmd: Sequence[str] = (str(gcc_path), "--version")
 
-        release: Optional[str] = None
+        release: str | None = None
         try:
             with subprocess.Popen(
                 gcc_cmd,
@@ -903,7 +883,7 @@ class DTShToolchain:
             ) as proc:
                 ret = proc.wait()
                 if ret == 0:
-                    output: List[str] = (
+                    output: list[str] = (
                         # We know proc.stdout is set.
                         proc.stdout.read()  # type: ignore[union-attr]
                         .decode("utf-8")

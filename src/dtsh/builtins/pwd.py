@@ -10,7 +10,7 @@ Unit tests and examples: tests/test_dtsh_builtin_pwd.py
 """
 
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from dtsh.io import DTShOutput
 from dtsh.shell import DTSh, DTShCommand

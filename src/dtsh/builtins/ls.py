@@ -10,25 +10,24 @@ Unit tests and examples: tests/test_dtsh_builtin_ls.py
 """
 
 
-from typing import Sequence, Dict, Mapping
+from collections.abc import Mapping, Sequence
 
-from dtsh.model import DTNode
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh
-from dtsh.shellutils import (
-    DTShFlagReverse,
-    DTShFlagEnabledOnly,
-    DTShFlagPager,
-    DTShFlagRecursive,
-    DTShFlagNoChildren,
-    DTShArgOrderBy,
-    DTShArgFixedDepth,
-    DTShParamDTPaths,
-)
-
+from dtsh.model import DTNode
+from dtsh.rich.modelview import DTModelView, SketchMV, ViewNodeList
 from dtsh.rich.shellutils import DTShCommandLongFmt
 from dtsh.rich.text import TextUtil
-from dtsh.rich.modelview import DTModelView, SketchMV, ViewNodeList
+from dtsh.shell import DTSh
+from dtsh.shellutils import (
+    DTShArgFixedDepth,
+    DTShArgOrderBy,
+    DTShFlagEnabledOnly,
+    DTShFlagNoChildren,
+    DTShFlagPager,
+    DTShFlagRecursive,
+    DTShFlagReverse,
+    DTShParamDTPaths,
+)
 
 
 class DTShBuiltinLs(DTShCommandLongFmt):
@@ -99,7 +98,7 @@ class DTShBuiltinLs(DTShCommandLongFmt):
         path_expansions: Sequence[DTSh.PathExpansion],
         sh: DTSh,
     ) -> Mapping[str, DTNode]:
-        path2node: Dict[str, DTNode] = {}
+        path2node: dict[str, DTNode] = {}
         for expansion in path_expansions:
             for node in self.sort(expansion.nodes):
                 path = sh.pathway(node, expansion.prefix)
@@ -152,7 +151,7 @@ class DTShBuiltinLs(DTShCommandLongFmt):
             or self.with_arg(DTShArgFixedDepth).isset
         )
 
-        path2contents: Dict[str, Sequence[DTNode]] = {}
+        path2contents: dict[str, Sequence[DTNode]] = {}
         for expansion in path_expansions:
             for node in self.sort(expansion.nodes):
                 if mode_recursive:

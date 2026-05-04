@@ -11,18 +11,16 @@ Rationale:
 """
 
 
-from typing import Tuple, List, Type, TypeVar, Optional
-
 import os
 import re
+from typing import TypeVar
 
 from rich.console import Console
 from rich.terminal_theme import TerminalTheme
 
 from dtsh.shell import DTShError
 
-
-SVGText = List[str]
+SVGText = list[str]
 
 TFragment = TypeVar("TFragment", bound="SVGFragment")
 
@@ -229,7 +227,7 @@ class SVGFormat:
     @staticmethod
     def ifind(
         svg_txt: SVGText, pattern: re.Pattern[str], start: int
-    ) -> Tuple[int, re.Match[str]]:
+    ) -> tuple[int, re.Match[str]]:
         """Find an RE pattern in SVG text.
 
         Stops on the first matching line.
@@ -261,10 +259,7 @@ class SVGFormat:
         Returns:
             A format string compatible with the rich library API.
         """
-        if font_family:
-            font_family = f"{font_family},monospace"
-        else:
-            font_family = "monospace"
+        font_family = f"{font_family},monospace" if font_family else "monospace"
 
         fmt = DTSH_META_SVG_FORMAT.replace("|font_family|", font_family)
         return fmt
@@ -276,12 +271,12 @@ class SVGFragment:
     RE_BEGIN: re.Pattern[str]
     """RE matching the beginning of the fragment."""
 
-    RE_END: Optional[re.Pattern[str]] = None
+    RE_END: re.Pattern[str] | None = None
     """RE matching the end of the fragment (multi-line fragments only)."""
 
     @classmethod
     def ifind(
-        cls: Type[TFragment], svg_txt: SVGText, start: int = 0
+        cls: type[TFragment], svg_txt: SVGText, start: int = 0
     ) -> TFragment:
         """Find an SVG fragment.
 
@@ -448,7 +443,7 @@ class SVGFragmentDefs(SVGFragment):
         #
         # Ref:
         # - https://github.com/Textualize/rich/issues/3576
-        matched: Optional[re.Match[str]] = None
+        matched: re.Match[str] | None = None
         i_rect: int = 0
         for i_rect, txt in enumerate(self._content):
             matched = SVGFragmentDefs.RE_RECT_3576.match(txt)
@@ -550,7 +545,7 @@ class SVGFragmentGTerminal(SVGFragment):
     @classmethod
     def ifind_list(
         cls, svg_txt: SVGText, start: int = 0
-    ) -> List["SVGFragmentGTerminal"]:
+    ) -> list["SVGFragmentGTerminal"]:
         """Find successive SVG boxes.
 
         Args:
@@ -561,7 +556,7 @@ class SVGFragmentGTerminal(SVGFragment):
             the end of the last box, and the matched boxes.
         """
         gterminal = cls.ifind(svg_txt, start)
-        gterminals: List[SVGFragmentGTerminal] = [gterminal]
+        gterminals: list[SVGFragmentGTerminal] = [gterminal]
 
         try:
             while True:
@@ -641,7 +636,7 @@ class SVGDocument:
             show_gcircles: Whether to show the macOS-like buttons.
         """
         svg_fmt = SVGFormat.mk_format(font_family)
-        contents: List[str] = console.export_svg(
+        contents: list[str] = console.export_svg(
             theme=theme,
             title=title,
             code_format=svg_fmt,
@@ -658,8 +653,8 @@ class SVGDocument:
     _style: SVGFragmentStyle
     _defs: SVGFragmentDefs
     _rect: SVGFragmentChrome
-    _gcircles: Optional[SVGFragmentGCircles] = None
-    _gterminals: List[SVGFragmentGTerminal]
+    _gcircles: SVGFragmentGCircles | None = None
+    _gterminals: list[SVGFragmentGTerminal]
 
     def __init__(
         self, svg_txt: SVGText, has_title: bool, show_gcircles: bool
@@ -723,7 +718,7 @@ class SVGDocument:
         return self._rect
 
     @property
-    def gcircles(self) -> Optional[SVGFragmentGCircles]:
+    def gcircles(self) -> SVGFragmentGCircles | None:
         """mocOS-lke buttons."""
         return self._gcircles
 
@@ -733,7 +728,7 @@ class SVGDocument:
         return self._gterminals[-1]
 
     @property
-    def gterminals(self) -> List[SVGFragmentGTerminal]:
+    def gterminals(self) -> list[SVGFragmentGTerminal]:
         """Captured outputs (append mode)."""
         return self._gterminals
 

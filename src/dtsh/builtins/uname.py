@@ -8,40 +8,38 @@ FIXME: Missing unit tests and examples: tests/test_dtsh_builtin_uname.py
 """
 
 
-from typing import Optional, List, Mapping, Sequence
-
+from collections.abc import Mapping, Sequence
 from enum import Enum
 
 from rich.text import Text
 
 from dtsh.autocomp import RlStateEnum
 from dtsh.config import DTShConfig
-from dtsh.hwm import DTShBoard
 from dtsh.dts import DTS
+from dtsh.hwm import DTShBoard
 from dtsh.io import DTShOutput
-from dtsh.rl import DTShReadline
-from dtsh.shell import (
-    DTSh,
-    DTShFlag,
-    DTShArg,
-    DTShCommand,
-    DTShError,
-    DTShUsageError,
-)
-from dtsh.shellutils import DTShFlagPager
-
 from dtsh.rich.modelview import (
     BoardModelView,
-    KernelModelView,
     FirmwareModelView,
     FormBoardInfo,
-    FormSoCInfo,
-    FormKernelInfo,
     FormFirmwareInfo,
+    FormKernelInfo,
+    FormSoCInfo,
+    KernelModelView,
 )
 from dtsh.rich.shellutils import DTShFlagLongList
 from dtsh.rich.text import TextUtil
 from dtsh.rich.tui import HeadingsContentWriter
+from dtsh.rl import DTShReadline
+from dtsh.shell import (
+    DTSh,
+    DTShArg,
+    DTShCommand,
+    DTShError,
+    DTShFlag,
+    DTShUsageError,
+)
+from dtsh.shellutils import DTShFlagPager
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 
@@ -63,10 +61,10 @@ class DTShBuiltinUname(DTShCommand):
 
     # Parsed POSIX-like options.
     # Populated by parse_argv().
-    _posix_options: List["UnamePosixOption"] = []
+    _posix_options: list["UnamePosixOption"] = []
 
     # Summary mode.
-    _summary_sections: List["UnameSummarySection"] = []
+    _summary_sections: list["UnameSummarySection"] = []
 
     def __init__(self) -> None:
         super().__init__(
@@ -116,7 +114,7 @@ class DTShBuiltinUname(DTShCommand):
         """Overrides DTShCommand.parse_argv()."""
         super().parse_argv(argv)
 
-        user_posix_opts: List[UnamePosixOption] = self._posix_user_opts()
+        user_posix_opts: list[UnamePosixOption] = self._posix_user_opts()
 
         if self.flag_summary or self.arg_summary.isset:
             self._mode = UnameMode.SUMMARY
@@ -177,7 +175,7 @@ class DTShBuiltinUname(DTShCommand):
             else:
                 after_sth = True
 
-            view: Optional[str | Text] = posix_opt.render(
+            view: str | Text | None = posix_opt.render(
                 dts, self.flag_longfmt
             )
             if view:
@@ -195,22 +193,22 @@ class DTShBuiltinUname(DTShCommand):
             if view:
                 writer.write_section(view, out)
 
-    def _posix_user_opts(self) -> List["UnamePosixOption"]:
+    def _posix_user_opts(self) -> list["UnamePosixOption"]:
         return [opt for opt in self._posix_all_opts() if opt.isset]
 
-    def _posix_all_opts(self) -> List["UnamePosixOption"]:
+    def _posix_all_opts(self) -> list["UnamePosixOption"]:
         return list(
             opt for opt in self._options if isinstance(opt, UnamePosixOption)
         )
 
-    def _posix_default_opts(self) -> List["UnamePosixOption"]:
+    def _posix_default_opts(self) -> list["UnamePosixOption"]:
         return list(
             opt
             for opt in self._options
             if isinstance(opt, UnamePosixFlagMachine)
         )
 
-    def _summary_all_sections(self) -> List["UnameSummarySection"]:
+    def _summary_all_sections(self) -> list["UnameSummarySection"]:
         return list(UnameArgSummaryFmt.ALL.values())
 
     def _posix_write_placeholder(self, out: DTShOutput) -> None:
@@ -243,7 +241,7 @@ class UnamePosixOption(DTShFlag):
         self,
         dts: DTS,
         flag_longfmt: bool,
-    ) -> Optional[str | Text]:
+    ) -> str | Text | None:
         """Render the corresponding POSIX-like output.
 
         Args:
@@ -257,7 +255,7 @@ class UnamePosixOption(DTShFlag):
     def render_raw(  # pylint: disable=useless-return
         self,
         dts: DTS,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Render POSIX-like output as strings."""
         del dts  # Unused in base class.
         return None
@@ -265,7 +263,7 @@ class UnamePosixOption(DTShFlag):
     def render_rich(  # pylint: disable=useless-return
         self,
         dts: DTS,
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Render POSIX-like output as rich views."""
         del dts  # Unused in base class.
         return None
@@ -288,7 +286,7 @@ class UnamePosixFlagMachine(UnamePosixOption):
     def render_raw(
         self,
         dts: DTS,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Overrides UnamePosixFlag.render_raw()."""
         if not dts.board:
             return None
@@ -298,19 +296,19 @@ class UnamePosixFlagMachine(UnamePosixOption):
         board_name: str = board.target
         # Full name retrieved from the board metadata (HWMv2 only)
         # or name retrieved from the runner metadata.
-        fullname: Optional[str] = board.full_name or board.runner_name
+        fullname: str | None = board.full_name or board.runner_name
         return " ".join(s for s in (board_name, fullname) if s)
 
     def render_rich(
         self,
         dts: DTS,
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Overrides UnamePosixFlag.render_rich()."""
         if not dts.board:
             return None
         board: DTShBoard = dts.board
 
-        txt_parts: List[Optional[Text]] = []
+        txt_parts: list[Text | None] = []
         if board.hwm == DTShBoard.HWM.V2:
             txt_parts.append(BoardModelView.mk_board_v2(board))
             txt_parts.append(BoardModelView.mk_full_name(board))
@@ -338,7 +336,7 @@ class UnamePosixFlagProcessor(UnamePosixOption):
     def render_raw(
         self,
         dts: DTS,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Overrides UnamePosixFlag.render_raw()."""
         if not dts.board:
             return None
@@ -347,7 +345,7 @@ class UnamePosixFlagProcessor(UnamePosixOption):
         if board.hwm == DTShBoard.HWM.V2:
             return board.qualifiers
 
-        arch_type: Sequence[Optional[str]] = (
+        arch_type: Sequence[str | None] = (
             board.runner_metadata.run_arch,
             board.runner_metadata.run_type,
         )
@@ -356,7 +354,7 @@ class UnamePosixFlagProcessor(UnamePosixOption):
     def render_rich(
         self,
         dts: DTS,
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Overrides UnamePosixFlag.render_rich()."""
         if not dts.board:
             return None
@@ -382,7 +380,7 @@ class UnamePosixFlagKernel(UnamePosixOption):
         dts: DTS,
     ) -> str:
         """Overrides UnamePosixFlag.render_raw()."""
-        kernel_rev: Optional[str] = dts.get_zephyr_head()
+        kernel_rev: str | None = dts.get_zephyr_head()
         kernel: str = (
             f"Zephyr-RTOS {kernel_rev}" if kernel_rev else "Zephyr-RTOS"
         )
@@ -398,7 +396,7 @@ class UnamePosixFlagKernel(UnamePosixOption):
         dts: DTS,
     ) -> Text:
         """Overrides UnamePosixFlag.render_rich()."""
-        txt_parts: List[Optional[Text]] = [
+        txt_parts: list[Text | None] = [
             TextUtil.mk_text("Zephyr-RTOS"),
             KernelModelView.mk_kernel_version(dts),
         ]
@@ -420,9 +418,9 @@ class UnamePosixFlagFirmware(UnamePosixOption):
     def render_raw(
         self,
         dts: DTS,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Overrides UnamePosixFlag.render_raw()."""
-        parts: List[str] = []
+        parts: list[str] = []
         if dts.fw_name:
             parts.append(dts.fw_name)
         if dts.fw_version:
@@ -434,9 +432,9 @@ class UnamePosixFlagFirmware(UnamePosixOption):
     def render_rich(
         self,
         dts: DTS,
-    ) -> Optional[Text]:
+    ) -> Text | None:
         """Overrides UnamePosixFlag.render_rich()."""
-        txt_parts: List[Text] = [
+        txt_parts: list[Text] = [
             txt
             for txt in (
                 FirmwareModelView.mk_fw_name(dts),
@@ -487,7 +485,7 @@ class UnameSummarySection:
         *,
         compact: bool = True,
         expand_included: bool = False,
-    ) -> Optional[HeadingsContentWriter.ContentType]:
+    ) -> HeadingsContentWriter.ContentType | None:
         # Unused in base class.
         del dts
         del compact
@@ -508,7 +506,7 @@ class UnameSummaryBoard(UnameSummarySection):
         *,
         compact: bool = True,
         expand_included: bool = False,
-    ) -> Optional[HeadingsContentWriter.ContentType]:
+    ) -> HeadingsContentWriter.ContentType | None:
         if not dts.board:
             return None
         return FormBoardInfo.create(
@@ -532,7 +530,7 @@ class UnameSummaryProcessor(UnameSummarySection):
         *,
         compact: bool = True,
         expand_included: bool = False,
-    ) -> Optional[HeadingsContentWriter.ContentType]:
+    ) -> HeadingsContentWriter.ContentType | None:
         if not dts.board:
             return None
         return FormSoCInfo.create(
@@ -556,7 +554,7 @@ class UnameSummaryKernel(UnameSummarySection):
         *,
         compact: bool = True,
         expand_included: bool = False,
-    ) -> Optional[HeadingsContentWriter.ContentType]:
+    ) -> HeadingsContentWriter.ContentType | None:
         return FormKernelInfo(dts)
 
 
@@ -573,7 +571,7 @@ class UnameSummaryFirmware(UnameSummarySection):
         *,
         compact: bool = True,
         expand_included: bool = False,
-    ) -> Optional[HeadingsContentWriter.ContentType]:
+    ) -> HeadingsContentWriter.ContentType | None:
         return FormFirmwareInfo(dts)
 
 
@@ -591,7 +589,7 @@ class UnameArgSummaryFmt(DTShArg):
     }
 
     @staticmethod
-    def parse_sections(fmt: str) -> List[UnameSummarySection]:
+    def parse_sections(fmt: str) -> list[UnameSummarySection]:
         """Parse format string into sections.
 
         Args:
@@ -621,13 +619,13 @@ class UnameArgSummaryFmt(DTShArg):
         return all(spec in UnameArgSummaryFmt.ALL for spec in fmt)
 
     # Parsed sections.
-    _sections: List[UnameSummarySection] = []
+    _sections: list[UnameSummarySection] = []
 
     def __init__(self) -> None:
         super().__init__(argname="fmt")
 
     @property
-    def sections(self) -> List[UnameSummarySection]:
+    def sections(self) -> list[UnameSummarySection]:
         """The parsed sections."""
         return self._sections
 
@@ -636,13 +634,13 @@ class UnameArgSummaryFmt(DTShArg):
         super().reset()
         self._sections.clear()
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Overrides DTShArg.parsed()."""
         super().parsed(value)
         if self._raw:
             self._sections = UnameArgSummaryFmt.parse_sections(self._raw)
 
-    def autocomp(self, txt: str, sh: DTSh) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: DTSh) -> list[DTShReadline.CompleterState]:
         """Overrides DTShArg.autocomp().
 
         Auto-complete argument with format specifiers.

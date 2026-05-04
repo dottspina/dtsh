@@ -27,29 +27,20 @@ Implementation notes:
 Unit tests and examples: tests/test_dtsh_model.py
 """
 
-
-from typing import (
-    cast,
-    Any,
-    Optional,
-    Iterator,
-    List,
-    Set,
-    Mapping,
-    Dict,
-    Tuple,
-    Sequence,
-    Union,
-)
-
 import os
 import posixpath
 import sys
+from collections.abc import Iterator, Mapping, Sequence
+from typing import (
+    Any,
+    Optional,
+    Union,
+    cast,
+)
 
 from devicetree import edtlib
-
-from dtsh.utils import YAMLFile, PropertyLineage
 from dtsh.dts import DTS
+from dtsh.utils import PropertyLineage, YAMLFile
 
 
 class DTPath:
@@ -80,7 +71,7 @@ class DTPath:
     """
 
     @staticmethod
-    def split(path: str) -> List[str]:
+    def split(path: str) -> list[str]:
         """Convert a DT path into a list of path segments.
 
         Each path segment is a node name:
@@ -417,7 +408,7 @@ class DTBinding:
     # Nested child-binding this binding defines, if any.
     _child_binding: Optional["DTBinding"]
 
-    _prop2specs: Optional[Dict[str, "DTPropertySpec"]] = None
+    _prop2specs: dict[str, "DTPropertySpec"] | None = None
 
     # The parent model (used to resolve child binding).
     def __init__(
@@ -450,7 +441,7 @@ class DTBinding:
         return self._edtbinding.path or ""
 
     @property
-    def compatible(self) -> Optional[str]:
+    def compatible(self) -> str | None:
         """Compatible string for the devices specified by this binding.
 
         None for child-bindings without compatible string,
@@ -467,7 +458,7 @@ class DTBinding:
         return self._edtbinding.buses
 
     @property
-    def on_bus(self) -> Optional[str]:
+    def on_bus(self) -> str | None:
         """The bus that the nodes specified by this binding should appear on.
 
         None if this binding does not expect a bus of appearance.
@@ -475,7 +466,7 @@ class DTBinding:
         return self._edtbinding.on_bus
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """The description of this binding, if any."""
         return self._edtbinding.description
 
@@ -512,7 +503,7 @@ class DTBinding:
         self._init_prop2specs()
         return self._prop2specs or {}
 
-    def all_dtproperties(self) -> List["DTPropertySpec"]:
+    def all_dtproperties(self) -> list["DTPropertySpec"]:
         """Enumerate specifications for all properties defined by this binding.
 
         Returns:
@@ -521,7 +512,7 @@ class DTBinding:
         self._init_prop2specs()
         return list(self._prop2specs.values()) if self._prop2specs else []
 
-    def get_headline(self) -> Optional[str]:
+    def get_headline(self) -> str | None:
         """The headline of this binding description, if any."""
         desc = self._edtbinding.description
         if desc:
@@ -577,20 +568,20 @@ class DTNodeInterrupt:
     @classmethod
     def sort_by_number(
         cls, irqs: Sequence["DTNodeInterrupt"], reverse: bool
-    ) -> List["DTNodeInterrupt"]:
+    ) -> list["DTNodeInterrupt"]:
         """Sort interrupts by IRQ number."""
         return sorted(irqs, key=lambda irq: irq.number, reverse=reverse)
 
     @classmethod
     def sort_by_priority(
         cls, irqs: Sequence["DTNodeInterrupt"], reverse: bool
-    ) -> List["DTNodeInterrupt"]:
+    ) -> list["DTNodeInterrupt"]:
         """Sort interrupts by IRQ priority."""
         return sorted(
             irqs,
-            key=lambda irq: irq.priority
-            if irq.priority is not None
-            else sys.maxsize,
+            key=lambda irq: (
+                irq.priority if irq.priority is not None else sys.maxsize
+            ),
             reverse=reverse,
         )
 
@@ -614,7 +605,7 @@ class DTNodeInterrupt:
         return sys.maxsize
 
     @property
-    def priority(self) -> Optional[int]:
+    def priority(self) -> int | None:
         """The IRQ priority.
 
         Although interrupts have a priority on most platforms,
@@ -625,7 +616,7 @@ class DTNodeInterrupt:
         return self._edtirq.data.get("priority")
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """The IRQ name."""
         return self._edtirq.name
 
@@ -650,9 +641,12 @@ class DTNodeInterrupt:
     def __lt__(self, other: object) -> bool:
         """By default, interrupts are sorted by IRQ numbers, then priorities."""
         if isinstance(other, DTNodeInterrupt):
-            if self.number == other.number:
-                if (self.priority is not None) and (other.priority is not None):
-                    return self.priority < other.priority
+            if (
+                (self.number == other.number)
+                and (self.priority is not None)
+                and (other.priority is not None)
+            ):
+                return self.priority < other.priority
             return self.number < other.number
         raise TypeError(other)
 
@@ -695,14 +689,14 @@ class DTNodeRegister:
     @classmethod
     def sort_by_addr(
         cls, regs: Sequence["DTNodeRegister"], reverse: bool
-    ) -> List["DTNodeRegister"]:
+    ) -> list["DTNodeRegister"]:
         """Sort registers by address."""
         return sorted(regs, key=lambda reg: reg.address, reverse=reverse)
 
     @classmethod
     def sort_by_size(
         cls, regs: Sequence["DTNodeRegister"], reverse: bool
-    ) -> List["DTNodeRegister"]:
+    ) -> list["DTNodeRegister"]:
         """Sort registers by size."""
         return sorted(regs, key=lambda reg: reg.size, reverse=reverse)
 
@@ -739,7 +733,7 @@ class DTNodeRegister:
         return self.address
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """The register name, if any."""
         return self._edtreg.name
 
@@ -789,7 +783,7 @@ class DTNodePHandleData:
         self._node = node
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """The phandle name.
 
         Args:
@@ -822,10 +816,10 @@ class DTPropertySpec:
     _edtspec: edtlib.PropertySpec
 
     # The node's binding that carries this property.
-    _binding: Optional[DTBinding]
+    _binding: DTBinding | None
 
     def __init__(
-        self, edtspec: edtlib.PropertySpec, binding: Optional[DTBinding]
+        self, edtspec: edtlib.PropertySpec, binding: DTBinding | None
     ) -> None:
         """Initialize specification.
 
@@ -837,7 +831,7 @@ class DTPropertySpec:
         self._binding = binding
 
     @property
-    def binding(self) -> Optional[DTBinding]:
+    def binding(self) -> DTBinding | None:
         """The node's binding where this specifies a property, if any."""
         return self._binding
 
@@ -847,7 +841,7 @@ class DTPropertySpec:
         return self._edtspec.name
 
     @property
-    def path(self) -> Optional[str]:
+    def path(self) -> str | None:
         """See edtlib.PropertySpec.path"""
         return self._edtspec.path
 
@@ -857,22 +851,22 @@ class DTPropertySpec:
         return self._edtspec.type
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """See edtlib.PropertySpec.description"""
         return self._edtspec.description
 
     @property
-    def enum(self) -> Optional[List[Any]]:
+    def enum(self) -> list[Any] | None:
         """See edtlib.PropertySpec.enum"""
         return self._edtspec.enum
 
     @property
-    def const(self) -> Union[None, int, List[int], str, List[str]]:
+    def const(self) -> None | int | list[int] | str | list[str]:
         """See edtlib.PropertySpec.const"""
         return self._edtspec.const
 
     @property
-    def default(self) -> Union[None, int, List[int], str, List[str]]:
+    def default(self) -> None | int | list[int] | str | list[str]:
         """See edtlib.PropertySpec.default"""
         return self._edtspec.default
 
@@ -887,7 +881,7 @@ class DTPropertySpec:
         return self._edtspec.deprecated
 
     @property
-    def specifier_space(self) -> Optional[str]:
+    def specifier_space(self) -> str | None:
         """See edtlib.PropertySpec.specifier_space"""
         return self._edtspec.specifier_space
 
@@ -900,11 +894,11 @@ class DTNodeProperty:
         int,
         str,
         bytes,
-        List[int],
-        List[str],
+        list[int],
+        list[str],
         "DTNode",
-        List["DTNode"],
-        List[DTNodePHandleData],
+        list["DTNode"],
+        list[DTNodePHandleData],
         None,
     ]
     """Property value types.
@@ -936,12 +930,12 @@ class DTNodeProperty:
         return self._edtprop.name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Property description from binding file, if any."""
         return self._edtprop.description
 
     @property
-    def path(self) -> Optional[str]:
+    def path(self) -> str | None:
         """Path to the binding file that specifies this property, if any."""
         return self._edtprop.spec.path
 
@@ -982,9 +976,9 @@ class DTNodeProperty:
         if isinstance(self._edtprop.val, list):
             # Non empty list of int, string, Node, or ControllerAndData
             if self._edtprop.val:
-                val0: Union[
-                    int, str, edtlib.Node, edtlib.ControllerAndData, None
-                ] = self._edtprop.val[0]
+                val0: (
+                    int | str | edtlib.Node | edtlib.ControllerAndData | None
+                ) = self._edtprop.val[0]
 
                 # List[int]
                 if isinstance(val0, int):
@@ -1031,11 +1025,9 @@ class DTNodeProperty:
         return False
 
     def __repr__(self) -> str:
-        vlist: List[Any]
-        if isinstance(self.value, list):
-            vlist = self.value
-        else:
-            vlist = [self.value]
+        vlist: list[Any] = (
+            self.value if isinstance(self.value, list) else [self.value]
+        )
         vstr = " ".join(
             [hex(val) if isinstance(val, int) else str(val) for val in vlist]
         )
@@ -1101,13 +1093,13 @@ class DTNode(DTWalkable):
     _parent: "DTNode"
 
     # Child nodes (DTS-order).
-    _children: List["DTNode"]
+    _children: list["DTNode"]
 
     # The binding that specifies the node content, if any.
-    _binding: Optional[DTBinding]
+    _binding: DTBinding | None
 
     # (All) properties, lazy initialized.
-    _props: Dict[str, DTNodeProperty]
+    _props: dict[str, DTNodeProperty]
 
     def __init__(
         self,
@@ -1163,7 +1155,7 @@ class DTNode(DTWalkable):
         return self._edtnode.name.split("@")[0]
 
     @property
-    def unit_addr(self) -> Optional[int]:
+    def unit_addr(self) -> int | None:
         """The (value of the) unit-address component of the node name.
 
         May be None if this node has no unit address.
@@ -1201,7 +1193,7 @@ class DTNode(DTWalkable):
         return self._edtnode.aliases
 
     @property
-    def chosen(self) -> List[str]:
+    def chosen(self) -> list[str]:
         """The parameters this node is a chosen for.
 
         Retrieved from the "/chosen" node content (DTSpec 3.3).
@@ -1218,7 +1210,7 @@ class DTNode(DTWalkable):
         return self._edtnode.labels
 
     @property
-    def label(self) -> Optional[str]:
+    def label(self) -> str | None:
         """A human readable description of the node device (DTSpec 4.1.2.3)."""
         return self._edtnode.label
 
@@ -1228,7 +1220,7 @@ class DTNode(DTWalkable):
         return self._edtnode.compats
 
     @property
-    def compatible(self) -> Optional[str]:
+    def compatible(self) -> str | None:
         """The compatible string value that actually specifies the node content.
 
         A few nodes have no compatible value.
@@ -1236,7 +1228,7 @@ class DTNode(DTWalkable):
         return self._edtnode.matching_compat
 
     @property
-    def vendor(self) -> Optional[DTVendor]:
+    def vendor(self) -> DTVendor | None:
         """The device vendor.
 
         This is the manufacturer for the compatible string
@@ -1259,17 +1251,17 @@ class DTNode(DTWalkable):
         return None
 
     @property
-    def binding_path(self) -> Optional[str]:
+    def binding_path(self) -> str | None:
         """Path to the binding file that specifies this node content."""
         return self._edtnode.binding_path
 
     @property
-    def binding(self) -> Optional[DTBinding]:
+    def binding(self) -> DTBinding | None:
         """The binding that specifies the node content, if any."""
         return self._binding
 
     @property
-    def on_bus(self) -> Optional[str]:
+    def on_bus(self) -> str | None:
         """The bus this node appears on, if any."""
         # NOTE[edtlib]:
         # What's the actual semantic of edtlib.Node.on_buses() ?
@@ -1292,19 +1284,19 @@ class DTNode(DTWalkable):
         return self._edtnode.buses
 
     @property
-    def interrupts(self) -> List[DTNodeInterrupt]:
+    def interrupts(self) -> list[DTNodeInterrupt]:
         """The interrupts generated by the node."""
         return [
             DTNodeInterrupt(edtirq, self) for edtirq in self._edtnode.interrupts
         ]
 
     @property
-    def registers(self) -> List[DTNodeRegister]:
+    def registers(self) -> list[DTNodeRegister]:
         """Addresses of the device resources (DTSpec 2.3.6)."""
         return [DTNodeRegister(edtreg) for edtreg in self._edtnode.regs]
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """The node description retrieved from its binding, if any."""
         return self._edtnode.description
 
@@ -1333,14 +1325,14 @@ class DTNode(DTWalkable):
         return self._edtnode.dep_ordinal
 
     @property
-    def required_by(self) -> List["DTNode"]:
+    def required_by(self) -> list["DTNode"]:
         """The nodes that directly depend on this device."""
         return [
             self._dt[edt_node.path] for edt_node in self._edtnode.required_by
         ]
 
     @property
-    def depends_on(self) -> List["DTNode"]:
+    def depends_on(self) -> list["DTNode"]:
         """The nodes this device directly depends on."""
         return [
             self._dt[edt_node.path] for edt_node in self._edtnode.depends_on
@@ -1372,7 +1364,7 @@ class DTNode(DTWalkable):
         self._init_props()
         return self._props[name]
 
-    def all_dtproperties(self) -> List[DTNodeProperty]:
+    def all_dtproperties(self) -> list[DTNodeProperty]:
         """Enumerate all node properties.
 
         Returns:
@@ -1397,7 +1389,7 @@ class DTNode(DTWalkable):
                 return node
         raise KeyError(name)
 
-    def get_child_binding_ancestor(self) -> Optional[DTBinding]:
+    def get_child_binding_ancestor(self) -> DTBinding | None:
         """Retrieve the child-binding ancestor of this node's binding.
 
         This is the binding this node's binding is recursively
@@ -1413,8 +1405,8 @@ class DTNode(DTWalkable):
         if not (self.binding and self.binding.cb_depth):
             return None
 
-        bindings_ancestor: Optional[DTBinding] = None
-        p_node: Optional[DTNode] = self
+        bindings_ancestor: DTBinding | None = None
+        p_node: DTNode | None = self
         while p_node and p_node.binding:
             parent = p_node.parent
             if (
@@ -1474,7 +1466,7 @@ class DTNode(DTWalkable):
         order_by: Optional["DTNodeSorter"] = None,
         reverse: bool = False,
         enabled_only: bool = False,
-    ) -> List["DTNode"]:
+    ) -> list["DTNode"]:
         """Search the devicetree branch under this node.
 
         Args:
@@ -1487,7 +1479,7 @@ class DTNode(DTWalkable):
         Returns:
             The list of matched nodes.
         """
-        nodes: List[DTNode] = [
+        nodes: list[DTNode] = [
             node
             for node in self.walk(
                 enabled_only=enabled_only,
@@ -1598,39 +1590,39 @@ class DTModel:
 
     # Map path names to nodes,
     # redundant with edtlib.EDT but "cheap".
-    _nodes: Dict[str, DTNode]
+    _nodes: dict[str, DTNode]
 
     # Bindings identified by a compatible string:
     # (compatible string, bus of appearance) -> binding
-    _compatible_bindings: Dict[Tuple[str, Optional[str]], DTBinding]
+    _compatible_bindings: dict[tuple[str, str | None], DTBinding]
 
     # Bindings without compatible string.
     # (YAML file name, cb_depth) -> binding
-    _compatless_bindings: Dict[Tuple[str, int], DTBinding]
+    _compatless_bindings: dict[tuple[str, int], DTBinding]
 
     # YAML binding files included by actual device bindings.
     # YAML file name -> binding
-    _base_bindings: Dict[str, DTBinding]
+    _base_bindings: dict[str, DTBinding]
 
     # Device and device class vendors that appear in this model.
     # prefix (aka manufacturer) -> vendor
-    _vendors: Dict[str, DTVendor]
+    _vendors: dict[str, DTVendor]
 
     # See aliased_nodes().
-    _aliased_nodes: Dict[str, DTNode]
+    _aliased_nodes: dict[str, DTNode]
 
     # See chosen_nodes().
-    _chosen_nodes: Dict[str, DTNode]
+    _chosen_nodes: dict[str, DTNode]
 
     # See labeled_nodes().
-    _labeled_nodes: Dict[str, DTNode]
+    _labeled_nodes: dict[str, DTNode]
 
     @classmethod
     def create(
         cls,
         dts_path: str,
-        binding_dirs: Optional[Sequence[str]] = None,
-        vendors_file: Optional[str] = None,
+        binding_dirs: Sequence[str] | None = None,
+        vendors_file: str | None = None,
     ) -> "DTModel":
         """Devicetree model factory.
 
@@ -1734,20 +1726,20 @@ class DTModel:
         return self._labeled_nodes
 
     @property
-    def bus_protocols(self) -> List[str]:
+    def bus_protocols(self) -> list[str]:
         """All bus protocols supported by this model."""
-        buses: Set[str] = set()
+        buses: set[str] = set()
         for node in self._nodes.values():
             buses.update(node.buses)
         return list(buses)
 
     @property
-    def compatible_strings(self) -> List[str]:
+    def compatible_strings(self) -> list[str]:
         """All compatible strings that appear on some node in this model."""
         return list(self._edt.compat2nodes.keys())
 
     @property
-    def vendors(self) -> List[DTVendor]:
+    def vendors(self) -> list[DTVendor]:
         """Vendors for this model compatible strings.
 
         NOTE: Will return an empty list if this model contains
@@ -1769,7 +1761,7 @@ class DTModel:
             print(f"WARN: invalid manufacturer: {e}", file=sys.stderr)
         return []
 
-    def get_device_binding(self, node: DTNode) -> Optional[DTBinding]:
+    def get_device_binding(self, node: DTNode) -> DTBinding | None:
         """Retrieve a device binding.
 
         Args:
@@ -1783,8 +1775,8 @@ class DTModel:
         return self._init_node_binding(node._edtnode)
 
     def get_compatible_binding(
-        self, compat: str, bus: Optional[str] = None
-    ) -> Optional[DTBinding]:
+        self, compat: str, bus: str | None = None
+    ) -> DTBinding | None:
         """Access bindings identified by a compatible string.
 
         If the lookup fails for the requested bus of appearance,
@@ -1804,7 +1796,7 @@ class DTModel:
         Returns:
             The binding for compatible devices, or None if not found.
         """
-        binding: Optional[DTBinding] = None
+        binding: DTBinding | None = None
 
         binding = self._compatible_bindings.get((compat, bus))
         if not binding and bus:
@@ -1836,7 +1828,7 @@ class DTModel:
                 pass
         return self._base_bindings[basename]
 
-    def get_vendor(self, compat: str) -> Optional[DTVendor]:
+    def get_vendor(self, compat: str) -> DTVendor | None:
         """Retrieve the vendor for a compatible string.
 
         Args:
@@ -1859,7 +1851,7 @@ class DTModel:
                 )
         return None
 
-    def get_compatible_devices(self, compat: str) -> List[DTNode]:
+    def get_compatible_devices(self, compat: str) -> list[DTNode]:
         """Retrieve devices whose binding matches a given compatible string.
 
         Args:
@@ -1913,7 +1905,7 @@ class DTModel:
         order_by: Optional["DTNodeSorter"] = None,
         reverse: bool = False,
         enabled_only: bool = False,
-    ) -> List[DTNode]:
+    ) -> list[DTNode]:
         """Search the devicetree.
 
         Shortcut for root.find().
@@ -1935,9 +1927,9 @@ class DTModel:
             enabled_only=enabled_only,
         )
 
-    def find_property(self, spec: DTPropertySpec) -> Optional[YAMLFile]:
+    def find_property(self, spec: DTPropertySpec) -> YAMLFile | None:
         """Find where the property was last modified."""
-        binding: Optional[DTBinding] = spec.binding
+        binding: DTBinding | None = spec.binding
         if not binding:
             return None
         return self._dts.yamlfs.find_property(
@@ -1947,7 +1939,7 @@ class DTModel:
     def backtrack_property(self, spec: DTPropertySpec) -> PropertyLineage:
         """Find where the property was last modified."""
         lineage = PropertyLineage()
-        binding: Optional[DTBinding] = spec.binding
+        binding: DTBinding | None = spec.binding
         if binding:
             self._dts.yamlfs.backtrack_property(
                 lineage, spec.name, binding.fyaml, binding.cb_depth
@@ -1979,7 +1971,7 @@ class DTModel:
             branch._children.append(child)  # pylint: disable=protected-access
             self._init_dt(child)
 
-    def _init_node_binding(self, edtnode: edtlib.Node) -> Optional[DTBinding]:
+    def _init_node_binding(self, edtnode: edtlib.Node) -> DTBinding | None:
         if not edtnode._binding:
             return None
         edtbinding: edtlib.Binding = edtnode._binding
@@ -1992,7 +1984,7 @@ class DTModel:
         edtbinding: edtlib.Binding,
         cb_depth: int,
     ) -> DTBinding:
-        child_binding: Optional[DTBinding] = None
+        child_binding: DTBinding | None = None
         if edtbinding.child_binding:
             child_binding = self._init_binding(
                 edtbinding.child_binding, cb_depth + 1
@@ -2003,11 +1995,11 @@ class DTModel:
         return binding
 
     def _post_init_binding(self, binding: DTBinding) -> None:
-        compat: Optional[str] = binding.compatible
+        compat: str | None = binding.compatible
         if compat:
             # Register if binding has a compatible: this cache should be
             # used only by autocomp and such.
-            on_bus: Optional[str] = binding.on_bus
+            on_bus: str | None = binding.on_bus
             if (compat, on_bus) not in self._compatible_bindings:
                 self._compatible_bindings[(compat, on_bus)] = binding
 
@@ -2016,8 +2008,8 @@ class DTModel:
     ) -> int:
         cb_depth: int = 0
 
-        p_node: Optional[edtlib.Node] = edtnode
-        p_binding: Optional[edtlib.Binding] = edtbinding
+        p_node: edtlib.Node | None = edtnode
+        p_binding: edtlib.Binding | None = edtbinding
 
         while p_node and p_binding:
             parent = p_node.parent
@@ -2066,7 +2058,7 @@ class DTModel:
         )
         return DTBinding(edtbinding, 0, None)
 
-    def _load_vendors_file(self, vendors_file: str) -> Dict[str, str]:
+    def _load_vendors_file(self, vendors_file: str) -> dict[str, str]:
         vendor_prefixes = edtlib.load_vendor_prefixes_txt(vendors_file)
         self._vendors.update(
             {
@@ -2096,7 +2088,7 @@ class DTNodeSorter:
 
     def split_sortable_unsortable(
         self, nodes: Sequence[DTNode]
-    ) -> Tuple[List[DTNode], List[DTNode]]:
+    ) -> tuple[list[DTNode], list[DTNode]]:
         """Split nodes into sortable and unsortable.
 
         Returns:
@@ -2120,7 +2112,7 @@ class DTNodeSorter:
 
     def sort(
         self, nodes: Sequence[DTNode], reverse: bool = False
-    ) -> List[DTNode]:
+    ) -> list[DTNode]:
         """Sort nodes.
 
         Args:
@@ -2186,13 +2178,13 @@ class DTNodeCriteria(DTNodeCriterion):
     A logical negation may eventually be applied to the chain.
     """
 
-    _criteria: List[DTNodeCriterion]
+    _criteria: list[DTNodeCriterion]
     _ored_chain: bool
     _negative_chain: bool
 
     def __init__(
         self,
-        criterion_chain: Optional[List[DTNodeCriterion]] = None,
+        criterion_chain: list[DTNodeCriterion] | None = None,
         ored_chain: bool = False,
         negative_chain: bool = False,
     ) -> None:

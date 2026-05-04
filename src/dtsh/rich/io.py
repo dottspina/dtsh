@@ -10,30 +10,28 @@
 Rich I/O streams implementations are based on the rich.console module.
 """
 
-
-from typing import Any, IO, Mapping, Optional, Sequence
-
-from io import StringIO
 import os
+from collections.abc import Mapping, Sequence
+from io import StringIO
+from typing import IO, Any
 
 from rich.console import Console, PagerContext
 from rich.measure import Measurement
-from rich.theme import Theme
 from rich.terminal_theme import (
-    SVG_EXPORT_THEME,
     DEFAULT_TERMINAL_THEME,
-    MONOKAI,
     DIMMED_MONOKAI,
+    MONOKAI,
     NIGHT_OWLISH,
+    SVG_EXPORT_THEME,
     TerminalTheme,
 )
+from rich.theme import Theme
 
 from dtsh.config import DTShConfig
-from dtsh.io import DTShVT, DTShInput, DTShOutput, DTShRedirect
-
+from dtsh.io import DTShInput, DTShOutput, DTShRedirect, DTShVT
 from dtsh.rich.html import HtmlDocument, HtmlFormat
-from dtsh.rich.theme import DTShTheme
 from dtsh.rich.svg import SVGDocument, SVGFormat
+from dtsh.rich.theme import DTShTheme
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 _theme: DTShTheme = DTShTheme.getinstance()
@@ -43,7 +41,7 @@ class DTShRichVT(DTShVT):
     """Rich terminal for devicetree shells."""
 
     _console: Console
-    _pager: Optional[PagerContext]
+    _pager: PagerContext | None
 
     def __init__(self) -> None:
         """Initialize VT."""
@@ -101,7 +99,7 @@ class DTShBatchRichVT(DTShRichVT):
     """
 
     # Batch input stream, reset to None on EOF.
-    _batch_istream: Optional[DTShInput]
+    _batch_istream: DTShInput | None
 
     # Whether to read from VT after batch.
     _interactive: bool
@@ -122,7 +120,7 @@ class DTShBatchRichVT(DTShRichVT):
         """Overrides DTShInput.is_tty()."""
         return self._batch_istream is None
 
-    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+    def readline(self, multi_prompt: Sequence[Any] | None = None) -> str:
         """Overrides DTShVT.readline()."""
         if self._batch_istream:
             try:
@@ -221,9 +219,7 @@ class DTShOutputFileText(DTShOutputFile):
             return
 
         try:
-            with open(
-                self.path, "a" if self.append else "w", encoding="utf-8"
-            ) as out:
+            with open(self.path, "a" if self.append else "w", encoding="utf-8") as out:
                 self._flush(out)
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
@@ -259,13 +255,12 @@ class DTShOutputFileHtml(DTShOutputFile):
             **kwargs: Keyword arguments, Console.print() semantic.
         """
         if self._pending:
-            if self._append:
+            if self._append and not _dtshconf.pref_html_compact:
                 # NOTE: commands output are formatted as successive HTML <pre>
                 # elements, and inserting an additional vertical space is
                 # very unlikely what the user wants: compact mode is the
                 # default for HTML output redirection.
-                if not _dtshconf.pref_html_compact:
-                    super().write()
+                super().write()
             # Capture is starting.
             self._pending = False
 
@@ -362,7 +357,7 @@ class DTShOutputFileSVG(DTShOutputFile):
             *args: Positional arguments, Console.print() semantic.
             **kwargs: Keyword arguments, Console.print() semantic.
         """
-        if self._append and not self._width:
+        if self._append and not self._width and not _dtshconf.pref_svg_compact:
             # When appending to an existing content (output file),
             # insert a blank line before we start to actually
             # capture the last command output.
@@ -370,8 +365,7 @@ class DTShOutputFileSVG(DTShOutputFile):
             # NOTE: we can't do that on flush, it will be too late,
             # the capture starts right bellow (that's how we can compute
             # the actual width of the command output).
-            if not _dtshconf.pref_svg_compact:
-                super().write()
+            super().write()
 
         # Write output to console using the maximum width.
         super().write(*args, **kwargs)
@@ -387,9 +381,7 @@ class DTShOutputFileSVG(DTShOutputFile):
                 # Aka ConsoleRenderable.
                 or hasattr(arg, "__rich_console__")
             ):
-                measure = Measurement.get(
-                    self._console, self._console.options, arg
-                )
+                measure = Measurement.get(self._console, self._console.options, arg)
                 self._line_width += measure.maximum
 
         endl: bool = kwargs.get("end", "\n") == "\n"
@@ -413,9 +405,7 @@ class DTShOutputFileSVG(DTShOutputFile):
             return
 
         try:
-            with open(
-                self.path, "r+" if self.append else "w", encoding="utf-8"
-            ) as out:
+            with open(self.path, "r+" if self.append else "w", encoding="utf-8") as out:
                 self._flush(out)
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
@@ -426,9 +416,7 @@ class DTShOutputFileSVG(DTShOutputFile):
 
     def _flush(self, out: IO[str]) -> None:
         # Text and background colors.
-        theme = DTSH_EXPORT_THEMES.get(
-            _dtshconf.pref_svg_theme, DEFAULT_TERMINAL_THEME
-        )
+        theme = DTSH_EXPORT_THEMES.get(_dtshconf.pref_svg_theme, DEFAULT_TERMINAL_THEME)
 
         # Shrink the console's width, to prevent the SVG document from being
         # unnecessarily wide.

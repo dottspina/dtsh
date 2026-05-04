@@ -5,33 +5,31 @@
 """Rich display callback for GNU readline integration."""
 
 
-from typing import Optional, Sequence, Set
-
 import os
+from collections.abc import Sequence
 
 from rich.text import Text
 
-from dtsh.io import DTShOutput
-from dtsh.rl import DTShReadline
 from dtsh.autocomp import (
     DTShAutocomp,
-    RlStateDTShCommand,
-    RlStateDTShOption,
-    RlStateDTPath,
     RlStateCompatStr,
-    RlStateDTVendor,
-    RlStateDTBus,
     RlStateDTAlias,
+    RlStateDTBus,
     RlStateDTChosen,
     RlStateDTLabel,
+    RlStateDTPath,
     RlStateDTProperty,
-    RlStateFsEntry,
+    RlStateDTShCommand,
+    RlStateDTShOption,
+    RlStateDTVendor,
     RlStateEnum,
+    RlStateFsEntry,
 )
-
-from dtsh.rich.theme import DTShTheme
+from dtsh.io import DTShOutput
 from dtsh.rich.text import TextUtil
+from dtsh.rich.theme import DTShTheme
 from dtsh.rich.tui import GridLayout
+from dtsh.rl import DTShReadline
 
 
 class DTShRichAutocomp(DTShAutocomp):
@@ -118,7 +116,7 @@ class DTShRichAutocomp(DTShAutocomp):
     def _rlstates_view_add_compatstr(
         self, grid: GridLayout, state: RlStateCompatStr
     ) -> None:
-        txt_desc: Optional[Text] = None
+        txt_desc: Text | None = None
         if state.bindings:
             # The compatible string associates bindings,
             # look for description.
@@ -130,8 +128,8 @@ class DTShRichAutocomp(DTShAutocomp):
                         binding.description, DTShTheme.STYLE_DT_DESCRIPTION
                     )
             else:
-                headlines: Set[str] = set()
-                buses: Set[str] = set()
+                headlines: set[str] = set()
+                buses: set[str] = set()
 
                 for binding in state.bindings:
                     if binding.on_bus:

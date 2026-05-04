@@ -10,26 +10,25 @@ Unit tests and examples: tests/test_dtsh_builtin_tree.py
 """
 
 
-from typing import Sequence, Mapping, Dict
+from collections.abc import Mapping, Sequence
 
-from dtsh.model import DTNode
 from dtsh.io import DTShOutput
-from dtsh.shell import DTSh
-from dtsh.shellutils import (
-    DTShFlagReverse,
-    DTShFlagEnabledOnly,
-    DTShFlagPager,
-    DTShArgOrderBy,
-    DTShArgFixedDepth,
-    DTShParamDTPaths,
-)
-
+from dtsh.model import DTNode
 from dtsh.rich.modelview import (
     SketchMV,
     ViewNodeTreePOSIX,
     ViewNodeTwoSided,
 )
 from dtsh.rich.shellutils import DTShCommandLongFmt
+from dtsh.shell import DTSh
+from dtsh.shellutils import (
+    DTShArgFixedDepth,
+    DTShArgOrderBy,
+    DTShFlagEnabledOnly,
+    DTShFlagPager,
+    DTShFlagReverse,
+    DTShParamDTPaths,
+)
 
 
 class DTShBuiltinTree(DTShCommandLongFmt):
@@ -87,7 +86,7 @@ class DTShBuiltinTree(DTShCommandLongFmt):
         path_expansions: Sequence[DTSh.PathExpansion],
         sh: DTSh,
     ) -> Mapping[str, DTNode]:
-        path2branch: Dict[str, DTNode] = {}
+        path2branch: dict[str, DTNode] = {}
         for expansion in path_expansions:
             for branch in self.sort(expansion.nodes):
                 path = sh.pathway(branch, expansion.prefix)

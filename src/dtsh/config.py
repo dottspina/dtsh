@@ -18,11 +18,8 @@ is loaded from and stored into the same directory.
 Unit tests and examples: tests/test_dtsh_config.py
 """
 
-
-from typing import List, Optional
-
-import configparser
 import codecs
+import configparser
 import enum
 import os
 import re
@@ -81,7 +78,7 @@ class DTShConfig:
             font.strip().replace('"', "'")
             for font in pref_font_family.split(",")
         ]
-        css_font_family: List[str] = []
+        css_font_family: list[str] = []
         for family in preferred_fonts:
             if (" " in family) and not family.startswith("'"):
                 css_font_family.append(f"'{family}'")
@@ -111,7 +108,7 @@ class DTShConfig:
     # Path to the per-user DTSh configuration and data directory
     _app_dir: str
 
-    def __init__(self, path: Optional[str] = None) -> None:
+    def __init__(self, path: str | None = None) -> None:
         """Initialize DTSh configuration.
 
         If a configuration path is explicitly set,
@@ -450,7 +447,7 @@ class DTShConfig:
             except OSError as e:
                 print(f"Failed to create file: {dst}", file=sys.stderr)
                 print(f"Cause: {e.strerror}", file=sys.stderr)
-                return -e.errno
+                return -e.errno if e.errno is not None else -1
 
         return 0
 
@@ -609,16 +606,11 @@ class DTShConfig:
             DTShConfig.Error: Failed to load configuration file.
         """
         try:
-            f = open(  # pylint: disable=consider-using-with
-                path, "r", encoding="utf-8"
-            )
-            self._cfg.read_file(f)
+            with open(path, encoding="utf-8") as f:
+                self._cfg.read_file(f)
 
         except (OSError, configparser.Error) as e:
-            if isinstance(e, OSError):
-                msg = e.strerror
-            else:
-                msg = e.message
+            msg = e.strerror if isinstance(e, OSError) else e.message
             if fail_early:
                 raise DTShConfig.Error(msg) from e
             print(f"Failed to load preferences file: {msg}", file=sys.stderr)

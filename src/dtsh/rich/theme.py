@@ -20,11 +20,10 @@ Unit tests and examples: tests/test_dtsh_theme.py
 """
 
 
-from typing import Optional, Dict, Mapping
-
 import configparser
 import os
 import sys
+from collections.abc import Mapping
 
 from rich.errors import StyleError, StyleSyntaxError
 from rich.style import Style
@@ -161,9 +160,9 @@ class DTShTheme:
         return _dtshtheme
 
     # Rich styles.
-    _styles: Dict[str, Style]
+    _styles: dict[str, Style]
 
-    def __init__(self, path: Optional[str] = None) -> None:
+    def __init__(self, path: str | None = None) -> None:
         """Initialize DTSh theme.
 
         If a theme path is explicitly set,

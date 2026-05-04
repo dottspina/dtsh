@@ -16,27 +16,18 @@ Shell-like interface with a devicetree model:
 Unit tests and examples: tests/test_dtsh_shell.py
 """
 
-
-from typing import (
-    cast,
-    Type,
-    TypeVar,
-    Union,
-    Optional,
-    Sequence,
-    List,
-    Tuple,
-    Dict,
-)
-
 import getopt
 import re
 import shlex
+from collections.abc import Sequence
+from typing import (
+    TypeVar,
+    cast,
+)
 
-from dtsh.model import DTPath, DTModel, DTNode, DTNodeSorter, DTNodeCriterion
 from dtsh.io import DTShOutput
+from dtsh.model import DTModel, DTNode, DTNodeCriterion, DTNodeSorter, DTPath
 from dtsh.rl import DTShReadline
-
 
 DTShOptionT = TypeVar("DTShOptionT", bound="DTShOption")
 """Type variable used for polymorphic access to command options.
@@ -71,13 +62,13 @@ class DTShOption:
     Constant to be defined by concrete options.
     """
 
-    SHORTNAME: Optional[str] = None
+    SHORTNAME: str | None = None
     """Single letter option name, e.g. "h".
 
     Constant to be defined by concrete options that accept a short getopt form.
     """
 
-    LONGNAME: Optional[str] = None
+    LONGNAME: str | None = None
     """Long option name, e.g. "help".
 
     Constant to be defined by concrete options that accept a long getopt form.
@@ -88,22 +79,22 @@ class DTShOption:
         self.reset()
 
     @property
-    def shortname(self) -> Optional[str]:
+    def shortname(self) -> str | None:
         """Single letter option name (without the "-" prefix)."""
         return type(self).SHORTNAME
 
     @property
-    def longname(self) -> Optional[str]:
+    def longname(self) -> str | None:
         """Long option name (without the "--" prefix)."""
         return type(self).LONGNAME
 
     @property
-    def brief(self) -> Optional[str]:
+    def brief(self) -> str | None:
         """Brief description."""
         return type(self).BRIEF
 
     @property
-    def getopt_short(self) -> Optional[str]:
+    def getopt_short(self) -> str | None:
         """Short GNU getopt option form.
 
         If the option is a flag, this is its short name.
@@ -114,7 +105,7 @@ class DTShOption:
         return self.shortname
 
     @property
-    def getopt_long(self) -> Optional[str]:
+    def getopt_long(self) -> str | None:
         """Long GNU getopt option form.
 
         If the option is a flag, this is its long name.
@@ -153,7 +144,7 @@ class DTShOption:
         An argument is either unset or reset to a default value.
         """
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Set this option.
 
         If the option is a flag, set the flag.
@@ -207,7 +198,7 @@ class DTShFlag(DTShOption):
         """
         self._on = False
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Set this flag.
 
         Overrides DTShOption.parsed().
@@ -235,7 +226,7 @@ class DTShArg(DTShOption):
     _name: str
 
     # See raw().
-    _raw: Optional[str]
+    _raw: str | None
 
     def __init__(self, argname: str) -> None:
         """
@@ -248,7 +239,7 @@ class DTShArg(DTShOption):
         self._name = argname.upper()
 
     @property
-    def getopt_short(self) -> Optional[str]:
+    def getopt_short(self) -> str | None:
         """Add argument's post-fix to the short getopt option form.
 
         Overrides DTShOption.getopt_short().
@@ -256,7 +247,7 @@ class DTShArg(DTShOption):
         return f"{self.shortname}:" if self.shortname else None
 
     @property
-    def getopt_long(self) -> Optional[str]:
+    def getopt_long(self) -> str | None:
         """Add argument's post-fix to the long getopt option form.
 
         Overrides DTShOption.getopt_long().
@@ -272,7 +263,7 @@ class DTShArg(DTShOption):
         return " ".join([super().usage, self._name])
 
     @property
-    def raw(self) -> Optional[str]:
+    def raw(self) -> str | None:
         """Raw argument value parsed on the command string.
 
         None if the argument has not been parsed().
@@ -294,7 +285,7 @@ class DTShArg(DTShOption):
         """
         self._raw = None
 
-    def parsed(self, value: Optional[str] = None) -> None:
+    def parsed(self, value: str | None = None) -> None:
         """Parsing the command string has set this argument.
 
         Overrides DTShOption.parsed().
@@ -311,9 +302,7 @@ class DTShArg(DTShOption):
             raise ValueError(None)
         self._raw = value
 
-    def autocomp(
-        self, txt: str, sh: "DTSh"
-    ) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: "DTSh") -> list[DTShReadline.CompleterState]:
         """Auto-complete with possible values for this argument.
 
         Args:
@@ -336,7 +325,7 @@ class DTShParameter:
     depending on its multiplicity.
     """
 
-    MultiplicityT = Union[str, int]
+    MultiplicityT = str | int
 
     # Parameter definition.
     _name: str
@@ -344,7 +333,7 @@ class DTShParameter:
     _brief: str
 
     # Raw parameter values parsed from the command string.
-    _raw: List[str]
+    _raw: list[str]
 
     def __init__(
         self, name: str, multiplicity: "DTShParameter.MultiplicityT", brief: str
@@ -396,7 +385,7 @@ class DTShParameter:
         """Raw parameter values parsed from the command string."""
         return self._raw
 
-    def parsed(self, values: List[str]) -> None:
+    def parsed(self, values: list[str]) -> None:
         """Parsing the command string has set this parameter.
 
         Args:
@@ -410,9 +399,7 @@ class DTShParameter:
         if self._multiplicity == "?":
             # Expect argc in [0, 1].
             if argc > 1:
-                raise DTShError(
-                    f"{self._name}: expects at most one value (got {argc})"
-                )
+                raise DTShError(f"{self._name}: expects at most one value (got {argc})")
 
         elif self._multiplicity == "+":
             # Expect argc >= 1
@@ -426,9 +413,7 @@ class DTShParameter:
         elif isinstance(self._multiplicity, int):
             N: int = self._multiplicity
             if argc != N:
-                raise DTShError(
-                    f"{self._name}: expects {N} value(s) (got {argc})"
-                )
+                raise DTShError(f"{self._name}: expects {N} value(s) (got {argc})")
 
         else:
             # Invalid parameter definition.
@@ -440,9 +425,7 @@ class DTShParameter:
         """Reset this parameter values before parsing the command line."""
         self._raw = []
 
-    def autocomp(
-        self, txt: str, sh: "DTSh"
-    ) -> List[DTShReadline.CompleterState]:
+    def autocomp(self, txt: str, sh: "DTSh") -> list[DTShReadline.CompleterState]:
         """Auto-complete parameter value.
 
         Args:
@@ -467,17 +450,17 @@ class DTShCommand:
     _brief: str
 
     # See options().
-    _options: List[DTShOption]
+    _options: list[DTShOption]
 
     # See param().
-    _param: Optional[DTShParameter]
+    _param: DTShParameter | None
 
     def __init__(
         self,
         name: str,
         brief: str,
-        options: Optional[Sequence[DTShOption]],
-        parameter: Optional[DTShParameter],
+        options: Sequence[DTShOption] | None,
+        parameter: DTShParameter | None,
     ) -> None:
         """Initialize a new devicetree shell command.
 
@@ -513,7 +496,7 @@ class DTShCommand:
         return self._options
 
     @property
-    def param(self) -> Optional[DTShParameter]:
+    def param(self) -> DTShParameter | None:
         """Expected parameter."""
         return self._param
 
@@ -542,7 +525,7 @@ class DTShCommand:
         )
 
     @property
-    def getopt_long(self) -> List[str]:
+    def getopt_long(self) -> list[str]:
         """Long options specification list compatible with GNU getopt.
 
         E.g. ["help", "depth="] for a command that supports a flag "--help",
@@ -552,7 +535,7 @@ class DTShCommand:
         # for type hinting consistency.
         return [opt.getopt_long or "" for opt in self._options if opt.longname]
 
-    def option(self, name: str) -> Optional[DTShOption]:
+    def option(self, name: str) -> DTShOption | None:
         """Retrieve command options by lexical name.
 
         Args:
@@ -574,7 +557,7 @@ class DTShCommand:
                     return opt
         return None
 
-    def with_option(self, option_t: Type[DTShOptionT]) -> DTShOptionT:
+    def with_option(self, option_t: type[DTShOptionT]) -> DTShOptionT:
         """Polymorphic access to the command options.
 
         Args:
@@ -593,7 +576,7 @@ class DTShCommand:
             raise KeyError(option_t)
         return cast(DTShOptionT, opt)
 
-    def with_flag(self, flag_t: Type[DTShFlag]) -> bool:
+    def with_flag(self, flag_t: type[DTShFlag]) -> bool:
         """Access a flag state.
 
         Args:
@@ -605,7 +588,7 @@ class DTShCommand:
         """
         return self.with_option(flag_t).isset
 
-    def with_arg(self, arg_t: Type[DTShOptionT]) -> DTShOptionT:
+    def with_arg(self, arg_t: type[DTShOptionT]) -> DTShOptionT:
         """Polymorphic access to the command arguments.
 
         Args:
@@ -617,7 +600,7 @@ class DTShCommand:
         """
         return self.with_option(arg_t)
 
-    def with_param(self, param_t: Type[DTShParamT]) -> DTShParamT:
+    def with_param(self, param_t: type[DTShParamT]) -> DTShParamT:
         """Polymorphic access to the command parameter.
 
         Args:
@@ -772,16 +755,14 @@ class DTSh:
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, DTSh.PathExpansion):
-                return (other.prefix == self.prefix) and (
-                    other.nodes == self.nodes
-                )
+                return (other.prefix == self.prefix) and (other.nodes == self.nodes)
             return False
 
     # Match label references (think &) in devicetree paths.
     _re_labelref: re.Pattern[str] = re.compile(r"^(?P<labelref>&[^/]+)")
 
     # See commands().
-    _commands: Dict[str, DTShCommand]
+    _commands: dict[str, DTShCommand]
 
     # See dt().
     _dt: DTModel
@@ -822,7 +803,7 @@ class DTSh:
         return self._cwd.path
 
     @property
-    def commands(self) -> List[DTShCommand]:
+    def commands(self) -> list[DTShCommand]:
         """The commands supported by this shell."""
         return list(self._commands.values())
 
@@ -874,17 +855,10 @@ class DTSh:
             DTPathNotFoundError: The prefix does not resolve to a node.
         """
         relpath = DTPath.relpath(node.path, self.node_at(prefix).path)
-
-        if relpath == ".":
-            path = prefix
-        else:
-            path = DTPath.join(prefix, relpath)
-
+        path = prefix if relpath == "." else DTPath.join(prefix, relpath)
         return path
 
-    def path_expansion(
-        self, path: str, enabled_only: bool = False
-    ) -> PathExpansion:
+    def path_expansion(self, path: str, enabled_only: bool = False) -> PathExpansion:
         """Expand a DT path expression that may contain "*" wild-cards.
 
         Boilerplate code to expand a DT path expression into:
@@ -922,15 +896,12 @@ class DTSh:
             or the path expansion didn't match any node.
         """
         prefix: str
-        nodes: List[DTNode]
+        nodes: list[DTNode]
 
         basename = DTPath.basename(path)
         if "*" in basename:
             dirname = DTPath.dirname(path)
-            if dirname == "." and not path.startswith("."):
-                prefix = ""
-            else:
-                prefix = dirname
+            prefix = "" if dirname == "." and not path.startswith(".") else dirname
 
             pattern = re.escape(basename).replace(r"\*", ".*")
             pattern = f"^{pattern}$"
@@ -947,10 +918,7 @@ class DTSh:
                 # like most Un*x shells do.
                 raise DTPathNotFoundError(path)
 
-            if enabled_only:
-                nodes = [node for node in globs if node.enabled]
-            else:
-                nodes = globs
+            nodes = [node for node in globs if node.enabled] if enabled_only else globs
 
         else:
             prefix = path or "."
@@ -981,7 +949,7 @@ class DTSh:
         except KeyError as e:
             raise DTPathNotFoundError(pathname) from e
 
-    def cd(self, path: Optional[str] = None) -> None:
+    def cd(self, path: str | None = None) -> None:
         """Change the current working branch.
 
         Args:
@@ -998,10 +966,10 @@ class DTSh:
         path: str,
         criterion: DTNodeCriterion,
         /,
-        order_by: Optional[DTNodeSorter] = None,
+        order_by: DTNodeSorter | None = None,
         reverse: bool = False,
         enabled_only: bool = False,
-    ) -> List[DTNode]:
+    ) -> list[DTNode]:
         """Search branch at path.
 
         Args:
@@ -1035,9 +1003,7 @@ class DTSh:
 
         return nodes
 
-    def parse_cmdline(
-        self, cmdline: str
-    ) -> Tuple[DTShCommand, List[str], Optional[str]]:
+    def parse_cmdline(self, cmdline: str) -> tuple[DTShCommand, list[str], str | None]:
         """Parse a command line.
 
         A command line is defined as a command string followed by optional
@@ -1088,7 +1054,7 @@ class DTSh:
         if not cmdline:
             raise ValueError()
 
-        v_cmdline: List[str] = [
+        v_cmdline: list[str] = [
             # If operating in POSIX mode, shlex will preserve the literal value
             # of the next character that follows a non-quoted escape characters:
             # e.g. input string \d is parsed as d: this would require
@@ -1134,10 +1100,7 @@ class DTSh:
         cmd_argv = v_cmdline[1 : cmd_argc + 1]
 
         v_redir2 = v_cmdline[cmd_argc + 1 :]
-        if v_redir2:
-            redir2 = " ".join(v_redir2)
-        else:
-            redir2 = None
+        redir2 = " ".join(v_redir2) if v_redir2 else None
 
         return (cmd, cmd_argv, redir2)
 
@@ -1145,9 +1108,9 @@ class DTSh:
 class DTShError(Exception):
     """Base for devicetree shell errors."""
 
-    _msg: Optional[str]
+    _msg: str | None
 
-    def __init__(self, msg: Optional[str] = None) -> None:
+    def __init__(self, msg: str | None = None) -> None:
         """A shell error happened.
 
         Args:
@@ -1174,7 +1137,7 @@ class DTShCommandError(DTShError):
 
     _cmd: DTShCommand
 
-    def __init__(self, cmd: DTShCommand, msg: Optional[str] = None) -> None:
+    def __init__(self, cmd: DTShCommand, msg: str | None = None) -> None:
         """New error.
 
         Args:
@@ -1257,5 +1220,5 @@ class DTShFlagHelp(DTShFlag):
     """
 
     BRIEF: str = "print command help"
-    SHORTNAME: Optional[str] = "h"
-    LONGNAME: Optional[str] = "help"
+    SHORTNAME: str | None = "h"
+    LONGNAME: str | None = "help"

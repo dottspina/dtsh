@@ -12,10 +12,10 @@
 Unit tests and examples: tests/test_dtsh_io.py
 """
 
-from typing import Any, IO, Tuple, Optional, List, Sequence
-
 import os
 import sys
+from collections.abc import Sequence
+from typing import IO, Any
 
 from dtsh.config import DTShConfig
 
@@ -57,7 +57,7 @@ class DTShInput:
     This base implementation immediately signals EOF.
     """
 
-    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+    def readline(self, multi_prompt: Sequence[Any] | None = None) -> str:
         """Print the prompt and read a command line from input stream.
 
         Args:
@@ -87,7 +87,7 @@ class DTShVT(DTShInput, DTShOutput):
     and ignores paging.
     """
 
-    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+    def readline(self, multi_prompt: Sequence[Any] | None = None) -> str:
         r"""Print the prompt and read a command line.
 
         To use ANSI escape codes in the prompt without breaking
@@ -200,7 +200,7 @@ class DTShRedirect(DTShOutput):
         """Failed to setup redirection stream."""
 
     @classmethod
-    def parse_redir2(cls, redir2: str) -> Tuple[str, bool]:
+    def parse_redir2(cls, redir2: str) -> tuple[str, bool]:
         """Parse redirection stream into path and mode.
 
         Does not validate the path.
@@ -313,12 +313,12 @@ class DTShInputFile(DTShInput):
         """
         try:
             self._in = open(  # pylint: disable=consider-using-with
-                path, "r", encoding="utf-8"
+                path, encoding="utf-8"
             )
         except OSError as e:
             raise DTShInputFile.Error(str(e)) from e
 
-    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+    def readline(self, multi_prompt: Sequence[Any] | None = None) -> str:
         """Overrides DTShInput.readline()."""
         line: str = self._in.readline()
 
@@ -345,9 +345,9 @@ class DTShInputCmds(DTShInput):
     Returns commands as they are provided on the tool command line.
     """
 
-    _cmds: List[str]
+    _cmds: list[str]
 
-    def __init__(self, cmds: List[str]) -> None:
+    def __init__(self, cmds: list[str]) -> None:
         """Initialize object.
 
         Args:
@@ -355,7 +355,7 @@ class DTShInputCmds(DTShInput):
         """
         self._cmds = cmds
 
-    def readline(self, multi_prompt: Optional[Sequence[Any]] = None) -> str:
+    def readline(self, multi_prompt: Sequence[Any] | None = None) -> str:
         """Overrides DTShInput.readline()."""
         if self._cmds:
             line: str = self._cmds.pop(0)
