@@ -225,9 +225,7 @@ class DTShRedirect(DTShOutput):
             path = redir2[1:].strip()
 
         if not path:
-            raise DTShRedirect.Error(
-                "don't know where to redirect the output to ?"
-            )
+            raise DTShRedirect.Error("don't know where to redirect the output to ?")
 
         return (path, append)
 
@@ -248,9 +246,7 @@ class DTShRedirect(DTShOutput):
         path, append = self.parse_redir2(redir2)
 
         if _dtshconf.pref_fs_no_spaces and " " in path:
-            raise DTShRedirect.Error(
-                f"spaces not allowed in redirection: '{path}'"
-            )
+            raise DTShRedirect.Error(f"spaces not allowed in redirection: '{path}'")
 
         if path.startswith("~"):
             # abspath() won't expand a leading "~".

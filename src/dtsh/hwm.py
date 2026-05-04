@@ -120,9 +120,7 @@ class BoardMetadata(HWMetaData):
     @property
     def revisions(self) -> list[str]:
         """Available board revisions."""
-        revisions: HWMetaData.Content = self._raw_board.get("revision", {}).get(
-            "revisions", []
-        )
+        revisions: HWMetaData.Content = self._raw_board.get("revision", {}).get("revisions", [])
         return [str(rev["name"]) for rev in revisions if rev in "name"]
 
     @property
@@ -176,9 +174,7 @@ class DTShBoard:
             """HWM version string."""
             return self.value
 
-    Qualifiers = tuple[
-        str, str | None, str | None, str | None, str | None
-    ]
+    Qualifiers = tuple[str, str | None, str | None, str | None, str | None]
     """Commodity for (name, version, soc, cpus, variant)."""
 
     RE_BOARD_HWM2 = re.compile(
@@ -446,9 +442,7 @@ class DTShBoard:
     @property
     def qualifiers(self) -> str:
         """Coma separated list of the HWMv2 qualifiers."""
-        qualifiers: list[str] = [
-            q for q in (self._soc, self._cpus, self._variant) if q is not None
-        ]
+        qualifiers: list[str] = [q for q in (self._soc, self._cpus, self._variant) if q is not None]
         return ",".join(qualifiers)
 
     def _get_hwm(self, cmake_cache: CMakeCache) -> HWM:
@@ -473,9 +467,7 @@ class DTShBoard:
         # ${BOARD_DIR}/${BOARD}.dts
         self._dts = self._board_dir / f"{self._target}.dts"
         # ${BOARD_DIR}/{BOARD}.yaml
-        self._runner_metadata = TestRunnerMetadata(
-            self._board_dir / f"{self._target}.yaml"
-        )
+        self._runner_metadata = TestRunnerMetadata(self._board_dir / f"{self._target}.yaml")
 
     def _init_board_v2(self, cmake_cache: CMakeCache) -> None:
         # Independent from qualifiers.
@@ -556,9 +548,7 @@ class DTShBoard:
         soc: str | None = None
         cpus: str | None = None
         variant: str | None = None
-        (name, revision, soc, cpus, variant) = DTShBoard.v2_parse_board(
-            self._target
-        )
+        (name, revision, soc, cpus, variant) = DTShBoard.v2_parse_board(self._target)
 
         if self._board_metadata:
             if not soc:
@@ -599,9 +589,7 @@ class DTShBoard:
         return path
 
     def _flat_qualifiers(self, strip_soc: bool = False) -> str:
-        qualifiers: list[str] = [
-            q for q in (self._soc, self._cpus, self._variant) if q is not None
-        ]
+        qualifiers: list[str] = [q for q in (self._soc, self._cpus, self._variant) if q is not None]
         if strip_soc and self._soc:
             qualifiers = qualifiers[1:]
         return "_".join(qualifiers)

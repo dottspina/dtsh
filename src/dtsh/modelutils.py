@@ -108,9 +108,7 @@ class DTNodeSortByAttr(DTNodeSorter):
             w = max(w) if self._reverse else min(w)
         return w
 
-    def sort(
-        self, nodes: Sequence[DTNode], reverse: bool = False
-    ) -> list[DTNode]:
+    def sort(self, nodes: Sequence[DTNode], reverse: bool = False) -> list[DTNode]:
         """Overrides DTNodeSorter.sort()."""
         # Set the reverse flag that the weight function will rely on.
         self._reverse = reverse
@@ -246,8 +244,7 @@ class DTNodeSortByIrqPriority(DTNodeSortByAttr):
             The interrupt priorities.
         """
         return [
-            irq.priority if irq.priority is not None else sys.maxsize
-            for irq in node.interrupts
+            irq.priority if irq.priority is not None else sys.maxsize for irq in node.interrupts
         ]
 
 
@@ -333,9 +330,7 @@ class DTNodeTextCriterion(DTNodeCriterion):
     # The RE that implements this criterion.
     _re: re.Pattern[str]
 
-    def __init__(
-        self, pattern: str, re_strict: bool = False, ignore_case: bool = False
-    ) -> None:
+    def __init__(self, pattern: str, re_strict: bool = False, ignore_case: bool = False) -> None:
         """Initialize criterion.
 
         Args:
@@ -361,9 +356,7 @@ class DTNodeTextCriterion(DTNodeCriterion):
 
     def match(self, node: DTNode) -> bool:
         """Overrides DTNodeCriterion.match()."""
-        return any(
-            self._re.match(txt) is not None for txt in self.get_haystack(node)
-        )
+        return any(self._re.match(txt) is not None for txt in self.get_haystack(node))
 
     def get_haystack(self, node: DTNode) -> Sequence[str]:
         """Get the textual representation of the haystack to search.
@@ -376,15 +369,11 @@ class DTNodeTextCriterion(DTNodeCriterion):
         del node
         return []
 
-    def _init_strict_re(
-        self, pattern: str, ignore_case: bool
-    ) -> re.Pattern[str]:
+    def _init_strict_re(self, pattern: str, ignore_case: bool) -> re.Pattern[str]:
         # RE strict mode, use pattern (e.g. from command string) as-is.
         return re.compile(pattern, flags=re.IGNORECASE if ignore_case else 0)
 
-    def _init_plain_text(
-        self, pattern: str, ignore_case: bool
-    ) -> re.Pattern[str]:
+    def _init_plain_text(self, pattern: str, ignore_case: bool) -> re.Pattern[str]:
         # Plain text search, escape all.
         pattern = re.escape(pattern)
         if r"\*" in pattern:
@@ -623,9 +612,7 @@ class DTNodeWithIrqPriority(DTNodeIntCriterion):
 
     def get_haystack(self, node: DTNode) -> Sequence[int]:
         """Overrides DTNodeIntCriterion.get_haystack()."""
-        return [
-            irq.priority for irq in node.interrupts if irq.priority is not None
-        ]
+        return [irq.priority for irq in node.interrupts if irq.priority is not None]
 
 
 class DTNodeWithRegAddr(DTNodeIntCriterion):
@@ -726,9 +713,7 @@ class DTWalkableComb(DTWalkable):
                     # Reverse DTS-order.
                     children = list(reversed(children))
                 for child in children:
-                    yield from self._walk(
-                        child, order_by=order_by, reverse=reverse
-                    )
+                    yield from self._walk(child, order_by=order_by, reverse=reverse)
 
 
 class DTSUtil:
@@ -787,9 +772,7 @@ class DTSUtil:
                 return cls.mk_phandles(phandles)
 
             # DTS "type: phandle-array".
-            phandle_array: list[DTNodePHandleData] = cast(
-                list[DTNodePHandleData], value
-            )
+            phandle_array: list[DTNodePHandleData] = cast(list[DTNodePHandleData], value)
             return cls.mk_phandle_array(phandle_array)
 
         if isinstance(value, bool):
@@ -843,7 +826,7 @@ class DTSUtil:
             nbytes += 1
         nbytes = nbytes or 1
 
-        fmt = f"0x{{:0{2*nbytes}x}}"
+        fmt = f"0x{{:0{2 * nbytes}x}}"
         strval = fmt.format(value)
 
         if as_cell:
@@ -937,9 +920,7 @@ class DTSUtil:
         Returns:
             A cell containing one or more phandles, e.g. "< &ctrl-1 &ctrl-2 >".
         """
-        strval = " ".join(
-            cls.mk_phandle(node, as_cell=False) for node in phandles
-        )
+        strval = " ".join(cls.mk_phandle(node, as_cell=False) for node in phandles)
         return cls._mk_cell(strval)
 
     @classmethod
@@ -952,16 +933,11 @@ class DTSUtil:
         Returns:
             A comma separated list of phandle-array entries.
         """
-        phdata_entries = [
-            cls.mk_phandle_and_data(entry, as_cell=True)
-            for entry in phandle_array
-        ]
+        phdata_entries = [cls.mk_phandle_and_data(entry, as_cell=True) for entry in phandle_array]
         return ", ".join(phdata_entries)
 
     @classmethod
-    def mk_phandle_and_data(
-        cls, phdata: DTNodePHandleData, as_cell: bool = True
-    ) -> str:
+    def mk_phandle_and_data(cls, phdata: DTNodePHandleData, as_cell: bool = True) -> str:
         """Make DTS-like output for entries in a "phandle-array".
 
         Args:
@@ -974,11 +950,7 @@ class DTSUtil:
             string representation.
         """
         data_values: list[str] = [
-            (
-                cls.mk_int(data, as_cell=False)
-                if isinstance(data, int)
-                else str(data)
-            )
+            (cls.mk_int(data, as_cell=False) if isinstance(data, int) else str(data))
             for data in phdata.data.values()
         ]
 

@@ -18,7 +18,6 @@ that should cover the devicetree shell needs:
 Unit tests and examples: tests/test_dtsh_dts.py
 """
 
-
 import os
 from collections.abc import Sequence
 from typing import Optional, cast
@@ -122,7 +121,7 @@ class DTS:
 
     @property
     def vendors_file(self) -> str | None:
-        "Path to the vendors file." ""
+        "Path to the vendors file."
         return self._vendors_file
 
     @property
@@ -282,9 +281,7 @@ class DTS:
         if not zephyr_base:
             # DTSh may be distributed with the Zephyr project:
             # test ZEPHYR_BASE/scripts/dts/dtsh/src/dtsh/__file__
-            dtshdir = os.path.dirname(
-                os.path.dirname(os.path.dirname(__file__))
-            )
+            dtshdir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             testdir = os.path.dirname(os.path.dirname(os.path.dirname(dtshdir)))
             # ZEPHYR_BASE/Kconfig.zephyr should then exist.
             if os.path.isfile(os.path.join(testdir, "Kconfig.zephyr")):
@@ -311,9 +308,7 @@ class DTS:
                         vendors_file = vndpath
         return vendors_file
 
-    def _init_binding_dirs(
-        self, binding_dirs: Sequence[str] | None
-    ) -> list[str]:
+    def _init_binding_dirs(self, binding_dirs: Sequence[str] | None) -> list[str]:
         if binding_dirs:
             binding_dirs = [os.path.abspath(path) for path in binding_dirs]
         else:
@@ -339,9 +334,7 @@ class DTS:
                     dts_roots.append(str(self._board.board_dir))
 
                 binding_dirs = [
-                    os.path.join(dtsroot, "dts", "bindings")
-                    for dtsroot in dts_roots
-                    if dtsroot
+                    os.path.join(dtsroot, "dts", "bindings") for dtsroot in dts_roots if dtsroot
                 ]
         # cast() is required to avoid type hinting error since
         # binding_dirs is first typed as an optional Sequence.

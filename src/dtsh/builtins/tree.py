@@ -9,7 +9,6 @@ List nodes in tree-like format.
 Unit tests and examples: tests/test_dtsh_builtin_tree.py
 """
 
-
 from collections.abc import Mapping, Sequence
 
 from dtsh.io import DTShOutput
@@ -53,14 +52,12 @@ class DTShBuiltinTree(DTShCommandLongFmt):
         super().execute(argv, sh, out)
 
         # Expand path parameter: can't be empty.
-        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(
-            DTShParamDTPaths
-        ).expand(self, sh)
+        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(DTShParamDTPaths).expand(
+            self, sh
+        )
         # Get the model, mapping the branches to list to their expected pathways.
         # pathway -> node.
-        path2branch: Mapping[str, DTNode] = self._get_path2branch(
-            path_expansions, sh
-        )
+        path2branch: Mapping[str, DTNode] = self._get_path2branch(path_expansions, sh)
 
         if self.with_flag(DTShFlagPager):
             out.pager_enter()

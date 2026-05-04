@@ -9,7 +9,6 @@ Change the current working branch.
 Unit tests and examples: tests/test_dtsh_builtin_cd.py
 """
 
-
 from collections.abc import Sequence
 
 from dtsh.io import DTShOutput

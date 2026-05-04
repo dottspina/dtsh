@@ -7,7 +7,6 @@
 FIXME: Missing unit tests and examples: tests/test_dtsh_builtin_uname.py
 """
 
-
 from collections.abc import Mapping, Sequence
 from enum import Enum
 
@@ -175,9 +174,7 @@ class DTShBuiltinUname(DTShCommand):
             else:
                 after_sth = True
 
-            view: str | Text | None = posix_opt.render(
-                dts, self.flag_longfmt
-            )
+            view: str | Text | None = posix_opt.render(dts, self.flag_longfmt)
             if view:
                 out.write(view, end=None)
             else:
@@ -197,16 +194,10 @@ class DTShBuiltinUname(DTShCommand):
         return [opt for opt in self._posix_all_opts() if opt.isset]
 
     def _posix_all_opts(self) -> list["UnamePosixOption"]:
-        return list(
-            opt for opt in self._options if isinstance(opt, UnamePosixOption)
-        )
+        return list(opt for opt in self._options if isinstance(opt, UnamePosixOption))
 
     def _posix_default_opts(self) -> list["UnamePosixOption"]:
-        return list(
-            opt
-            for opt in self._options
-            if isinstance(opt, UnamePosixFlagMachine)
-        )
+        return list(opt for opt in self._options if isinstance(opt, UnamePosixFlagMachine))
 
     def _summary_all_sections(self) -> list["UnameSummarySection"]:
         return list(UnameArgSummaryFmt.ALL.values())
@@ -381,14 +372,8 @@ class UnamePosixFlagKernel(UnamePosixOption):
     ) -> str:
         """Overrides UnamePosixFlag.render_raw()."""
         kernel_rev: str | None = dts.get_zephyr_head()
-        kernel: str = (
-            f"Zephyr-RTOS {kernel_rev}" if kernel_rev else "Zephyr-RTOS"
-        )
-        hwm_version: str = (
-            dts.board.hwm.version
-            if dts.board
-            else DTShBoard.HWM.UNKNOWN.version
-        )
+        kernel: str = f"Zephyr-RTOS {kernel_rev}" if kernel_rev else "Zephyr-RTOS"
+        hwm_version: str = dts.board.hwm.version if dts.board else DTShBoard.HWM.UNKNOWN.version
         return " ".join((kernel, hwm_version))
 
     def render_rich(

@@ -175,9 +175,7 @@ class DTShBuiltinCat(DTShCommand):
             )
 
         # Cat output options parsed from the command line.
-        cnt_options: int = sum(
-            [self.option_description, self.option_bindings, self.option_yaml]
-        )
+        cnt_options: int = sum([self.option_description, self.option_bindings, self.option_yaml])
 
         if cnt_options or self.flag_show_all:
             # Preconditions for summary.
@@ -191,13 +189,9 @@ class DTShBuiltinCat(DTShCommand):
 
             if cnt_options:
                 if self.flag_show_all:
-                    raise DTShCommandError(
-                        self, "options '-DBY' not allowed with '-A'"
-                    )
+                    raise DTShCommandError(self, "options '-DBY' not allowed with '-A'")
                 if (cnt_options > 1) and not self.flag_longfmt:
-                    raise DTShCommandError(
-                        self, "more than one option from '-DBY' requires '-l'"
-                    )
+                    raise DTShCommandError(self, "more than one option from '-DBY' requires '-l'")
         else:
             self._mode = CatMode.PVALUES
 
@@ -240,16 +234,12 @@ class DTShBuiltinCat(DTShCommand):
         else:
             self._cat_pvalues_ascii(props, out)
 
-    def _cat_pvalues_ascii(
-        self, props: list[DTNodeProperty], out: DTShOutput
-    ) -> None:
+    def _cat_pvalues_ascii(self, props: list[DTNodeProperty], out: DTShOutput) -> None:
         for prop in props:
             strval = DTSUtil.mk_property_value(prop)
             out.write(f"{prop.name}: {strval}")
 
-    def _cat_pvalues_rich(
-        self, props: list[DTNodeProperty], node: DTNode, out: DTShOutput
-    ) -> None:
+    def _cat_pvalues_rich(self, props: list[DTNodeProperty], node: DTNode, out: DTShOutput) -> None:
         view: PrintableType
         if props:
             view = ViewPropertyValueTable(props, node.dt)
@@ -293,16 +283,12 @@ class DTShBuiltinCat(DTShCommand):
 
         if self.flag_show_all or self.option_description:
             sections.append(
-                HeadingsContentWriter.Section(
-                    "description", ViewDescription(prop.description)
-                )
+                HeadingsContentWriter.Section("description", ViewDescription(prop.description))
             )
 
         if self.flag_show_all or self.option_bindings:
             sections.append(
-                HeadingsContentWriter.Section(
-                    "specification", FormPropertySpec(prop.dtspec, dt)
-                )
+                HeadingsContentWriter.Section("specification", FormPropertySpec(prop.dtspec, dt))
             )
 
         if self.flag_show_all or self.option_yaml:
@@ -322,9 +308,7 @@ class DTShBuiltinCat(DTShCommand):
                     linktype=_dtshconf.pref_yaml_actionable_type,
                 )
             else:
-                content = TextUtil.mk_apologies(
-                    "Specification file unavailable."
-                )
+                content = TextUtil.mk_apologies("Specification file unavailable.")
             sections.append(HeadingsContentWriter.Section("YAML", content))
 
         self._write_rich_sections(sections, out)
@@ -426,9 +410,7 @@ class DTShBuiltinCat(DTShCommand):
 
         if self.flag_show_all or self.option_description:
             sections.append(
-                HeadingsContentWriter.Section(
-                    "description", ViewDescription(node.description)
-                )
+                HeadingsContentWriter.Section("description", ViewDescription(node.description))
             )
 
         content: HeadingsContentWriter.ContentType
@@ -439,12 +421,8 @@ class DTShBuiltinCat(DTShCommand):
             if props:
                 content = ViewPropertyValueTable(props, node.dt)
             else:
-                content = TextUtil.mk_apologies(
-                    "This node does not set any property."
-                )
-            sections.append(
-                HeadingsContentWriter.Section("Properties", content)
-            )
+                content = TextUtil.mk_apologies("This node does not set any property.")
+            sections.append(HeadingsContentWriter.Section("Properties", content))
 
         if self.flag_show_all or self.option_bindings:
             if node.binding:

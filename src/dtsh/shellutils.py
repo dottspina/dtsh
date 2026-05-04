@@ -9,7 +9,6 @@ Flags, arguments and parameters for DTSh commands.
 Unit tests and examples: tests/test_dtsh_shellutils.py
 """
 
-
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -202,9 +201,7 @@ class DTShArgFixedDepth(DTShArg):
             try:
                 depth = int(self._raw or "0")
             except ValueError as e:
-                raise DTShError(
-                    f"expects an integer value (got '{self._raw}')"
-                ) from e
+                raise DTShError(f"expects an integer value (got '{self._raw}')") from e
 
             if depth < 0:
                 raise DTShError(f"expects a non negative value (got {depth})")
@@ -869,10 +866,7 @@ class DTShParamDTPaths(DTShParameter):
             enabled_only = False
 
         try:
-            return [
-                sh.path_expansion(path, enabled_only)
-                for path in self._raw or [""]
-            ]
+            return [sh.path_expansion(path, enabled_only) for path in self._raw or [""]]
         except DTPathNotFoundError as e:
             raise DTShCommandError(cmd, e.msg) from e
 
@@ -924,9 +918,7 @@ class DTShParamDTPathX(DTShParameter):
         """Whether the parameter value is a properties globbing expression."""
         return self._parm_prop is not None and self._parm_prop.endswith("*")
 
-    def xsplit(
-        self, cmd: DTShCommand, sh: DTSh
-    ) -> tuple[DTNode, list[DTNodeProperty] | None]:
+    def xsplit(self, cmd: DTShCommand, sh: DTSh) -> tuple[DTNode, list[DTNodeProperty] | None]:
         """Actually split the parameter into node and properties.
 
         Args:
@@ -961,9 +953,7 @@ class DTShParamDTPathX(DTShParameter):
                 if node.has_dtproperty(self._parm_prop):
                     props = [node.dtproperty(self._parm_prop)]
                 else:
-                    raise DTShCommandError(
-                        cmd, f"property not found: '{self._parm_prop}'"
-                    )
+                    raise DTShCommandError(cmd, f"property not found: '{self._parm_prop}'")
 
             return (node, props)
 

@@ -273,9 +273,7 @@ class PropertyLineage:
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, PropertyLineage):
             return False
-        return (self.fyaml_last == other.fyaml_last) and (
-            self.fyaml_spec == other.fyaml_spec
-        )
+        return (self.fyaml_last == other.fyaml_last) and (self.fyaml_spec == other.fyaml_spec)
 
 
 class YAMLFilesystem:
@@ -371,9 +369,7 @@ class YAMLFilesystem:
                 if not yaml_inc.is_filtered_out(name):
                     fyaml_inc = self.find_file(yaml_inc.name)
                     if fyaml_inc:
-                        fyaml_found = self.find_property(
-                            name, fyaml_inc, cb_depth - depth
-                        )
+                        fyaml_found = self.find_property(name, fyaml_inc, cb_depth - depth)
                         if fyaml_found:
                             return fyaml_found
         return None
@@ -414,9 +410,7 @@ class YAMLFilesystem:
                 if not yaml_inc.is_filtered_out(name):
                     fyaml_inc = self.find_file(yaml_inc.name)
                     if fyaml_inc:
-                        self.backtrack_property(
-                            lineage, name, fyaml_inc, cb_depth - depth
-                        )
+                        self.backtrack_property(lineage, name, fyaml_inc, cb_depth - depth)
 
     def _fyaml_get_property(
         self, name: str, fyaml: YAMLFile, cb_depth: int
@@ -466,8 +460,7 @@ class CMakeCache:
         """
         with open(path, encoding="utf-8") as cache:
             entries = [
-                CMakeCacheEntry.from_line(line, line_no)
-                for line_no, line in enumerate(cache)
+                CMakeCacheEntry.from_line(line, line_no) for line_no, line in enumerate(cache)
             ]
         self._entries = {entry.name: entry for entry in entries if entry}
 
@@ -838,9 +831,7 @@ class DTShToolchain:
     # Either retrieved from the CMake cache or the shell
     # environment (${TOOLCHAIN_VARIANT}_TOOLCHAIN_PATH).
     def _get_toolchain_path(self, cmake_cache: CMakeCache) -> Path | None:
-        var = DTShToolchain.CMAKE_TOOLCHAIN_PATH_FMT.format(
-            VARIANT=self._variant.upper()
-        )
+        var = DTShToolchain.CMAKE_TOOLCHAIN_PATH_FMT.format(VARIANT=self._variant.upper())
         path: str | None = cmake_cache.getstr(var)
         return Path(path) if path else None
 

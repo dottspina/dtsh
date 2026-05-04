@@ -9,7 +9,6 @@ List chosen nodes.
 Unit tests and examples: tests/test_dtsh_builtin_chosen.py
 """
 
-
 from collections.abc import Mapping, Sequence
 
 from dtsh.io import DTShOutput
@@ -53,11 +52,7 @@ class DTShBuiltinChosen(DTShCommandLongFmt):
 
         if self.with_flag(DTShFlagEnabledOnly):
             # Filter out chosen nodes which are disabled.
-            chosen2node = {
-                chosen: node
-                for chosen, node in chosen2node.items()
-                if node.enabled
-            }
+            chosen2node = {chosen: node for chosen, node in chosen2node.items() if node.enabled}
 
         # Silently output nothing if no matched chosen nodes.
         if chosen2node:

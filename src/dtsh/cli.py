@@ -38,9 +38,7 @@ class DTShArgvParser(argparse.ArgumentParser):
             action="append",
             metavar="DIR",
         )
-        grp_open_dts.add_argument(
-            "dts", help="path to the DTS file", nargs="?", metavar="DTS"
-        )
+        grp_open_dts.add_argument("dts", help="path to the DTS file", nargs="?", metavar="DTS")
 
         grp_user_files = parser.add_argument_group("user files")
         grp_user_files.add_argument(
@@ -184,9 +182,7 @@ class DTShCli:
         except DTShTheme.Error as e:
             raise DTShError(f"failed to load theme file: {path}") from e
 
-    def __init__(
-        self, parser: argparse.ArgumentParser | None = None
-    ) -> None:
+    def __init__(self, parser: argparse.ArgumentParser | None = None) -> None:
         """Initialize CLI.
 
         Args:
@@ -233,9 +229,7 @@ class DTShCli:
                 cli_args.interactive,
             )
         else:
-            session = DTShRichSession.create(
-                cli_args.dts, cli_args.binding_dirs
-            )
+            session = DTShRichSession.create(cli_args.dts, cli_args.binding_dirs)
 
         session.run(cli_args.interactive)
 

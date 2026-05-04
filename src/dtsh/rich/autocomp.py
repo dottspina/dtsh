@@ -4,7 +4,6 @@
 
 """Rich display callback for GNU readline integration."""
 
-
 import os
 from collections.abc import Sequence
 
@@ -95,27 +94,19 @@ class DTShRichAutocomp(DTShAutocomp):
 
         out.write(grid)
 
-    def _rlstates_view_add_dtshcmd(
-        self, grid: GridLayout, state: RlStateDTShCommand
-    ) -> None:
+    def _rlstates_view_add_dtshcmd(self, grid: GridLayout, state: RlStateDTShCommand) -> None:
         grid.add_row(TextUtil.bold(state.cmd.name), state.cmd.brief)
 
-    def _rlstates_view_add_dtshopt(
-        self, grid: GridLayout, state: RlStateDTShOption
-    ) -> None:
+    def _rlstates_view_add_dtshopt(self, grid: GridLayout, state: RlStateDTShOption) -> None:
         grid.add_row(TextUtil.bold(state.opt.usage), state.opt.brief)
 
-    def _rlstates_view_add_dtpath(
-        self, grid: GridLayout, state: RlStateDTPath
-    ) -> None:
+    def _rlstates_view_add_dtpath(self, grid: GridLayout, state: RlStateDTPath) -> None:
         txt = TextUtil.mk_text(state.node.name, DTShTheme.STYLE_DT_NODE_NAME)
         if not state.node.enabled:
             TextUtil.dim(txt)
         grid.add_row(txt, None)
 
-    def _rlstates_view_add_compatstr(
-        self, grid: GridLayout, state: RlStateCompatStr
-    ) -> None:
+    def _rlstates_view_add_compatstr(self, grid: GridLayout, state: RlStateCompatStr) -> None:
         txt_desc: Text | None = None
         if state.bindings:
             # The compatible string associates bindings,
@@ -141,75 +132,55 @@ class DTShRichAutocomp(DTShAutocomp):
                 if len(headlines) == 1:
                     # All associated bindings have the same description
                     # headline, use it.
-                    txt_desc = TextUtil.mk_headline(
-                        headlines.pop(), DTShTheme.STYLE_DT_DESCRIPTION
-                    )
+                    txt_desc = TextUtil.mk_headline(headlines.pop(), DTShTheme.STYLE_DT_DESCRIPTION)
                 elif buses:
                     # Tell user about different buses of appearance.
                     txt_desc = TextUtil.assemble(
                         TextUtil.italic("Available for different buses: "),
-                        TextUtil.mk_text(
-                            ", ".join(buses), DTShTheme.STYLE_DT_BUS
-                        ),
+                        TextUtil.mk_text(", ".join(buses), DTShTheme.STYLE_DT_BUS),
                     )
 
-        txt_compat = TextUtil.mk_text(
-            state.compatstr, DTShTheme.STYLE_DT_COMPAT_STR
-        )
+        txt_compat = TextUtil.mk_text(state.compatstr, DTShTheme.STYLE_DT_COMPAT_STR)
 
         grid.add_row(txt_compat, txt_desc)
 
-    def _rlstates_view_add_vendor(
-        self, grid: GridLayout, state: RlStateDTVendor
-    ) -> None:
+    def _rlstates_view_add_vendor(self, grid: GridLayout, state: RlStateDTVendor) -> None:
         grid.add_row(
             TextUtil.mk_text(state.prefix, DTShTheme.STYLE_DT_COMPAT_STR),
             TextUtil.mk_text(state.vendor, DTShTheme.STYLE_DT_VENDOR_NAME),
         )
 
-    def _rlstates_view_add_bus(
-        self, grid: GridLayout, state: RlStateDTBus
-    ) -> None:
+    def _rlstates_view_add_bus(self, grid: GridLayout, state: RlStateDTBus) -> None:
         grid.add_row(
             TextUtil.mk_text(state.proto, DTShTheme.STYLE_DT_BUS),
             None,
         )
 
-    def _rlstates_view_add_alias(
-        self, grid: GridLayout, state: RlStateDTAlias
-    ) -> None:
+    def _rlstates_view_add_alias(self, grid: GridLayout, state: RlStateDTAlias) -> None:
         txt = TextUtil.mk_text(state.alias, DTShTheme.STYLE_DT_ALIAS)
         if not state.node.enabled:
             TextUtil.dim(txt)
         grid.add_row(txt, None)
 
-    def _rlstates_view_add_chosen(
-        self, grid: GridLayout, state: RlStateDTChosen
-    ) -> None:
+    def _rlstates_view_add_chosen(self, grid: GridLayout, state: RlStateDTChosen) -> None:
         txt = TextUtil.mk_text(state.chosen, DTShTheme.STYLE_DT_CHOSEN)
         if not state.node.enabled:
             TextUtil.dim(txt)
         grid.add_row(txt, None)
 
-    def _rlstates_view_add_label(
-        self, grid: GridLayout, state: RlStateDTLabel
-    ) -> None:
+    def _rlstates_view_add_label(self, grid: GridLayout, state: RlStateDTLabel) -> None:
         txt_label = TextUtil.mk_text(state.label, DTShTheme.STYLE_DT_NODE_LABEL)
         if not state.node.enabled:
             TextUtil.dim(txt_label)
         if state.node.description:
-            txt_desc = TextUtil.mk_headline(
-                state.node.description, DTShTheme.STYLE_DT_DESCRIPTION
-            )
+            txt_desc = TextUtil.mk_headline(state.node.description, DTShTheme.STYLE_DT_DESCRIPTION)
             if not state.node.enabled:
                 TextUtil.dim(txt_desc)
         else:
             txt_desc = None
         grid.add_row(txt_label, txt_desc)
 
-    def _rlstates_view_add_fspath(
-        self, layout: GridLayout, state: RlStateFsEntry
-    ) -> None:
+    def _rlstates_view_add_fspath(self, layout: GridLayout, state: RlStateFsEntry) -> None:
         if state.dirent.is_dir():
             txt = TextUtil.mk_text(
                 f"{state.dirent.name}{os.sep}",
@@ -222,12 +193,8 @@ class DTShRichAutocomp(DTShAutocomp):
             )
         layout.add_row(txt, None)
 
-    def _rlstates_view_add_dtprop(
-        self, grid: GridLayout, state: RlStateDTProperty
-    ) -> None:
-        txt_prop = TextUtil.mk_text(
-            state.dtproperty.name, DTShTheme.STYLE_DT_PROPERTY
-        )
+    def _rlstates_view_add_dtprop(self, grid: GridLayout, state: RlStateDTProperty) -> None:
+        txt_prop = TextUtil.mk_text(state.dtproperty.name, DTShTheme.STYLE_DT_PROPERTY)
 
         if state.dtproperty.description:
             txt_desc = TextUtil.mk_headline(
@@ -238,7 +205,5 @@ class DTShRichAutocomp(DTShAutocomp):
 
         grid.add_row(txt_prop, txt_desc)
 
-    def _rlstates_view_add_enum(
-        self, grid: GridLayout, state: RlStateEnum
-    ) -> None:
+    def _rlstates_view_add_enum(self, grid: GridLayout, state: RlStateEnum) -> None:
         grid.add_row(TextUtil.bold(state.value), state.brief)

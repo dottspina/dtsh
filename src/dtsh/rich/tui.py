@@ -7,7 +7,6 @@
 Base view definitions compatible with the rich console protocol, __rich__().
 """
 
-
 from collections.abc import Sequence
 
 import rich.box
@@ -139,9 +138,7 @@ class GridLayout(View):
             Self to allow chaining.
         """
         if len(self._grid.columns) != len(views):
-            raise ValueError(
-                f"Expected {len(self._grid.columns)} views, got {len(views)}"
-            )
+            raise ValueError(f"Expected {len(self._grid.columns)} views, got {len(views)}")
         self._grid.add_row(*views)
         return self
 
@@ -204,9 +201,7 @@ class TableLayout(View):
             views: The row's render-able columns.
         """
         if len(self._table.columns) != len(views):
-            raise ValueError(
-                f"Expected {len(self._table.columns)} views, got {len(views)}"
-            )
+            raise ValueError(f"Expected {len(self._table.columns)} views, got {len(views)}")
         self._table.add_row(*views)
 
 
@@ -272,9 +267,7 @@ class FormLayout(GridLayout):
         self._linktype = DTShConfig.getinstance().pref_form_actionable_type
         self._grid.columns[0].justify = "right"
 
-    def add_content(
-        self, label: str, content: View | RenderableType | None
-    ) -> None:
+    def add_content(self, label: str, content: View | RenderableType | None) -> None:
         """Add en entry to this form.
 
         Args:
@@ -428,9 +421,7 @@ class RenderableError(BaseException):
         """The error view."""
         return self._grid
 
-    def warn_and_forward(
-        self, cmd: DTShCommand, msg: str, out: DTShOutput
-    ) -> None:
+    def warn_and_forward(self, cmd: DTShCommand, msg: str, out: DTShOutput) -> None:
         """Warn user and forward this error.
 
         Convenience for:

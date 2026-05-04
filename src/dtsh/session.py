@@ -55,9 +55,7 @@ class DTShSession:
     _last_err: BaseException | None
 
     @classmethod
-    def create(
-        cls, dts_path: str, binding_dirs: Sequence[str] | None = None
-    ) -> "DTShSession":
+    def create(cls, dts_path: str, binding_dirs: Sequence[str] | None = None) -> "DTShSession":
         """Create a new devicetree shell session.
 
         Args:
@@ -106,9 +104,7 @@ class DTShSession:
             self._autocomp.display,
         )
 
-    def run(
-        self, interactive: bool = True
-    ) -> None:  # pylint: disable=too-many-branches
+    def run(self, interactive: bool = True) -> None:  # pylint: disable=too-many-branches
         """Enter session loop.
 
         If interactive, first run the preamble hook:
@@ -163,9 +159,7 @@ class DTShSession:
                     # but will fault if the command is undefined.
                     cmd, argv, redir2 = self._dtsh.parse_cmdline(cmdline)
 
-                    out: DTShOutput = (
-                        self.open_redir2(redir2) if redir2 else self._vt
-                    )
+                    out: DTShOutput = self.open_redir2(redir2) if redir2 else self._vt
 
                 except DTShRedirect.Error as e:
                     # Failed to initialize redirection stream.
@@ -292,9 +286,7 @@ class DTShSession:
         """
         return [
             self._dtsh.pwd,
-            _dtshconf.prompt_alt
-            if self._last_err
-            else _dtshconf.prompt_default,
+            _dtshconf.prompt_alt if self._last_err else _dtshconf.prompt_default,
         ]
 
     def mk_prologue(self) -> Sequence[Any]:
@@ -328,9 +320,7 @@ class DTShSession:
             self._vt.write(line)
 
     @classmethod
-    def _create_dtmodel(
-        cls, dts_path: str, binding_dirs: Sequence[str] | None
-    ) -> DTModel:
+    def _create_dtmodel(cls, dts_path: str, binding_dirs: Sequence[str] | None) -> DTModel:
         try:
             return DTModel.create(dts_path, binding_dirs)
         except (OSError, edtlib.EDTError) as e:

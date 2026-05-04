@@ -103,9 +103,7 @@ class DTShReadline:
         def __repr__(self) -> str:
             return self._rlstr
 
-    CompletionCallback = Callable[
-        [str, str, int, int], list["DTShReadline.CompleterState"]
-    ]
+    CompletionCallback = Callable[[str, str, int, int], list["DTShReadline.CompleterState"]]
     """Completer states provider callback prototype.
 
     That's where the completion logic is implemented.
@@ -124,9 +122,7 @@ class DTShReadline:
         The list of completer states.
     """
 
-    DisplayCallback = Callable[
-        [DTShOutput, list["DTShReadline.CompleterState"]], None
-    ]
+    DisplayCallback = Callable[[DTShOutput, list["DTShReadline.CompleterState"]], None]
     """Completer states display callback prototype.
 
     That's where the completion matches are displayed.
@@ -223,9 +219,7 @@ class DTShReadline:
             begin = readline.get_begidx()
             end = readline.get_endidx()
 
-            self._completer_states = self._completion_callback(
-                cs_txt, rlbuf, begin, end
-            )
+            self._completer_states = self._completion_callback(cs_txt, rlbuf, begin, end)
 
         try:
             return self._completer_states[state].rlstr
@@ -282,6 +276,4 @@ class DTShReadline:
 
         if self._display_callback:
             # Enable custom display callback if asked to.
-            readline.set_completion_display_matches_hook(
-                self.rl_display_matches_hook
-            )
+            readline.set_completion_display_matches_hook(self.rl_display_matches_hook)

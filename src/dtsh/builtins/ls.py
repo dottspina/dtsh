@@ -9,7 +9,6 @@ List branch contents.
 Unit tests and examples: tests/test_dtsh_builtin_ls.py
 """
 
-
 from collections.abc import Mapping, Sequence
 
 from dtsh.io import DTShOutput
@@ -54,9 +53,9 @@ class DTShBuiltinLs(DTShCommandLongFmt):
         super().execute(argv, sh, out)
 
         # Expand path parameter.
-        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(
-            DTShParamDTPaths
-        ).expand(self, sh)
+        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(DTShParamDTPaths).expand(
+            self, sh
+        )
 
         if self.with_flag(DTShFlagPager):
             out.pager_enter()
@@ -80,9 +79,7 @@ class DTShBuiltinLs(DTShCommandLongFmt):
         out: DTShOutput,
     ) -> None:
         # Get the nodes to list as "files".
-        path2node: Mapping[str, DTNode] = self._get_path2node(
-            path_expansions, sh
-        )
+        path2node: Mapping[str, DTNode] = self._get_path2node(path_expansions, sh)
         if not path2node:
             return
 
@@ -105,15 +102,11 @@ class DTShBuiltinLs(DTShCommandLongFmt):
                 path2node[path] = node
         return path2node
 
-    def _output_nodes_raw(
-        self, path2node: Mapping[str, DTNode], out: DTShOutput
-    ) -> None:
+    def _output_nodes_raw(self, path2node: Mapping[str, DTNode], out: DTShOutput) -> None:
         for path in path2node:
             out.write(path)
 
-    def _output_nodes_longfmt(
-        self, path2node: Mapping[str, DTNode], out: DTShOutput
-    ) -> None:
+    def _output_nodes_longfmt(self, path2node: Mapping[str, DTNode], out: DTShOutput) -> None:
         sketch = self.get_sketch(SketchMV.Layout.LIST_VIEW)
         cols = self.get_longfmt(sketch.default_fmt)
 
@@ -128,9 +121,7 @@ class DTShBuiltinLs(DTShCommandLongFmt):
         out: DTShOutput,
     ) -> None:
         # Get the branches to list the contents of as "directories".
-        path2contents: Mapping[str, Sequence[DTNode]] = self._get_path2contents(
-            path_expansions, sh
-        )
+        path2contents: Mapping[str, Sequence[DTNode]] = self._get_path2contents(path_expansions, sh)
         if not path2contents:
             return
 
@@ -146,10 +137,7 @@ class DTShBuiltinLs(DTShCommandLongFmt):
         path_expansions: Sequence[DTSh.PathExpansion],
         sh: DTSh,
     ) -> Mapping[str, Sequence[DTNode]]:
-        mode_recursive = (
-            self.with_flag(DTShFlagRecursive)
-            or self.with_arg(DTShArgFixedDepth).isset
-        )
+        mode_recursive = self.with_flag(DTShFlagRecursive) or self.with_arg(DTShArgFixedDepth).isset
 
         path2contents: dict[str, Sequence[DTNode]] = {}
         for expansion in path_expansions:

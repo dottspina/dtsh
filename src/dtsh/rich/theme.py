@@ -19,7 +19,6 @@ The user's theme file is located in the DTSh application data directory.
 Unit tests and examples: tests/test_dtsh_theme.py
 """
 
-
 import configparser
 import os
 import sys

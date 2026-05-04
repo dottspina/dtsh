@@ -74,10 +74,7 @@ class DTShConfig:
         Normalize the preference string to a valid value we can insert
         in a CSS "font-family:" style specification.
         """
-        preferred_fonts = [
-            font.strip().replace('"', "'")
-            for font in pref_font_family.split(",")
-        ]
+        preferred_fonts = [font.strip().replace('"', "'") for font in pref_font_family.split(",")]
         css_font_family: list[str] = []
         for family in preferred_fonts:
             if (" " in family) and not family.startswith("'"):
@@ -326,9 +323,7 @@ class DTShConfig:
         try:
             return ActionableType(actionable_type)
         except ValueError:
-            print(
-                f"Invalid actionable type: {actionable_type}", file=sys.stderr
-            )
+            print(f"Invalid actionable type: {actionable_type}", file=sys.stderr)
         return ActionableType.LINK
 
     @property
@@ -437,9 +432,7 @@ class DTShConfig:
                 if os.path.exists(dst):
                     print(f"File exists, skipped: {dst}")
                 else:
-                    shutil.copyfile(
-                        os.path.join(src_dir, "rich", "theme.ini"), dst
-                    )
+                    shutil.copyfile(os.path.join(src_dir, "rich", "theme.ini"), dst)
                     print(f"User theme: {dst}")
 
                 return 0
@@ -569,9 +562,7 @@ class DTShConfig:
             val = val.replace("\n", " ")
             return str(
                 DTShConfig._RE_ESCAPE_SEQ.sub(
-                    lambda match: codecs.decode(
-                        match.group(0), "unicode-escape"
-                    ),
+                    lambda match: codecs.decode(match.group(0), "unicode-escape"),
                     val,
                 )
             )
@@ -634,9 +625,7 @@ class DTShConfig:
                 print(f"Cause: {e}", file=sys.stderr)
 
     def _init_app_dir_darwin(self) -> str:
-        return os.path.abspath(
-            os.path.join(os.path.expanduser("~"), "Library", "DTSh")
-        )
+        return os.path.abspath(os.path.join(os.path.expanduser("~"), "Library", "DTSh"))
 
     def _init_app_dir_nt(self) -> str:
         local_app_data = os.environ.get(

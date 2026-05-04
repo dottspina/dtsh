@@ -9,7 +9,6 @@ List aliased nodes.
 Unit tests and examples: tests/test_dtsh_builtin_alias.py
 """
 
-
 from collections.abc import Mapping, Sequence
 
 from dtsh.io import DTShOutput
@@ -53,11 +52,7 @@ class DTShBuiltinAlias(DTShCommandLongFmt):
 
         if self.with_flag(DTShFlagEnabledOnly):
             # Filter out aliased nodes which are disabled.
-            alias2node = {
-                alias: node
-                for alias, node in alias2node.items()
-                if node.enabled
-            }
+            alias2node = {alias: node for alias, node in alias2node.items() if node.enabled}
 
         # Silently output nothing if no matched aliased nodes.
         if alias2node:

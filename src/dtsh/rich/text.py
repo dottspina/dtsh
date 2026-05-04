@@ -173,9 +173,7 @@ class TextUtil:
 
         if linktype is ActionableType.ALT:
             # Append actionable text.
-            actionable = TextUtil.mk_text(
-                _dtshconf.pref_actionable_text, style=text.style
-            )
+            actionable = TextUtil.mk_text(_dtshconf.pref_actionable_text, style=text.style)
             actionable.stylize(Style(link=uri))
             text = TextUtil.join(" ", (text, actionable))
         else:
@@ -185,9 +183,7 @@ class TextUtil:
         return text
 
     @classmethod
-    def mk_headline(
-        cls, content: str, style: str | Style | None = None
-    ) -> Text:
+    def mk_headline(cls, content: str, style: str | Style | None = None) -> Text:
         """Extract headline of a multi-line content.
 
         Args:
@@ -270,9 +266,7 @@ class TextUtil:
         name = flabel or str(path.absolute())
 
         fs_found = path.exists()
-        txt = cls.mk_text(
-            name, style=style if fs_found else DTShTheme.STYLE_FS_NOT_FOUND
-        )
+        txt = cls.mk_text(name, style=style if fs_found else DTShTheme.STYLE_FS_NOT_FOUND)
         if fs_found:
             txt = cls.link(txt, path.absolute().as_uri(), linktype)
 

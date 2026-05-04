@@ -46,9 +46,7 @@ class DTShRichVT(DTShVT):
     def __init__(self) -> None:
         """Initialize VT."""
         super().__init__()
-        self._console = Console(
-            theme=Theme(_theme.styles), highlight=False, markup=False
-        )
+        self._console = Console(theme=Theme(_theme.styles), highlight=False, markup=False)
         self._pager = None
 
     def write(self, *args: Any, **kwargs: Any) -> None:
@@ -276,22 +274,16 @@ class DTShOutputFileHtml(DTShOutputFile):
             return
 
         try:
-            with open(
-                self.path, "r+" if self.append else "w", encoding="utf-8"
-            ) as redir2io:
+            with open(self.path, "r+" if self.append else "w", encoding="utf-8") as redir2io:
                 self._flush(redir2io)
         except OSError as e:
             raise DTShRedirect.Error(f"{self.path}: {e.strerror}") from e
         except HtmlFormat.Error as e:
-            raise DTShRedirect.Error(
-                f"unexpected HTML format, redirection canceled: {e}"
-            ) from e
+            raise DTShRedirect.Error(f"unexpected HTML format, redirection canceled: {e}") from e
 
     def _flush(self, redir2io: IO[str]) -> None:
         # Get the captured command output we're dealing with.
-        theme = DTSH_EXPORT_THEMES.get(
-            _dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME
-        )
+        theme = DTSH_EXPORT_THEMES.get(_dtshconf.pref_html_theme, DEFAULT_TERMINAL_THEME)
         html_capture: HtmlDocument = HtmlDocument.capture(
             self._console,
             theme=theme,
@@ -410,9 +402,7 @@ class DTShOutputFileSVG(DTShOutputFile):
         except OSError as e:
             raise DTShRedirect.Error(e.strerror) from e
         except SVGFormat.Error as e:
-            raise DTShRedirect.Error(
-                f"Unexpected SVG format, redirection canceled: {e}"
-            ) from e
+            raise DTShRedirect.Error(f"Unexpected SVG format, redirection canceled: {e}") from e
 
     def _flush(self, out: IO[str]) -> None:
         # Text and background colors.

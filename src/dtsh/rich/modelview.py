@@ -98,9 +98,7 @@ class DTModelView:
                 # Append the path separator to the branch path
                 # if not the devicetree root.
                 dirname += "/"
-            tv_branch = TextUtil.mk_text(
-                f"{dirname}", DTShTheme.STYLE_DT_PATH_BRANCH
-            )
+            tv_branch = TextUtil.mk_text(f"{dirname}", DTShTheme.STYLE_DT_PATH_BRANCH)
         else:
             # Empty base name (devicetree root): promote "/" to base name.
             basename = "/"
@@ -135,9 +133,7 @@ class DTModelView:
             if not branch.endswith("/"):
                 branch += "/"
 
-            tv_branch = TextUtil.mk_text(
-                f"{branch}", DTShTheme.STYLE_DT_PATH_BRANCH
-            )
+            tv_branch = TextUtil.mk_text(f"{branch}", DTShTheme.STYLE_DT_PATH_BRANCH)
         else:
             tv_branch = None
 
@@ -253,9 +249,7 @@ class DTModelView:
         """Text view factory child-binding depth."""
         return TextUtil.mk_text(
             str(cb_depth),
-            DTShTheme.STYLE_DT_IS_CHILD_BINDING
-            if (cb_depth > 0)
-            else DTShTheme.STYLE_DT_CB_ORDER,
+            DTShTheme.STYLE_DT_IS_CHILD_BINDING if (cb_depth > 0) else DTShTheme.STYLE_DT_CB_ORDER,
         )
 
     @classmethod
@@ -286,23 +280,17 @@ class DTModelView:
     @classmethod
     def mk_interrupt(cls, irq: DTNodeInterrupt) -> Text:
         """Text view factory for interrupts."""
-        tv_irq = TextUtil.mk_text(
-            str(irq.number), DTShTheme.STYLE_DT_IRQ_NUMBER
-        )
+        tv_irq = TextUtil.mk_text(str(irq.number), DTShTheme.STYLE_DT_IRQ_NUMBER)
 
         if irq.priority is not None:
             tv_irq = TextUtil.assemble(
                 tv_irq,
                 ":",
-                TextUtil.mk_text(
-                    str(irq.priority), DTShTheme.STYLE_DT_IRQ_PRIORITY
-                ),
+                TextUtil.mk_text(str(irq.priority), DTShTheme.STYLE_DT_IRQ_PRIORITY),
             )
 
         if irq.name:
-            tv_irq = TextUtil.assemble(
-                tv_irq, " ", TextUtil.mk_text(f"({irq.name})")
-            )
+            tv_irq = TextUtil.assemble(tv_irq, " ", TextUtil.mk_text(f"({irq.name})"))
 
         return tv_irq
 
@@ -343,9 +331,7 @@ class DTModelView:
         """Text view factory for node dependencies."""
         return TextUtil.mk_text(
             depends_on,
-            DTShTheme.STYLE_DT_DEP_FAILED
-            if dep_failed
-            else DTShTheme.STYLE_DT_DEP_ON,
+            DTShTheme.STYLE_DT_DEP_FAILED if dep_failed else DTShTheme.STYLE_DT_DEP_ON,
         )
 
     @classmethod
@@ -353,9 +339,7 @@ class DTModelView:
         """Text view factory for dependent nodes."""
         return TextUtil.mk_text(
             req_by,
-            DTShTheme.STYLE_DT_DEP_FAILED
-            if dep_failed
-            else DTShTheme.STYLE_DT_REQ_BY,
+            DTShTheme.STYLE_DT_DEP_FAILED if dep_failed else DTShTheme.STYLE_DT_REQ_BY,
         )
 
 
@@ -535,9 +519,7 @@ class NodeMV:
         return []
 
     @classmethod
-    def mk_view(
-        cls, node: DTNode, sketch: SketchMV
-    ) -> RenderableType | None:
+    def mk_view(cls, node: DTNode, sketch: SketchMV) -> RenderableType | None:
         """Make the view that represents this node aspect.
 
         Args:
@@ -599,9 +581,7 @@ class NodeColumnMV:
         """The view factory."""
         return self._modelview
 
-    def mk_view(
-        self, node: DTNode, sketch: SketchMV
-    ) -> RenderableType | None:
+    def mk_view(self, node: DTNode, sketch: SketchMV) -> RenderableType | None:
         """Shortcut to call view factory.
 
         Args:
@@ -654,9 +634,7 @@ class ViewNodeTable(TableLayout):
 
         NOTE: Won't check for duplicates.
         """
-        cols: list[RenderableType | None] = [
-            col.mk_view(node, self._sketch) for col in self._cols
-        ]
+        cols: list[RenderableType | None] = [col.mk_view(node, self._sketch) for col in self._cols]
         self.add_row(*cols)
 
     def extend(self, nodes: Iterable[DTNode]) -> None:
@@ -690,9 +668,7 @@ class ViewNodeList(ViewNodeTable):
             sketch,
             padding=(0, 1, 0, 1),
             show_header=_dtshconf.pref_list_headers,
-            no_wrap=no_wrap
-            if no_wrap is not None
-            else _dtshconf.pref_list_no_wrap,
+            no_wrap=no_wrap if no_wrap is not None else _dtshconf.pref_list_no_wrap,
         )
         if self._sketch.layout == SketchMV.Layout.LIST_MULTI:
             # When we allow multiple-line cells, draw lines to distinguish rows.
@@ -887,9 +863,7 @@ class ViewNodeTwoSided(GridLayout):
     _walkable: DTWalkable
     _cols: Sequence[NodeColumnMV]
 
-    def __init__(
-        self, walkable: DTWalkable, cols: Sequence[NodeColumnMV]
-    ) -> None:
+    def __init__(self, walkable: DTWalkable, cols: Sequence[NodeColumnMV]) -> None:
         """Initialize view.
 
         No rendering happens until do_layout() is called.
@@ -921,9 +895,7 @@ class ViewNodeTwoSided(GridLayout):
               walking through to leaf nodes, according to enabled_only.
         """
         # Left side: tree view
-        left_treeview = ViewDTWalkableMV(
-            self._walkable, self._cols[0].modelview
-        )
+        left_treeview = ViewDTWalkableMV(self._walkable, self._cols[0].modelview)
         if _dtshconf.pref_tree_headers and self._cols[1:]:
             # If a non empty right-side list-view shows its headers,
             # move the left-side tree-view two lines bellow.
@@ -939,9 +911,7 @@ class ViewNodeTwoSided(GridLayout):
         right_listview.left_indent(2)
 
         # Layout both sides in sync.
-        for node in left_treeview.walk_layout(
-            order_by, reverse, enabled_only, fixed_depth
-        ):
+        for node in left_treeview.walk_layout(order_by, reverse, enabled_only, fixed_depth):
             right_listview.append(node)
 
         self.add_row(left_treeview, right_listview)
@@ -991,9 +961,7 @@ class DepOrdinalNodeMV(NodeMV):
     @classmethod
     def mk_text(cls, node: DTNode, sketch: SketchMV) -> Sequence[Text]:
         """Overrides NodeMV.mk_text()."""
-        return (
-            TextUtil.mk_text(str(node.dep_ordinal), DTShTheme.STYLE_DT_ORDINAL),
-        )
+        return (TextUtil.mk_text(str(node.dep_ordinal), DTShTheme.STYLE_DT_ORDINAL),)
 
 
 class DeviceLabelNodeMV(NodeMV):
@@ -1100,11 +1068,7 @@ class BindingNodeMV(NodeMV):
         cb_depth: int = binding.cb_depth
         # Should we anchor child-bindings to their parent node's binding ?
         cb_anchor: str | None = _dtshconf.pref_tree_cb_anchor
-        cb_anchored = (
-            sketch.layout == SketchMV.Layout.TWO_SIDED
-            and cb_depth
-            and cb_anchor
-        )
+        cb_anchored = sketch.layout == SketchMV.Layout.TWO_SIDED and cb_depth and cb_anchor
 
         if cb_anchored:
             spc_indent = 2 * (cb_depth - 1) * " "
@@ -1284,13 +1248,9 @@ class InterruptsNodeMV(NodeMV):
         # In-cell sort.
         irqs: Sequence[DTNodeInterrupt]
         if sketch.with_sorter(DTNodeSortByIrqNumber):
-            irqs = DTNodeInterrupt.sort_by_number(
-                node.interrupts, sketch.with_reverse()
-            )
+            irqs = DTNodeInterrupt.sort_by_number(node.interrupts, sketch.with_reverse())
         elif sketch.with_sorter(DTNodeSortByIrqPriority):
-            irqs = DTNodeInterrupt.sort_by_priority(
-                node.interrupts, sketch.with_reverse()
-            )
+            irqs = DTNodeInterrupt.sort_by_priority(node.interrupts, sketch.with_reverse())
         else:
             irqs = node.interrupts
 
@@ -1314,13 +1274,9 @@ class RegistersNodeMV(NodeMV):
         # In-cell sort.
         regs: Sequence[DTNodeRegister]
         if sketch.with_sorter(DTNodeSortByRegAddr):
-            regs = DTNodeRegister.sort_by_addr(
-                node.registers, sketch.with_reverse()
-            )
+            regs = DTNodeRegister.sort_by_addr(node.registers, sketch.with_reverse())
         elif sketch.with_sorter(DTNodeSortByRegSize):
-            regs = DTNodeRegister.sort_by_size(
-                node.registers, sketch.with_reverse()
-            )
+            regs = DTNodeRegister.sort_by_size(node.registers, sketch.with_reverse())
         else:
             regs = node.registers
 
@@ -1344,13 +1300,9 @@ class RegisterRangesNodeMV(NodeMV):
         # In-cell sort.
         regs: Sequence[DTNodeRegister]
         if sketch.with_sorter(DTNodeSortByRegAddr):
-            regs = DTNodeRegister.sort_by_addr(
-                node.registers, sketch.with_reverse()
-            )
+            regs = DTNodeRegister.sort_by_addr(node.registers, sketch.with_reverse())
         elif sketch.with_sorter(DTNodeSortByRegSize):
-            regs = DTNodeRegister.sort_by_size(
-                node.registers, sketch.with_reverse()
-            )
+            regs = DTNodeRegister.sort_by_size(node.registers, sketch.with_reverse())
         else:
             regs = node.registers
 
@@ -1398,9 +1350,7 @@ class ReqByNodeMV(NodeMV):
             return []
 
         tvs_req_by = (
-            DTModelView.mk_requiredy_by(
-                req_by.name, dep_failed=req_by.enabled and not node.enabled
-            )
+            DTModelView.mk_requiredy_by(req_by.name, dep_failed=req_by.enabled and not node.enabled)
             for req_by in node.required_by
         )
 
@@ -1485,9 +1435,7 @@ class DTTypesMV:
 
             if isinstance(val0, DTNodePHandleData):
                 # DTS "type: phandle-array".
-                phandle_array: list[DTNodePHandleData] = cast(
-                    list[DTNodePHandleData], dtvalue
-                )
+                phandle_array: list[DTNodePHandleData] = cast(list[DTNodePHandleData], dtvalue)
                 return cls.mk_phandle_array(phandle_array)
 
         if isinstance(dtvalue, bool):
@@ -1538,9 +1486,7 @@ class DTTypesMV:
         """
         return TextUtil.mk_text(
             DTSUtil.mk_boolean(value),
-            style=DTShTheme.STYLE_DTVALUE_TRUE
-            if value
-            else DTShTheme.STYLE_DTVALUE_FALSE,
+            style=DTShTheme.STYLE_DTVALUE_TRUE if value else DTShTheme.STYLE_DTVALUE_FALSE,
         )
 
     @classmethod
@@ -1631,12 +1577,8 @@ class DTTypesMV:
             A styled text representation of the array.
         """
         if as_cell:
-            strval = " ".join(
-                DTSUtil.mk_int(val, as_cell=False) for val in int_arr
-            )
-            txt_array = TextUtil.mk_text(
-                strval, DTShTheme.STYLE_DTVALUE_INT_ARRAY
-            )
+            strval = " ".join(DTSUtil.mk_int(val, as_cell=False) for val in int_arr)
+            txt_array = TextUtil.mk_text(strval, DTShTheme.STYLE_DTVALUE_INT_ARRAY)
             return cls._mk_cell(txt_array)
 
         return TextUtil.join(
@@ -1656,9 +1598,7 @@ class DTTypesMV:
         Returns:
             A styled text representation of the string array.
         """
-        return TextUtil.join(
-            TextUtil.mk_text(", "), (cls.mk_string(val) for val in str_arr)
-        )
+        return TextUtil.join(TextUtil.mk_text(", "), (cls.mk_string(val) for val in str_arr))
 
     @classmethod
     def mk_phandles(cls, phandles: list[DTNode]) -> Text:
@@ -1692,16 +1632,11 @@ class DTTypesMV:
         """
         return TextUtil.join(
             TextUtil.mk_text(", "),
-            (
-                cls.mk_phandle_data(entry, as_cell=True)
-                for entry in phandle_array
-            ),
+            (cls.mk_phandle_data(entry, as_cell=True) for entry in phandle_array),
         )
 
     @classmethod
-    def mk_phandle_data(
-        cls, phdata: DTNodePHandleData, as_cell: bool = True
-    ) -> Text:
+    def mk_phandle_data(cls, phdata: DTNodePHandleData, as_cell: bool = True) -> Text:
         """Make DTS-like output for entries in a "phandle-array".
 
         Args:
@@ -1711,9 +1646,7 @@ class DTTypesMV:
             A styled text representation of the "phandle-array" entry.
         """
         data_values: list[str] = [
-            DTSUtil.mk_int(data, as_cell=False)
-            if isinstance(data, int)
-            else str(data)
+            DTSUtil.mk_int(data, as_cell=False) if isinstance(data, int) else str(data)
             for data in phdata.data.values()
         ]
 
@@ -1721,9 +1654,7 @@ class DTTypesMV:
             TextUtil.mk_text(" "),
             [
                 cls.mk_phandle(phdata.phandle, as_cell=False),
-                TextUtil.mk_text(
-                    " ".join(data_values), DTShTheme.STYLE_DTVALUE_PHANDLE_DATA
-                ),
+                TextUtil.mk_text(" ".join(data_values), DTShTheme.STYLE_DTVALUE_PHANDLE_DATA),
             ],
         )
 
@@ -1733,18 +1664,14 @@ class DTTypesMV:
 
     @classmethod
     def _mk_cell(cls, content: Text) -> Text:
-        return TextUtil.assemble(
-            TextUtil.mk_text("< "), content, TextUtil.mk_text(" >")
-        )
+        return TextUtil.assemble(TextUtil.mk_text("< "), content, TextUtil.mk_text(" >"))
 
 
 class NodePropertyMV:
     """Helper for making views (e.g. lists) of node properties."""
 
     @classmethod
-    def mk_name(
-        cls, dtprop: DTNodeProperty, dt: DTModel, link_spec: bool = False
-    ) -> Text:
+    def mk_name(cls, dtprop: DTNodeProperty, dt: DTModel, link_spec: bool = False) -> Text:
         """Make styled property name."""
         txt_name = TextUtil.mk_text(dtprop.name, DTShTheme.STYLE_DT_PROPERTY)
         if link_spec:
@@ -1762,23 +1689,17 @@ class NodePropertyMV:
         return txt_type
 
     @classmethod
-    def mk_headline(
-        cls, prop: DTNodeProperty, link_spec: bool = True
-    ) -> Text | None:
+    def mk_headline(cls, prop: DTNodeProperty, link_spec: bool = True) -> Text | None:
         """Make styled property description's headline."""
         if prop.description:
-            txt_desc = TextUtil.mk_headline(
-                prop.description, DTShTheme.STYLE_DT_DESCRIPTION
-            )
+            txt_desc = TextUtil.mk_headline(prop.description, DTShTheme.STYLE_DT_DESCRIPTION)
             if link_spec and prop.path:
                 txt_desc = TextUtil.link(txt_desc, prop.path)
             return txt_desc
         return None
 
     @classmethod
-    def mk_value(
-        cls, dtprop: DTNodeProperty, hint_status: bool = True
-    ) -> Text | None:
+    def mk_value(cls, dtprop: DTNodeProperty, hint_status: bool = True) -> Text | None:
         """Make styled property value."""
         txt_value = DTTypesMV.mk_property_value(dtprop)
         if txt_value and (hint_status and not dtprop.node.enabled):
@@ -1897,9 +1818,7 @@ class FormPropertySpec(FormLayout):
                     style=DTShTheme.STYLE_DT_PROPERTY,
                 )
             )
-            if lineage.fyaml_spec and (
-                lineage.fyaml_spec != lineage.fyaml_last
-            ):
+            if lineage.fyaml_spec and (lineage.fyaml_spec != lineage.fyaml_last):
                 tree.add(
                     TextUtil.mk_pathname(
                         lineage.fyaml_spec.path,
@@ -2072,13 +1991,9 @@ class ViewPropertySpecTable(TableLayout):
             TextUtil.dim(txt_name)
         return txt_name
 
-    def _mk_description(
-        self, spec: DTPropertySpec, dt: DTModel
-    ) -> Text | None:
+    def _mk_description(self, spec: DTPropertySpec, dt: DTModel) -> Text | None:
         if spec.description:
-            txt_desc = TextUtil.mk_headline(
-                spec.description, DTShTheme.STYLE_DT_DESCRIPTION
-            )
+            txt_desc = TextUtil.mk_headline(spec.description, DTShTheme.STYLE_DT_DESCRIPTION)
             if spec.deprecated:
                 TextUtil.dim(txt_desc)
             fyaml = dt.find_property(spec)
@@ -2130,18 +2045,14 @@ class FormNodeBinding(FormLayout):
         tvs: Sequence[Text] = CompatibleNodeMV.mk_text(self._node, self._sketch)
         if tvs:
             return tvs[0]
-        return TextUtil.mk_apologies(
-            "This binding does not define a compatible string"
-        )
+        return TextUtil.mk_apologies("This binding does not define a compatible string")
 
     def _mk_bus_info(self) -> Text:
         tvs: Sequence[Text] = BusNodeMV.mk_text(self._node, self._sketch)
         if tvs:
             return tvs[0]
 
-        return TextUtil.mk_apologies(
-            "This binding neither provides nor depends on buses"
-        )
+        return TextUtil.mk_apologies("This binding neither provides nor depends on buses")
 
     def _mk_child_bindings(self) -> View | Text:
         if self._binding.cb_depth or self._binding.child_binding:
@@ -2302,16 +2213,12 @@ class ViewYAMLFile(View):
         self._linktype = linktype or _dtshconf.pref_yaml_actionable_type
 
         self._yaml_includes = {}
-        err_fyaml: YAMLFile | None = self._init_follow_included(
-            fyaml, yamlfs
-        )
+        err_fyaml: YAMLFile | None = self._init_follow_included(fyaml, yamlfs)
         if err_fyaml:
             self._view = self._mk_error_view(err_fyaml)
             return
 
-        self._view = Tree(
-            self._mk_anchor(fyaml, False, style or DTShTheme.STYLE_YAML_FILE)
-        )
+        self._view = Tree(self._mk_anchor(fyaml, False, style or DTShTheme.STYLE_YAML_FILE))
         self._treeview_follow_included(self._view, fyaml, compact)
 
     @property
@@ -2319,9 +2226,7 @@ class ViewYAMLFile(View):
         """Overrides View.renderable()."""
         return self._view
 
-    def _init_follow_included(
-        self, fyaml: YAMLFile, yamlfs: YAMLFilesystem
-    ) -> YAMLFile | None:
+    def _init_follow_included(self, fyaml: YAMLFile, yamlfs: YAMLFilesystem) -> YAMLFile | None:
         inc_names: Sequence[str] = fyaml.includes
         if fyaml.lasterr:
             return fyaml
@@ -2342,14 +2247,10 @@ class ViewYAMLFile(View):
 
         return None
 
-    def _treeview_follow_included(
-        self, parent: Tree, fyaml: YAMLFile, compact: bool
-    ) -> None:
+    def _treeview_follow_included(self, parent: Tree, fyaml: YAMLFile, compact: bool) -> None:
         for basename in fyaml.includes:
             inc_fyaml = self._yaml_includes[basename]
-            inc_anchor = self._mk_anchor(
-                inc_fyaml, compact, DTShTheme.STYLE_YAML_INCLUDE
-            )
+            inc_anchor = self._mk_anchor(inc_fyaml, compact, DTShTheme.STYLE_YAML_INCLUDE)
             inc_tree = parent.add(inc_anchor)
             self._treeview_follow_included(inc_tree, inc_fyaml, compact)
 
@@ -2384,9 +2285,7 @@ class ViewYAMLFile(View):
                 for err_line in str(lasterr).splitlines():
                     layout.add_row(TextUtil.mk_warning(err_line))
             else:
-                layout.add_row(
-                    TextUtil.mk_warning(f"{lasterr.strerror} ({lasterr.errno})")
-                )
+                layout.add_row(TextUtil.mk_warning(f"{lasterr.strerror} ({lasterr.errno})"))
         return layout
 
 
@@ -2469,12 +2368,8 @@ class ViewDTSFile(GridLayout):
         """
         super().__init__(no_wrap=True)
 
-        txt_file = TextUtil.mk_text(
-            os.path.basename(fdts.path), DTShTheme.STYLE_DTS_FILE
-        )
-        txt_file = TextUtil.link(
-            txt_file, fdts.path, _dtshconf.pref_dts_actionable_type
-        )
+        txt_file = TextUtil.mk_text(os.path.basename(fdts.path), DTShTheme.STYLE_DTS_FILE)
+        txt_file = TextUtil.link(txt_file, fdts.path, _dtshconf.pref_dts_actionable_type)
         self.add_row(txt_file)
         self.add_row(ViewDTSContent(fdts.content))
 
@@ -2736,9 +2631,7 @@ class BoardModelView:
         """
         if not board.full_name:
             return None
-        return TextUtil.mk_text(
-            board.full_name, style=DTShTheme.STYLE_INF_BOARD_FULL_NAME
-        )
+        return TextUtil.mk_text(board.full_name, style=DTShTheme.STYLE_INF_BOARD_FULL_NAME)
 
     @staticmethod
     def mk_runner_name(board: DTShBoard) -> Text | None:
@@ -2752,9 +2645,7 @@ class BoardModelView:
         """
         if not board.runner_name:
             return None
-        return TextUtil.mk_text(
-            board.runner_name, style=DTShTheme.STYLE_INF_RUNNER_NAME
-        )
+        return TextUtil.mk_text(board.runner_name, style=DTShTheme.STYLE_INF_RUNNER_NAME)
 
     @staticmethod
     def mk_board_name(board: DTShBoard) -> Text | None:
@@ -2768,9 +2659,7 @@ class BoardModelView:
         """
         if not board.name:
             return None
-        return TextUtil.mk_text(
-            board.name, style=DTShTheme.STYLE_INF_BOARD_NAME
-        )
+        return TextUtil.mk_text(board.name, style=DTShTheme.STYLE_INF_BOARD_NAME)
 
     @staticmethod
     def mk_board_revision(board: DTShBoard) -> Text | None:
@@ -2784,9 +2673,7 @@ class BoardModelView:
         """
         if not board.revision:
             return None
-        return TextUtil.mk_text(
-            board.revision, style=DTShTheme.STYLE_INF_BOARD_REVISION
-        )
+        return TextUtil.mk_text(board.revision, style=DTShTheme.STYLE_INF_BOARD_REVISION)
 
     @staticmethod
     def mk_soc(board: DTShBoard) -> Text | None:
@@ -2827,9 +2714,7 @@ class BoardModelView:
             A rich Text view, or None if unavailable.
         """
         if board.variant:
-            return TextUtil.mk_text(
-                board.variant, DTShTheme.STYLE_INF_BOARD_VARIANT
-            )
+            return TextUtil.mk_text(board.variant, DTShTheme.STYLE_INF_BOARD_VARIANT)
         return None
 
     @staticmethod
@@ -2844,9 +2729,7 @@ class BoardModelView:
         """
         if not board.qualifiers:
             return None
-        return TextUtil.mk_text(
-            board.qualifiers, style=DTShTheme.STYLE_INF_BOARD_QUALIFIERS
-        )
+        return TextUtil.mk_text(board.qualifiers, style=DTShTheme.STYLE_INF_BOARD_QUALIFIERS)
 
     @staticmethod
     def mk_board_v2(board: DTShBoard) -> Text | None:
@@ -2955,9 +2838,7 @@ class FormBoardInfo(FormLayout):
                 compact=compact,
                 expand_included=expand_included,
             )
-        return FormBoardInfo(
-            board, zephyr_base, compact=compact, expand_included=expand_included
-        )
+        return FormBoardInfo(board, zephyr_base, compact=compact, expand_included=expand_included)
 
     _board: DTShBoard
     _zephyr_base: str | None
@@ -2998,9 +2879,7 @@ class FormBoardInfo(FormLayout):
         self._init_twister_metadata()
 
     def _init_hwm(self) -> None:
-        self.add_content(
-            "Hardware Model", BoardModelView.mk_hwm(self._board.hwm)
-        )
+        self.add_content("Hardware Model", BoardModelView.mk_hwm(self._board.hwm))
 
     def _init_board(self) -> None:
         self.add_content("Board", BoardModelView.mk_board(self._board))
@@ -3022,9 +2901,7 @@ class FormBoardInfo(FormLayout):
         self.add_content("Board directory", content)
 
     def _init_board_dts(self) -> None:
-        content: Text = BoardModelView.mk_dts_pathname(
-            self._board, linktype=self._linktype
-        )
+        content: Text = BoardModelView.mk_dts_pathname(self._board, linktype=self._linktype)
         self.add_content("Board file (DTS)", content)
 
     def _init_twister_metadata(self) -> None:
@@ -3085,9 +2962,7 @@ class FormBoardInfoV2(FormBoardInfo):
             if self._compact:
                 content = titlebar
             else:
-                content = ViewYAMLContent(
-                    self._board.board_metadata.text, titlebar=titlebar
-                )
+                content = ViewYAMLContent(self._board.board_metadata.text, titlebar=titlebar)
         self.add_content("Board metadata", content)
 
 
@@ -3121,9 +2996,7 @@ class FormSoCInfo(FormLayout):
                 compact=compact,
                 expand_included=expand_included,
             )
-        return FormSoCInfo(
-            board, zephyr_base, compact=compact, expand_included=expand_included
-        )
+        return FormSoCInfo(board, zephyr_base, compact=compact, expand_included=expand_included)
 
     _board: DTShBoard
     _zephyr_base: str | None
@@ -3160,22 +3033,16 @@ class FormSoCInfo(FormLayout):
         self._init_soc_svd()
 
     def _init_hwm(self) -> None:
-        self.add_content(
-            "Hardware Model", BoardModelView.mk_hwm(self._board.hwm)
-        )
+        self.add_content("Hardware Model", BoardModelView.mk_hwm(self._board.hwm))
 
     def _init_arch_type(self) -> None:
-        content: Text | None = BoardModelView.mk_runner_arch_type(
-            self._board
-        )
+        content: Text | None = BoardModelView.mk_runner_arch_type(self._board)
         self.add_content("Twister metadata", content)
 
     def _init_soc_svd(self) -> None:
         content: Text | None = None
         if self._board.soc_svd:
-            content = BoardModelView.mk_soc_svd_pathname(
-                self._board, linktype=self._linktype
-            )
+            content = BoardModelView.mk_soc_svd_pathname(self._board, linktype=self._linktype)
         self.add_content("SoC SVD", content)
 
 
@@ -3223,9 +3090,7 @@ class FormSoCInfoV2(FormSoCInfo):
             if self._compact:
                 content = titlebar
             else:
-                content = ViewYAMLContent(
-                    self._board.soc_metadata.text, titlebar=titlebar
-                )
+                content = ViewYAMLContent(self._board.soc_metadata.text, titlebar=titlebar)
         self.add_content("SoC metadata", content)
 
 
@@ -3269,9 +3134,7 @@ class KernelModelView:
         """
         kernel_rev: str | None = dts.get_zephyr_head()
         if kernel_rev:
-            return TextUtil.mk_text(
-                kernel_rev, style=DTShTheme.STYLE_INF_KERNEL_VERSION
-            )
+            return TextUtil.mk_text(kernel_rev, style=DTShTheme.STYLE_INF_KERNEL_VERSION)
         return None
 
     @staticmethod
@@ -3374,9 +3237,7 @@ class KernelModelView:
         Returns:
             A rich Text view.
         """
-        return TextUtil.mk_text(
-            toolchain.variant, style=DTShTheme.STYLE_INF_TOOLCHAIN
-        )
+        return TextUtil.mk_text(toolchain.variant, style=DTShTheme.STYLE_INF_TOOLCHAIN)
 
     @staticmethod
     def mk_toolchain_name(toolchain: DTShToolchain) -> Text | None:
@@ -3410,9 +3271,7 @@ class KernelModelView:
         if not toolchain.release:
             return None
 
-        return TextUtil.mk_text(
-            toolchain.release, style=DTShTheme.STYLE_INF_TOOLCHAIN_RELEASE
-        )
+        return TextUtil.mk_text(toolchain.release, style=DTShTheme.STYLE_INF_TOOLCHAIN_RELEASE)
 
     @staticmethod
     def mk_toolchain(toolchain: DTShToolchain) -> Text:
@@ -3462,9 +3321,7 @@ class FormKernelInfo(FormLayout):
         self._init_toolchain_dir()
 
     def _init_zephyr_base(self) -> None:
-        content: Text | None = KernelModelView.mk_zephyr_base(
-            self._dts, linktype=self._linktype
-        )
+        content: Text | None = KernelModelView.mk_zephyr_base(self._dts, linktype=self._linktype)
         self.add_content("ZEPHYR_BASE", content)
 
     def _init_kernel_version(self) -> None:
@@ -3498,9 +3355,7 @@ class FormKernelInfo(FormLayout):
     def _init_toolchain_dir(self) -> None:
         content: Text | None = None
         if self._toolchain:
-            content = KernelModelView.mk_toolchain_dir(
-                self._toolchain, linktype=self._linktype
-            )
+            content = KernelModelView.mk_toolchain_dir(self._toolchain, linktype=self._linktype)
         self.add_content("Toolchain path", content)
 
 
@@ -3560,9 +3415,7 @@ class FirmwareModelView:
 
         flabel: str | None = None
         if dts.app_source_dir:
-            flabel = dts.app_binary_dir.replace(
-                dts.app_source_dir, "APPLICATION_SOURCE_DIR"
-            )
+            flabel = dts.app_binary_dir.replace(dts.app_source_dir, "APPLICATION_SOURCE_DIR")
 
         return TextUtil.mk_pathname(
             Path(dts.app_binary_dir),
@@ -3618,9 +3471,7 @@ class FirmwareModelView:
 
         flabel: str | None = None
         if dts.app_source_dir:
-            flabel = dts.app_conf_file.replace(
-                dts.app_source_dir, "APPLICATION_SOURCE_DIR"
-            )
+            flabel = dts.app_conf_file.replace(dts.app_source_dir, "APPLICATION_SOURCE_DIR")
         return TextUtil.mk_pathname(
             Path(dts.app_conf_file),
             flabel=flabel,
@@ -3654,9 +3505,7 @@ class FirmwareModelView:
         """
         if not dts.fw_version:
             return None
-        return TextUtil.mk_text(
-            dts.fw_version, style=DTShTheme.STYLE_INF_FW_VERSION
-        )
+        return TextUtil.mk_text(dts.fw_version, style=DTShTheme.STYLE_INF_FW_VERSION)
 
 
 class FormFirmwareInfo(FormLayout):
@@ -3686,15 +3535,11 @@ class FormFirmwareInfo(FormLayout):
         self._init_conf_file()
 
     def _init_app_src_dir(self) -> None:
-        content: Text | None = FirmwareModelView.mk_app_src_dir(
-            self._dts, linktype=self._linktype
-        )
+        content: Text | None = FirmwareModelView.mk_app_src_dir(self._dts, linktype=self._linktype)
         self.add_content("Source directory", content)
 
     def _init_app_bin_dir(self) -> None:
-        content: Text | None = FirmwareModelView.mk_app_bin_dir(
-            self._dts, linktype=self._linktype
-        )
+        content: Text | None = FirmwareModelView.mk_app_bin_dir(self._dts, linktype=self._linktype)
         self.add_content("Build directory", content)
 
     def _init_fw_name(self) -> None:
@@ -3706,9 +3551,7 @@ class FormFirmwareInfo(FormLayout):
         self.add_content("Firmware version", content)
 
     def _init_devicetree(self) -> None:
-        content: Text | None = FirmwareModelView.mk_dts_pathname(
-            self._dts, linktype=self._linktype
-        )
+        content: Text | None = FirmwareModelView.mk_dts_pathname(self._dts, linktype=self._linktype)
         self.add_content("Devicetree", content)
 
     def _init_conf_file(self) -> None:

@@ -10,7 +10,6 @@ Rationale:
 - we need an additional abstraction layer to properly support the "append" mode
 """
 
-
 import os
 import re
 from typing import TypeVar
@@ -181,9 +180,7 @@ class SVGFormat:
     RE_DEFS_CLOSE = re.compile(r"\s*</defs>")
 
     # Match the text line which starts chrome rectangle.
-    RE_CHROME = re.compile(
-        r'\s*<rect\s+.*x="1" y="1" width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)"'
-    )
+    RE_CHROME = re.compile(r'\s*<rect\s+.*x="1" y="1" width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)"')
 
     # Match the text line which starts macOS-like buttons.
     RE_GBOX_CIRCLES = re.compile(r'\s*<g transform="translate\(26,22\)">')
@@ -225,9 +222,7 @@ class SVGFormat:
     VSPAN_TITLE_BAR: int = GTERM_Y - GCIRCLES_Y + 1 + GCIRCLES_R
 
     @staticmethod
-    def ifind(
-        svg_txt: SVGText, pattern: re.Pattern[str], start: int
-    ) -> tuple[int, re.Match[str]]:
+    def ifind(svg_txt: SVGText, pattern: re.Pattern[str], start: int) -> tuple[int, re.Match[str]]:
         """Find an RE pattern in SVG text.
 
         Stops on the first matching line.
@@ -275,9 +270,7 @@ class SVGFragment:
     """RE matching the end of the fragment (multi-line fragments only)."""
 
     @classmethod
-    def ifind(
-        cls: type[TFragment], svg_txt: SVGText, start: int = 0
-    ) -> TFragment:
+    def ifind(cls: type[TFragment], svg_txt: SVGText, start: int = 0) -> TFragment:
         """Find an SVG fragment.
 
         Args:
@@ -348,9 +341,7 @@ class SVGFragmentViewBox(SVGFragment):
     _width: float
     _height: float
 
-    def __init__(
-        self, endl: int, content: SVGText, matched: re.Match[str]
-    ) -> None:
+    def __init__(self, endl: int, content: SVGText, matched: re.Match[str]) -> None:
         """Initialize SVG container geometry."""
         super().__init__(endl, content, matched)
         raw_width: str = matched.group("w")
@@ -400,10 +391,7 @@ class SVGFragmentStyle(SVGFragment):
         """
         offset = len(self._content) - 1
         self._content = (
-            self._content[:offset]
-            + [""]
-            + fragment.content[1:-1]
-            + self._content[offset:]
+            self._content[:offset] + [""] + fragment.content[1:-1] + self._content[offset:]
         )
 
 
@@ -416,13 +404,9 @@ class SVGFragmentDefs(SVGFragment):
     # RE matching the first <rect> that will appear within
     # the SVG <defs> element.
     # See _workaround_rich_issue_3576().
-    RE_RECT_3576 = re.compile(
-        r'\s*<rect\s+.*x="0" y="0" width="[\d.]+" height="(?P<h>[\d.]+)"'
-    )
+    RE_RECT_3576 = re.compile(r'\s*<rect\s+.*x="0" y="0" width="[\d.]+" height="(?P<h>[\d.]+)"')
 
-    def __init__(
-        self, endl: int, content: SVGText, matched: re.Match[str]
-    ) -> None:
+    def __init__(self, endl: int, content: SVGText, matched: re.Match[str]) -> None:
         """Initialize rectangle geometry."""
         super().__init__(endl, content, matched)
         self._workaround_rich_issue_3576()
@@ -467,10 +451,7 @@ class SVGFragmentDefs(SVGFragment):
         """
         offset = len(self._content) - 1
         self._content = (
-            self._content[:offset]
-            + [""]
-            + fragment.content[1:-1]
-            + self._content[offset:]
+            self._content[:offset] + [""] + fragment.content[1:-1] + self._content[offset:]
         )
 
 
@@ -483,9 +464,7 @@ class SVGFragmentChrome(SVGFragment):
     _width: float
     _height: float
 
-    def __init__(
-        self, endl: int, content: SVGText, matched: re.Match[str]
-    ) -> None:
+    def __init__(self, endl: int, content: SVGText, matched: re.Match[str]) -> None:
         """Initialize rectangle geometry."""
         super().__init__(endl, content, matched)
         raw_width: str = matched.group("w")
@@ -543,9 +522,7 @@ class SVGFragmentGTerminal(SVGFragment):
         return cls(i_end, svg_txt[i_begin : i_end + 1], matched)
 
     @classmethod
-    def ifind_list(
-        cls, svg_txt: SVGText, start: int = 0
-    ) -> list["SVGFragmentGTerminal"]:
+    def ifind_list(cls, svg_txt: SVGText, start: int = 0) -> list["SVGFragmentGTerminal"]:
         """Find successive SVG boxes.
 
         Args:
@@ -572,9 +549,7 @@ class SVGFragmentGTerminal(SVGFragment):
     _x: float
     _y: float
 
-    def __init__(
-        self, endl: int, content: SVGText, matched: re.Match[str]
-    ) -> None:
+    def __init__(self, endl: int, content: SVGText, matched: re.Match[str]) -> None:
         """Initialize GBox geometry."""
         super().__init__(endl, content, matched)
         raw_x: str = matched.group("x")
@@ -656,9 +631,7 @@ class SVGDocument:
     _gcircles: SVGFragmentGCircles | None = None
     _gterminals: list[SVGFragmentGTerminal]
 
-    def __init__(
-        self, svg_txt: SVGText, has_title: bool, show_gcircles: bool
-    ) -> None:
+    def __init__(self, svg_txt: SVGText, has_title: bool, show_gcircles: bool) -> None:
         """
         Args:
             svg_txt: Valid SVG document.
@@ -815,12 +788,8 @@ class SVGDocument:
             self.viewbox.width,
             self.viewbox.height - SVGFormat.VSPAN_TITLE_BAR,
         )
-        self.rect.set_width_height(
-            self.rect.width, self.rect.height - SVGFormat.VSPAN_TITLE_BAR
-        )
-        self.gterminal.set_xy(
-            self.gterminal.x, self.gterminal.y - SVGFormat.VSPAN_TITLE_BAR
-        )
+        self.rect.set_width_height(self.rect.width, self.rect.height - SVGFormat.VSPAN_TITLE_BAR)
+        self.gterminal.set_xy(self.gterminal.x, self.gterminal.y - SVGFormat.VSPAN_TITLE_BAR)
 
 
 DTSH_META_SVG_FORMAT = """\

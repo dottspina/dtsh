@@ -164,9 +164,7 @@ class DTShOption:
     def __eq__(self, other: object) -> bool:
         """Options equal when their names equal."""
         if isinstance(other, DTShOption):
-            return (other.shortname == self.shortname) and (
-                other.longname == self.longname
-            )
+            return (other.shortname == self.shortname) and (other.longname == self.longname)
         return False
 
     def __hash__(self) -> int:
@@ -335,9 +333,7 @@ class DTShParameter:
     # Raw parameter values parsed from the command string.
     _raw: list[str]
 
-    def __init__(
-        self, name: str, multiplicity: "DTShParameter.MultiplicityT", brief: str
-    ) -> None:
+    def __init__(self, name: str, multiplicity: "DTShParameter.MultiplicityT", brief: str) -> None:
         """Initialize the command's parameter.
 
         Args:
@@ -658,9 +654,7 @@ class DTShCommand:
                 raise DTShUsageError(self, e.msg) from e
 
         elif parsed_param_values:
-            raise DTShUsageError(
-                self, f"unexpected parameter: {' '.join(parsed_param_values)}"
-            )
+            raise DTShUsageError(self, f"unexpected parameter: {' '.join(parsed_param_values)}")
 
         if self.with_flag(DTShFlagHelp):
             # User's asked for help.
@@ -909,9 +903,7 @@ class DTSh:
 
             # Path expansion.
             globs = [
-                node
-                for node in self.node_at(dirname).children
-                if re_basename.match(node.name)
+                node for node in self.node_at(dirname).children if re_basename.match(node.name)
             ]
             if not globs:
                 # We consider empty expansions as "path not found" errors,

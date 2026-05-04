@@ -9,7 +9,6 @@ Print current working branch.
 Unit tests and examples: tests/test_dtsh_builtin_pwd.py
 """
 
-
 from collections.abc import Sequence
 
 from dtsh.io import DTShOutput
@@ -21,9 +20,7 @@ class DTShBuiltinPwd(DTShCommand):
 
     def __init__(self) -> None:
         """Command definition."""
-        super().__init__(
-            "pwd", "print path of current working branch", [], None
-        )
+        super().__init__("pwd", "print path of current working branch", [], None)
 
     def execute(self, argv: Sequence[str], sh: DTSh, out: DTShOutput) -> None:
         """Overrides DTShCommand.execute()."""

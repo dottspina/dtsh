@@ -9,7 +9,6 @@ Search for nodes with multiple criteria.
 Unit tests and examples: tests/test_dtsh_builtin_find.py
 """
 
-
 from collections.abc import Mapping, Sequence
 
 from dtsh.io import DTShOutput
@@ -69,9 +68,9 @@ class DTShBuiltinFind(DTShCommandLongFmt):
         super().execute(argv, sh, out)
 
         # Expand path parameter.
-        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(
-            DTShParamDTPaths
-        ).expand(self, sh)
+        path_expansions: Sequence[DTSh.PathExpansion] = self.with_param(DTShParamDTPaths).expand(
+            self, sh
+        )
 
         if self.with_flag(DTShFlagPager):
             out.pager_enter()
@@ -94,9 +93,7 @@ class DTShBuiltinFind(DTShCommandLongFmt):
         out: DTShOutput,
     ) -> None:
         # Get model, mapping pathways to the nodes found there.
-        path2node: Mapping[str, DTNode] = self._get_path2node(
-            path_expansions, sh
-        )
+        path2node: Mapping[str, DTNode] = self._get_path2node(path_expansions, sh)
         if not path2node:
             return
         count = len(path2node)

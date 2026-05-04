@@ -167,9 +167,7 @@ class DTShRichSession(DTShSession):
         """Overrides DTShVT.mk_prompt()."""
         return [
             DTModelView.mk_path_name(self._dtsh.pwd),
-            _dtshconf.prompt_alt
-            if self._last_err
-            else _dtshconf.prompt_default,
+            _dtshconf.prompt_alt if self._last_err else _dtshconf.prompt_default,
         ]
 
     def mk_prologue(self) -> Sequence[Any]:

@@ -11,7 +11,6 @@ Base command with boilerplate code to support formatted outputs.
 Unit tests and examples: tests/test_dtsh_rich_shellutils.py
 """
 
-
 import sys
 from collections.abc import Mapping, Sequence
 
@@ -251,10 +250,7 @@ class DTShCommandLongFmt(DTShCommand):
     @property
     def has_longfmt(self) -> bool:
         """Whether formatted output is disabled by an option or preference."""
-        return (
-            self.with_flag(DTShFlagLongList)
-            or self.with_arg(DTShArgLongFmt).isset
-        )
+        return self.with_flag(DTShFlagLongList) or self.with_arg(DTShArgLongFmt).isset
 
     @property
     def flag_reverse(self) -> bool:
@@ -357,27 +353,13 @@ class DTShCommandLongFmt(DTShCommand):
 DTSH_NODE_FMT_SPEC: Mapping[str, DTShNodeFmt.Spec] = {
     spec.key: spec
     for spec in [
-        DTShNodeFmt.Spec(
-            "p", "path name", NodeColumnMV("Path", PathNameNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "N", "node name", NodeColumnMV("Name", NodeNameNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "n", "unit name", NodeColumnMV("Name", UnitNameNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "a", "unit address", NodeColumnMV("Address", UnitAddrNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "o", "dependency ordinal", NodeColumnMV("Ordinal", DepOrdinalNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "l", "device label", NodeColumnMV("Label", DeviceLabelNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "L", "DTS labels", NodeColumnMV("Labels", NodeLabelsNodeMV)
-        ),
+        DTShNodeFmt.Spec("p", "path name", NodeColumnMV("Path", PathNameNodeMV)),
+        DTShNodeFmt.Spec("N", "node name", NodeColumnMV("Name", NodeNameNodeMV)),
+        DTShNodeFmt.Spec("n", "unit name", NodeColumnMV("Name", UnitNameNodeMV)),
+        DTShNodeFmt.Spec("a", "unit address", NodeColumnMV("Address", UnitAddrNodeMV)),
+        DTShNodeFmt.Spec("o", "dependency ordinal", NodeColumnMV("Ordinal", DepOrdinalNodeMV)),
+        DTShNodeFmt.Spec("l", "device label", NodeColumnMV("Label", DeviceLabelNodeMV)),
+        DTShNodeFmt.Spec("L", "DTS labels", NodeColumnMV("Labels", NodeLabelsNodeMV)),
         DTShNodeFmt.Spec(
             "c",
             "compatible strings",
@@ -393,32 +375,18 @@ DTSH_NODE_FMT_SPEC: Mapping[str, DTShNodeFmt.Spec] = {
             "child-binding depth",
             NodeColumnMV("Binding Depth", BindingDepthNodeMV),
         ),
-        DTShNodeFmt.Spec(
-            "d", "description", NodeColumnMV("Description", DescriptionNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "v", "vendor name", NodeColumnMV("Vendor", VendorNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "s", "status string", NodeColumnMV("Status", StatusNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "A", "node aliases", NodeColumnMV("Aliases", AliasesNodeMV)
-        ),
+        DTShNodeFmt.Spec("d", "description", NodeColumnMV("Description", DescriptionNodeMV)),
+        DTShNodeFmt.Spec("v", "vendor name", NodeColumnMV("Vendor", VendorNodeMV)),
+        DTShNodeFmt.Spec("s", "status string", NodeColumnMV("Status", StatusNodeMV)),
+        DTShNodeFmt.Spec("A", "node aliases", NodeColumnMV("Aliases", AliasesNodeMV)),
         DTShNodeFmt.Spec(
             "K",
             "all labels and aliases",
             NodeColumnMV("Also Known As", AlsoKnownAsNodeMV),
         ),
-        DTShNodeFmt.Spec(
-            "b", "bus of appearance", NodeColumnMV("On Bus", OnBusNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "B", "supported bus protocols", NodeColumnMV("Buses", BusesNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "Y", "bus information", NodeColumnMV("Bus", BusNodeMV)
-        ),
+        DTShNodeFmt.Spec("b", "bus of appearance", NodeColumnMV("On Bus", OnBusNodeMV)),
+        DTShNodeFmt.Spec("B", "supported bus protocols", NodeColumnMV("Buses", BusesNodeMV)),
+        DTShNodeFmt.Spec("Y", "bus information", NodeColumnMV("Bus", BusNodeMV)),
         DTShNodeFmt.Spec(
             "i",
             "generated interrupts",
@@ -434,12 +402,8 @@ DTSH_NODE_FMT_SPEC: Mapping[str, DTShNodeFmt.Spec] = {
             "registers (address range)",
             NodeColumnMV("Registers", RegisterRangesNodeMV),
         ),
-        DTShNodeFmt.Spec(
-            "D", "node dependencies", NodeColumnMV("Depends-on", DepOnNodeMV)
-        ),
-        DTShNodeFmt.Spec(
-            "T", "dependent nodes", NodeColumnMV("Required-by", ReqByNodeMV)
-        ),
+        DTShNodeFmt.Spec("D", "node dependencies", NodeColumnMV("Depends-on", DepOnNodeMV)),
+        DTShNodeFmt.Spec("T", "dependent nodes", NodeColumnMV("Required-by", ReqByNodeMV)),
     ]
 }
 """Map meta-data to node format specifiers and view factories."""
