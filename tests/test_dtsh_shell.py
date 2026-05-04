@@ -10,22 +10,21 @@
 # pylint: disable=too-many-statements
 # pylint: disable=protected-access
 
-
 import pytest
 
-from dtsh.model import DTNode, DTNodeCriterion, DTNodeCriteria
+from dtsh.model import DTNode, DTNodeCriteria, DTNodeCriterion
 from dtsh.shell import (
+    DTPathNotFoundError,
     DTSh,
-    DTShOption,
     DTShArg,
     DTShCommand,
+    DTShCommandNotFoundError,
+    DTShError,
     DTShFlag,
     DTShFlagHelp,
+    DTShOption,
     DTShParameter,
-    DTShError,
     DTShUsageError,
-    DTPathNotFoundError,
-    DTShCommandNotFoundError,
 )
 
 from .dtsh_uthelpers import DTShTests
@@ -38,14 +37,14 @@ def test_dtshoption() -> None:
         LONGNAME = "mock"
 
     opt = MockOption()
-    assert "m" == opt.shortname
-    assert "mock" == opt.longname
-    assert "mock option" == opt.brief
+    assert opt.shortname == "m"
+    assert opt.longname == "mock"
+    assert opt.brief == "mock option"
 
     # No suffix expected.
-    assert "m" == opt.getopt_short
-    assert "mock" == opt.getopt_long
-    assert "-m --mock" == opt.usage
+    assert opt.getopt_short == "m"
+    assert opt.getopt_long == "mock"
+    assert opt.usage == "-m --mock"
 
     assert not opt.isset
 
@@ -68,14 +67,14 @@ def test_dtshflag() -> None:
         LONGNAME = "mock"
 
     flag = MockFlag()
-    assert "m" == flag.shortname
-    assert "mock" == flag.longname
-    assert "mock flag" == flag.brief
+    assert flag.shortname == "m"
+    assert flag.longname == "mock"
+    assert flag.brief == "mock flag"
 
     # No suffix expected.
-    assert "m" == flag.getopt_short
-    assert "mock" == flag.getopt_long
-    assert "-m --mock" == flag.usage
+    assert flag.getopt_short == "m"
+    assert flag.getopt_long == "mock"
+    assert flag.usage == "-m --mock"
 
     # State life-cycle.
     assert not flag.isset
@@ -110,21 +109,21 @@ def test_dtsharg() -> None:
             super().__init__(argname="arg")
 
     arg = MockArg()
-    assert "m" == arg.shortname
-    assert "mock" == arg.longname
-    assert "mock argument" == arg.brief
+    assert arg.shortname == "m"
+    assert arg.longname == "mock"
+    assert arg.brief == "mock argument"
 
     # Suffix expected.
-    assert "m:" == arg.getopt_short
-    assert "mock=" == arg.getopt_long
-    assert "-m --mock ARG" == arg.usage
+    assert arg.getopt_short == "m:"
+    assert arg.getopt_long == "mock="
+    assert arg.usage == "-m --mock ARG"
 
     # State life-cycle.
     assert not arg.isset
     assert arg.raw is None
     arg.parsed("value")
     assert arg.isset
-    assert "value" == arg.raw
+    assert arg.raw == "value"
     arg.reset()
     assert not arg.isset
     assert arg.raw is None
@@ -151,16 +150,16 @@ def test_dtsharg() -> None:
 def test_dtshparameter() -> None:
     # Optional parameter.
     param = DTShParameter("param", "?", "mock param")
-    assert "mock param" == param.brief
-    assert "?" == param.multiplicity
-    assert "[PARAM]" == param.usage
+    assert param.brief == "mock param"
+    assert param.multiplicity == "?"
+    assert param.usage == "[PARAM]"
     DTShTests.check_param(param)
 
     # State life-cycle.
     param.reset()
     assert not param.raw
     param.parsed(["value"])
-    assert ["value"] == param.raw
+    assert param.raw == ["value"]
     param.reset()
     assert not param.raw
     # Parameter is optional.
@@ -172,37 +171,37 @@ def test_dtshparameter() -> None:
 
     # Optional parameter, zero or more values
     param = DTShParameter("param", "*", "mock param")
-    assert "*" == param.multiplicity
-    assert "[PARAM ...]" == param.usage
+    assert param.multiplicity == "*"
+    assert param.usage == "[PARAM ...]"
     DTShTests.check_param(param)
 
     param.parsed([])
     assert not param.raw
     param.parsed(["value"])
-    assert ["value"] == param.raw
+    assert param.raw == ["value"]
     param.parsed(["value", "value"])
-    assert ["value", "value"] == param.raw
+    assert param.raw == ["value", "value"]
 
     # Required parameter.
     param = DTShParameter("param", "+", "mock param")
     DTShTests.check_param(param)
 
-    assert "+" == param.multiplicity
-    assert "PARAM [PARAM ...]" == param.usage
+    assert param.multiplicity == "+"
+    assert param.usage == "PARAM [PARAM ...]"
     # Allows more than one value.
     param.parsed(["value"])
-    assert ["value"] == param.raw
+    assert param.raw == ["value"]
     param.parsed(["value", "value"])
 
     # Required parameter, N values.
     param = DTShParameter("param", 2, "mock param")
     DTShTests.check_param(param)
 
-    assert 2 == param.multiplicity
-    assert "PARAM PARAM" == param.usage
+    assert param.multiplicity == 2
+    assert param.usage == "PARAM PARAM"
     # Expects exactly two values.
     param.parsed(["value", "value"])
-    assert ["value", "value"] == param.raw
+    assert param.raw == ["value", "value"]
     with pytest.raises(DTShError):
         param.parsed([])
     with pytest.raises(DTShError):
@@ -231,23 +230,18 @@ def test_dtshcommand() -> None:
         _param: MockParam
 
         def __init__(self) -> None:
-            super().__init__(
-                "mock", "mock command", [mock_flag, mock_arg], mock_param
-            )
+            super().__init__("mock", "mock command", [mock_flag, mock_arg], mock_param)
 
     mock_flag = MockFlag()
     mock_arg = MockArg()
     mock_param = MockParam()
     cmd = MockCmd()
 
-    assert "mock" == cmd.name
-    assert "mock command" == cmd.brief
-    assert (
-        "mock [-h --help] [-f --flag] [-a --argument ARG] [PARAM]"
-        == cmd.synopsis
-    )
-    assert "hfa:" == cmd.getopt_short
-    assert ["help", "flag", "argument="] == cmd.getopt_long
+    assert cmd.name == "mock"
+    assert cmd.brief == "mock command"
+    assert cmd.synopsis == "mock [-h --help] [-f --flag] [-a --argument ARG] [PARAM]"
+    assert cmd.getopt_short == "hfa:"
+    assert cmd.getopt_long == ["help", "flag", "argument="]
 
     assert [DTShFlagHelp(), mock_flag, mock_arg] == cmd.options
     assert cmd.param is mock_param
@@ -278,12 +272,8 @@ def test_dtshcommand() -> None:
         cmd.with_arg(MockArgInval)
 
     # Equality.
-    assert DTShCommand("mock", "", [], None) == DTShCommand(
-        "mock", "", [], None
-    )
-    assert DTShCommand("mock", "", [], None) != DTShCommand(
-        "other", "", [], None
-    )
+    assert DTShCommand("mock", "", [], None) == DTShCommand("mock", "", [], None)
+    assert DTShCommand("mock", "", [], None) != DTShCommand("other", "", [], None)
 
     # Default order.
     assert DTShCommand("a", "", [], None) < DTShCommand("b", "", [], None)
@@ -305,21 +295,19 @@ def test_dtshcommand_parse_argv() -> None:
         def __init__(self) -> None:
             super().__init__(name="param", multiplicity="?", brief="mock param")
 
-    cmd = DTShCommand(
-        "mock", "mock command", [MockFlag(), MockArg()], MockParam()
-    )
+    cmd = DTShCommand("mock", "mock command", [MockFlag(), MockArg()], MockParam())
     assert not cmd.with_option(MockFlag).isset
     assert not cmd.with_flag(MockFlag)
     assert not cmd.with_flag(DTShFlagHelp)
     assert not cmd.with_arg(MockArg).isset
     assert cmd.with_arg(MockArg).raw is None
-    assert [] == cmd.with_param(MockParam).raw
+    assert cmd.with_param(MockParam).raw == []
 
     cmd.parse_argv(["-f", "-a", "arg", "param"])
     assert cmd.with_flag(MockFlag)
     assert cmd.with_arg(MockArg).isset
-    assert "arg" == cmd.with_arg(MockArg).raw
-    assert ["param"] == cmd.with_param(MockParam).raw
+    assert cmd.with_arg(MockArg).raw == "arg"
+    assert cmd.with_param(MockParam).raw == ["param"]
 
     cmd.reset()
     assert not cmd.with_flag(MockFlag)
@@ -352,26 +340,26 @@ def test_dtsh_pathway() -> None:
     # Working branch is "/":
     assert dt_soc.path == sh.pathway(dt_soc, dt_soc.path)
     assert dt_soc.name == sh.pathway(dt_soc, dt_soc.name)
-    assert "soc" == sh.pathway(dt_soc, "")
-    assert "../soc" == sh.pathway(dt_soc, "..")
-    assert "../leds" == sh.pathway(dt_leds, "..")
+    assert sh.pathway(dt_soc, "") == "soc"
+    assert sh.pathway(dt_soc, "..") == "../soc"
+    assert sh.pathway(dt_leds, "..") == "../leds"
 
     # Change working branch to "/soc":
     sh.cd(dt_soc.path)
     assert dt_soc.path == sh.pathway(dt_soc, dt_soc.path)
-    assert "../soc" == sh.pathway(dt_soc, "..")
-    assert "../leds" == sh.pathway(dt_leds, "..")
+    assert sh.pathway(dt_soc, "..") == "../soc"
+    assert sh.pathway(dt_leds, "..") == "../leds"
     # Nonsense: pathway from "/soc" to "/soc" with a empty path
     # representing "/soc" (e.g. "ls" would list the "/soc" children not soc).
-    assert "" == sh.pathway(dt_soc, "")
+    assert sh.pathway(dt_soc, "") == ""
 
     # Change working branch to "/soc/flash-controller@4001e000/flash@0".
     sh.cd(dt_flash0.path)
     assert dt_partitions.path == sh.pathway(dt_partitions, dt_flash0.path)
     assert dt_partitions.name == sh.pathway(dt_partitions, dt_partitions.name)
-    assert "partitions" == sh.pathway(dt_partitions, "")
-    assert "../flash@0/partitions" == sh.pathway(dt_partitions, "..")
-    assert "../flash@0/partitions" == sh.pathway(dt_partitions, "../flash@0")
+    assert sh.pathway(dt_partitions, "") == "partitions"
+    assert sh.pathway(dt_partitions, "..") == "../flash@0/partitions"
+    assert sh.pathway(dt_partitions, "../flash@0") == "../flash@0/partitions"
 
     with pytest.raises(DTPathNotFoundError):
         sh.pathway(dt_partitions, "/invalid/prefix")
@@ -383,19 +371,13 @@ def test_dtsh_path_expansion() -> None:
     dt_pwmleds = dtmodel["/pwmleds"]
     sh = DTSh(dtmodel, [])
 
-    assert DTSh.PathExpansion("", [dt_leds, dt_pwmleds]) == sh.path_expansion(
-        "*ed*"
-    )
-    assert DTSh.PathExpansion("leds", dt_leds.children) == sh.path_expansion(
-        "leds/*"
-    )
+    assert DTSh.PathExpansion("", [dt_leds, dt_pwmleds]) == sh.path_expansion("*ed*")
+    assert DTSh.PathExpansion("leds", dt_leds.children) == sh.path_expansion("leds/*")
 
     sh.cd(dt_leds.path)
     assert DTSh.PathExpansion("", dt_leds.children) == sh.path_expansion("led*")
 
-    assert DTSh.PathExpansion("../leds", dt_leds.children) == sh.path_expansion(
-        "../leds/led*"
-    )
+    assert DTSh.PathExpansion("../leds", dt_leds.children) == sh.path_expansion("../leds/led*")
     # Empty expansions are errors.
     with pytest.raises(DTPathNotFoundError):
         sh.path_expansion("pwmled*")
@@ -412,13 +394,13 @@ def test_dtsh_realpath() -> None:
     dt_partition0 = dt_partitions.get_child("partition@0")
     sh = DTSh(dtmodel, [])
 
-    assert "/" == sh.realpath("")
-    assert "/soc" == sh.realpath("soc")
+    assert sh.realpath("") == "/"
+    assert sh.realpath("soc") == "/soc"
 
     sh.cd("soc")
-    assert "/soc" == sh.realpath("")
-    assert "/soc" == sh.realpath(".")
-    assert "/" == sh.realpath("..")
+    assert sh.realpath("") == "/soc"
+    assert sh.realpath(".") == "/soc"
+    assert sh.realpath("..") == "/"
 
     assert dt_flash0.path == sh.realpath("&flash0")
     assert dt_partitions.path == sh.realpath("&flash0/partitions")
@@ -428,7 +410,7 @@ def test_dtsh_realpath() -> None:
 
     sh.cd()
     # Won't fault if realpath is evenutally not a path to a devicetree node.
-    assert "/node/not/found" == sh.realpath("node/not/found")
+    assert sh.realpath("node/not/found") == "/node/not/found"
 
     # But will fault when a DT label resolution fails.
     with pytest.raises(DTPathNotFoundError):
@@ -444,7 +426,7 @@ def test_dtsh() -> None:
 
     assert dtmodel is sh.dt
     assert dtmodel.root is sh.cwd
-    assert "/" == sh.pwd
+    assert sh.pwd == "/"
     assert [cmd_ls, cmd_tree] == sorted(sh.commands)
     assert cmd_ls is sh._commands["ls"]
     assert cmd_tree is sh._commands["tree"]
@@ -462,16 +444,16 @@ def test_dtsh_normpath() -> None:
     assert "/" == sh.pwd == sh.realpath("")
 
     # Won't fail on undefined node names.
-    assert "/" == sh.realpath("./a/../")
-    assert "/a/b" == sh.realpath("a/b/")
+    assert sh.realpath("./a/../") == "/"
+    assert sh.realpath("a/b/") == "/a/b"
 
     # Resolve devicetree label.
-    assert "/buttons/button_0/b" == sh.realpath("&button0/b")
+    assert sh.realpath("&button0/b") == "/buttons/button_0/b"
 
     # Fault on undefined label.
     with pytest.raises(DTPathNotFoundError) as e:
         sh.realpath("&not_a_label/b")
-    assert "&not_a_label" == e.value.path
+    assert e.value.path == "&not_a_label"
 
 
 def test_dtsh_node_at() -> None:
@@ -492,7 +474,7 @@ def test_dtsh_node_at() -> None:
     # Fault on undefined node names.
     with pytest.raises(DTPathNotFoundError) as e:
         sh.node_at("not/a/node")
-    assert "/not/a/node" == e.value.path
+    assert e.value.path == "/not/a/node"
 
     # Resolve devicetree label.
     assert dtmodel["/buttons/button_0"] is sh.node_at("&button0")
@@ -500,19 +482,19 @@ def test_dtsh_node_at() -> None:
     # Fault on undefined label.
     with pytest.raises(DTPathNotFoundError) as e:
         sh.node_at("&not_a_label")
-    assert "&not_a_label" == e.value.path
+    assert e.value.path == "&not_a_label"
 
 
 def test_dtsh_cd() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     sh = DTSh(dtmodel, [])
     assert dtmodel.root is sh.cwd
-    assert "/" == sh.pwd
+    assert sh.pwd == "/"
 
     # Absolute path.
     sh.cd("/soc/i2c@40003000")
     assert dtmodel["/soc/i2c@40003000"] is sh.cwd
-    assert "/soc/i2c@40003000" == sh.pwd
+    assert sh.pwd == "/soc/i2c@40003000"
 
     # Path references.
     sh.cd()
@@ -532,10 +514,10 @@ def test_dtsh_cd() -> None:
     sh.cd()
     with pytest.raises(DTPathNotFoundError) as e:
         sh.cd("not/a/node")
-    assert "/not/a/node" == e.value.path
+    assert e.value.path == "/not/a/node"
     with pytest.raises(DTPathNotFoundError) as e:
         sh.cd("&not_a_label/path")
-    assert "&not_a_label" == e.value.path
+    assert e.value.path == "&not_a_label"
 
 
 def test_dtsh_find() -> None:
@@ -545,36 +527,28 @@ def test_dtsh_find() -> None:
     sh = DTSh(dtmodel, [])
 
     # An Empty criterion chain matches all nodes: POSIX-like "find".
-    assert sorted(dtmodel.root.walk()) == sorted(
-        sh.find("", DTNodeCriteria([]))
-    )
+    assert sorted(dtmodel.root.walk()) == sorted(sh.find("", DTNodeCriteria([])))
 
     class CriterionBME680(DTNodeCriterion):
         def match(self, node: DTNode) -> bool:
-            return "bme680" == node.unit_name
+            return node.unit_name == "bme680"
 
     # Relative path with wild-cards.
-    assert [dt_i2c.get_child("bme680@76")] == sh.find(
-        dt_i2c.path, CriterionBME680()
-    )
+    assert [dt_i2c.get_child("bme680@76")] == sh.find(dt_i2c.path, CriterionBME680())
 
     # Devicetree labels.
-    assert [dt_i2c.get_child("bme680@76")] == sh.find(
-        "&i2c0", CriterionBME680()
-    )
+    assert [dt_i2c.get_child("bme680@76")] == sh.find("&i2c0", CriterionBME680())
 
     class CriterionPartition(DTNodeCriterion):
         def match(self, node: DTNode) -> bool:
-            return "partition" == node.unit_name
+            return node.unit_name == "partition"
 
     criterion = CriterionPartition()
     assert sorted(dt_partitions.children) == sorted(sh.find("/soc", criterion))
-    assert [] == sh.find(dt_i2c.path, criterion)
+    assert sh.find(dt_i2c.path, criterion) == []
 
     # ORed criterion chain.
-    criteria = DTNodeCriteria(
-        [CriterionPartition(), CriterionBME680()], ored_chain=True
-    )
+    criteria = DTNodeCriteria([CriterionPartition(), CriterionBME680()], ored_chain=True)
     assert sorted(
         [
             dt_i2c.get_child("bme680@76"),
@@ -620,56 +594,56 @@ def test_dtsh_parse_cmdline() -> None:
     # First lex is always parsed into a command name.
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline(">")
-        assert ">" == e.value.name
+        assert e.value.name == ">"
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline(" > ")
-        assert ">" == e.value.name
+        assert e.value.name == ">"
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline(" >> ")
-        assert ">>" == e.value.name
+        assert e.value.name == ">>"
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline(">x")
-        assert ">x" == e.value.name
+        assert e.value.name == ">x"
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline("> x")
-        assert ">" == e.value.name
+        assert e.value.name == ">"
     # No space before ">", no  redirection.
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline("mock>x")
-        assert "mock>x" == e.value.name
+        assert e.value.name == "mock>x"
     with pytest.raises(DTShCommandNotFoundError) as e:
         sh.parse_cmdline("mock>> x")
-        assert "mock>>" == e.value.name
+        assert e.value.name == "mock>>"
 
     # Command line without redirection.
     cmd, cmd_argv, redir2 = sh.parse_cmdline("  mock  ")
     assert cmd_mock == cmd
-    assert [] == cmd_argv
+    assert cmd_argv == []
     assert redir2 is None
 
     # Command line with empty redirection path.
     cmd, cmd_argv, redir2 = sh.parse_cmdline("mock >")
     assert cmd_mock == cmd
-    assert [] == cmd_argv
-    assert ">" == redir2
+    assert cmd_argv == []
+    assert redir2 == ">"
 
     cmd, cmd_argv, redir2 = sh.parse_cmdline("mock >> ")
     assert cmd_mock == cmd
-    assert [] == cmd_argv
-    assert ">>" == redir2
+    assert cmd_argv == []
+    assert redir2 == ">>"
 
     # Not a redirection, expects a value.
     cmd, cmd_argv, redir2 = sh.parse_cmdline("mock --argument >")
     assert cmd_mock == cmd
-    assert ["--argument", ">"] == cmd_argv
+    assert cmd_argv == ["--argument", ">"]
     assert redir2 is None
     # Value provided, parsed redirection.
     cmd, cmd_argv, redir2 = sh.parse_cmdline("mock --argument >1 >path")
     assert cmd_mock == cmd
-    assert ["--argument", ">1"] == cmd_argv
-    assert ">path" == redir2
+    assert cmd_argv == ["--argument", ">1"]
+    assert redir2 == ">path"
     # The flag does not expect a value, parsed redirection.
     cmd, cmd_argv, redir2 = sh.parse_cmdline("mock --flag >> path")
     assert cmd_mock == cmd
-    assert ["--flag"] == cmd_argv
-    assert ">> path" == redir2
+    assert cmd_argv == ["--flag"]
+    assert redir2 == ">> path"

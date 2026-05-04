@@ -7,7 +7,6 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
-
 import os
 
 import pytest
@@ -16,7 +15,6 @@ from dtsh.config import DTShConfig
 from dtsh.io import DTShRedirect
 
 from .dtsh_uthelpers import DTShTests
-
 
 _dtshconf: DTShConfig = DTShConfig.getinstance()
 

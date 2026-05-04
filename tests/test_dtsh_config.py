@@ -8,12 +8,11 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=import-outside-toplevel
 
-
 import os
 
 import pytest
 
-from dtsh.config import DTShConfig, ActionableType
+from dtsh.config import ActionableType, DTShConfig
 
 from .dtsh_uthelpers import DTShTests
 
@@ -62,8 +61,8 @@ def test_dtshconfig_getstr() -> None:
     assert cfg.getstr("test.string.quoted") == "quoted string "
     assert cfg.getstr("test.string.quotes") == 'a"b'
     assert cfg.getstr("test.string.unicode") == "❯"
-    assert cfg.getstr("test.string.literal") == "\u276F"
-    assert cfg.getstr("test.string.mixed") == "\u276F ❯"
+    assert cfg.getstr("test.string.literal") == "\u276f"
+    assert cfg.getstr("test.string.mixed") == "\u276f ❯"
     # getstr() is fail-safe.
     assert cfg.getstr("undefined") == ""
     assert cfg.getstr("undefined", "any") == "any"
@@ -84,12 +83,12 @@ def test_dtshconfig_defaults() -> None:
     cfg_defaults = DTShConfig(dtsh_ini)
 
     # Wide characters.
-    assert "…" == cfg_defaults.wchar_ellipsis
-    assert "↗" == cfg_defaults.wchar_arrow_ne
-    assert "↖" == cfg_defaults.wchar_arrow_nw
-    assert "→" == cfg_defaults.wchar_arrow_right
-    assert "↳" == cfg_defaults.wchar_arrow_right_hook
-    assert "—" == cfg_defaults.wchar_dash
+    assert cfg_defaults.wchar_ellipsis == "…"
+    assert cfg_defaults.wchar_arrow_ne == "↗"
+    assert cfg_defaults.wchar_arrow_nw == "↖"
+    assert cfg_defaults.wchar_arrow_right == "→"
+    assert cfg_defaults.wchar_arrow_right_hook == "↳"
+    assert cfg_defaults.wchar_dash == "—"
 
     # Prompt.
     assert cfg_defaults.prompt_default
@@ -97,7 +96,7 @@ def test_dtshconfig_defaults() -> None:
     assert cfg_defaults.prompt_sparse
 
     # General preferences.
-    assert 255 == cfg_defaults.pref_redir2_maxwidth
+    assert cfg_defaults.pref_redir2_maxwidth == 255
     assert not cfg_defaults.pref_always_longfmt
     assert cfg_defaults.pref_sizes_si
     assert not cfg_defaults.pref_hex_upper
@@ -105,48 +104,44 @@ def test_dtshconfig_defaults() -> None:
     assert cfg_defaults.pref_fs_no_spaces
     assert cfg_defaults.pref_fs_no_overwrite
     assert not cfg_defaults.pref_fs_no_overwrite_strict
-    assert ActionableType.LINK == cfg_defaults.pref_actionable_type
+    assert cfg_defaults.pref_actionable_type == ActionableType.LINK
 
     # List views.
     assert cfg_defaults.pref_list_headers
     assert not cfg_defaults.pref_list_placeholder
     assert cfg_defaults.pref_list_fmt
-    assert ActionableType.LINK == ActionableType(
-        cfg_defaults.pref_list_actionable_type
-    )
+    assert ActionableType(cfg_defaults.pref_list_actionable_type) == ActionableType.LINK
 
     # Tree views.
     assert cfg_defaults.pref_tree_headers
     assert cfg_defaults.pref_tree_placeholder
     assert cfg_defaults.pref_tree_fmt
-    assert ActionableType.NONE == ActionableType(
-        cfg_defaults.pref_tree_actionable_type
-    )
-    assert ActionableType.ALT == cfg_defaults.pref_2Sided_actionable_type
+    assert ActionableType(cfg_defaults.pref_tree_actionable_type) == ActionableType.NONE
+    assert cfg_defaults.pref_2Sided_actionable_type == ActionableType.ALT
     # 2-sided views child marker (disabled).
     assert not cfg_defaults.pref_tree_cb_anchor
 
     # Actionable type.
-    assert ActionableType.LINK == cfg_defaults.pref_actionable_type
+    assert cfg_defaults.pref_actionable_type == ActionableType.LINK
     assert cfg_defaults.pref_actionable_text
 
     # HTML.
-    assert "svg" == cfg_defaults.pref_html_theme
-    assert "'DejaVu Sans Mono'" == cfg_defaults.pref_html_font_family
+    assert cfg_defaults.pref_html_theme == "svg"
+    assert cfg_defaults.pref_html_font_family == "'DejaVu Sans Mono'"
 
     # SVG.
-    assert "svg" == cfg_defaults.pref_svg_theme
-    assert "'Fira Code','DejaVu Sans Mono'" == cfg_defaults.pref_svg_font_family
-    assert 0.61 == cfg_defaults.pref_svg_font_ratio
+    assert cfg_defaults.pref_svg_theme == "svg"
+    assert cfg_defaults.pref_svg_font_family == "'Fira Code','DejaVu Sans Mono'"
+    assert cfg_defaults.pref_svg_font_ratio == 0.61
 
     # YAML.
-    assert "nord" == cfg_defaults.pref_yaml_theme
-    assert ActionableType.LINK == cfg_defaults.pref_yaml_actionable_type
+    assert cfg_defaults.pref_yaml_theme == "nord"
+    assert cfg_defaults.pref_yaml_actionable_type == ActionableType.LINK
 
     # DTS.
-    assert "monokai" == cfg_defaults.pref_dts_theme
-    assert ActionableType.ALT == cfg_defaults.pref_dts_actionable_type
+    assert cfg_defaults.pref_dts_theme == "monokai"
+    assert cfg_defaults.pref_dts_actionable_type == ActionableType.ALT
 
     # Forms.
     assert cfg_defaults.pref_form_show_all
-    assert ActionableType.ALT == cfg_defaults.pref_form_actionable_type
+    assert cfg_defaults.pref_form_actionable_type == ActionableType.ALT

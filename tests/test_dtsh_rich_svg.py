@@ -8,12 +8,12 @@
 # pylint: disable=missing-function-docstring
 
 from dtsh.rich.svg import (
-    SVGFragmentViewBox,
-    SVGFragmentStyle,
-    SVGFragmentDefs,
     SVGFragmentChrome,
+    SVGFragmentDefs,
     SVGFragmentGCircles,
     SVGFragmentGTerminal,
+    SVGFragmentStyle,
+    SVGFragmentViewBox,
 )
 
 
@@ -25,20 +25,20 @@ def test_svg_fragment_viewbox() -> None:
             "<!-- after -->",
         ]
     )
-    assert 1 == fragment.i_end
-    assert 1 == len(fragment.content)
-    assert 1434 == fragment.width
-    assert 2563.2 == fragment.height
-    assert [
+    assert fragment.i_end == 1
+    assert len(fragment.content) == 1
+    assert fragment.width == 1434
+    assert fragment.height == 2563.2
+    assert fragment.content == [
         '<svg class="rich-terminal" viewBox="0 0 1434.0 2563.2" xmlns="http://www.w3.org/2000/svg">',
-    ] == fragment.content
+    ]
 
     fragment.set_width_height(1024, 768)
-    assert 1024 == fragment.width
-    assert 768 == fragment.height
-    assert [
+    assert fragment.width == 1024
+    assert fragment.height == 768
+    assert fragment.content == [
         '<svg class="rich-terminal" viewBox="0 0 1024 768" xmlns="http://www.w3.org/2000/svg">',
-    ] == fragment.content
+    ]
 
 
 def test_svg_fragment_style() -> None:
@@ -51,13 +51,13 @@ def test_svg_fragment_style() -> None:
             "<!-- after -->",
         ]
     )
-    assert 3 == fragment.i_end
-    assert 3 == len(fragment.content)
-    assert [
+    assert fragment.i_end == 3
+    assert len(fragment.content) == 3
+    assert fragment.content == [
         '<style type="">',
         "...",
         "</style>",
-    ] == fragment.content
+    ]
 
 
 def test_svg_fragment_defs() -> None:
@@ -73,9 +73,9 @@ def test_svg_fragment_defs() -> None:
             "<!-- after -->",
         ]
     )
-    assert 6 == fragment.i_end
-    assert 6 == len(fragment.content)
-    assert [
+    assert fragment.i_end == 6
+    assert len(fragment.content) == 6
+    assert fragment.content == [
         "<defs>",
         '<clipPath id="terminal-257872858-clip-terminal">',
         # 307.4 = 299.4 + 8 (rich library issue 3576)
@@ -83,7 +83,7 @@ def test_svg_fragment_defs() -> None:
         "</clipPath>",
         "...",
         "</defs>",
-    ] == fragment.content
+    ]
 
 
 def test_svg_fragment_rect() -> None:
@@ -94,20 +94,20 @@ def test_svg_fragment_rect() -> None:
             "<!-- after -->",
         ]
     )
-    assert 1 == fragment.i_end
-    assert 1 == len(fragment.content)
-    assert 1432 == fragment.width
-    assert 2561.2 == fragment.height
-    assert [
+    assert fragment.i_end == 1
+    assert len(fragment.content) == 1
+    assert fragment.width == 1432
+    assert fragment.height == 2561.2
+    assert fragment.content == [
         '<rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1432.0" height="2561.2" rx="8"/>'
-    ] == fragment.content
+    ]
 
     fragment.set_width_height(1024, 768)
-    assert 1024 == fragment.width
-    assert 768 == fragment.height
-    assert [
+    assert fragment.width == 1024
+    assert fragment.height == 768
+    assert fragment.content == [
         '<rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1024" height="768" rx="8"/>'
-    ] == fragment.content
+    ]
 
 
 def test_svg_fragment_gcircles() -> None:
@@ -120,13 +120,13 @@ def test_svg_fragment_gcircles() -> None:
             "<!-- after -->",
         ]
     )
-    assert 3 == fragment.i_end
-    assert 3 == len(fragment.content)
-    assert [
+    assert fragment.i_end == 3
+    assert len(fragment.content) == 3
+    assert fragment.content == [
         '<g transform="translate(26,22)">',
         "...",
         "</g>",
-    ] == fragment.content
+    ]
 
 
 def test_svg_fragment_gterminal() -> None:
@@ -142,13 +142,13 @@ def test_svg_fragment_gterminal() -> None:
             "<!-- after -->",
         ]
     )
-    assert 6 == fragment.i_end
-    assert 6 == len(fragment.content)
-    assert [
+    assert fragment.i_end == 6
+    assert len(fragment.content) == 6
+    assert fragment.content == [
         '<g transform="translate(9.0, 41.0)" clip-path="url(#terminal-3423481079-clip-terminal)">',
         "",
         '<g class="terminal-3423481079-matrix">',
         "...",
         "</g>",
         "</g>",
-    ] == fragment.content
+    ]

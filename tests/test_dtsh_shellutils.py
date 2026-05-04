@@ -11,75 +11,73 @@
 # pylint: disable=too-many-statements
 # pylint: disable=protected-access
 
-from typing import List, Tuple
-
 import pytest
 
-from dtsh.shell import DTSh, DTShCommand, DTShError, DTShCommandError
 from dtsh.modelutils import (
+    DTNodeAlsoKnownAs,
+    DTNodeWithAlias,
+    DTNodeWithBinding,
+    DTNodeWithBus,
+    DTNodeWithChosen,
+    DTNodeWithCompatible,
+    DTNodeWithDescription,
+    DTNodeWithDeviceLabel,
+    DTNodeWithName,
+    DTNodeWithNodeLabel,
+    DTNodeWithOnBus,
     # Text-based criteria.
     DTNodeWithPath,
-    DTNodeWithName,
     DTNodeWithUnitName,
-    DTNodeWithCompatible,
-    DTNodeWithBinding,
     DTNodeWithVendor,
-    DTNodeWithDescription,
-    DTNodeWithBus,
-    DTNodeWithOnBus,
-    DTNodeWithDeviceLabel,
-    DTNodeWithNodeLabel,
-    DTNodeWithAlias,
-    DTNodeWithChosen,
-    DTNodeAlsoKnownAs,
 )
+from dtsh.shell import DTSh, DTShCommand, DTShCommandError, DTShError
 from dtsh.shellutils import (
-    DTShFlagReverse,
-    DTShFlagEnabledOnly,
-    DTShFlagPager,
-    DTShFlagRegex,
-    DTShFlagIgnoreCase,
-    DTShFlagCount,
-    DTShFlagTreeLike,
-    DTShFlagNoChildren,
-    DTShFlagRecursive,
-    DTShFlagLogicalOr,
-    DTShFlagLogicalNot,
+    DTSH_ARG_NODE_CRITERIA,
+    DTSH_NODE_ORDER_BY,
     DTShArgFixedDepth,
-    # Arguments for text-based criteria.
-    DTShArgTextCriterion,
-    DTShArgNodeWithPath,
-    DTShArgNodeWithStatus,
-    DTShArgNodeWithName,
-    DTShArgNodeWithUnitName,
-    DTShArgNodeWithCompatible,
-    DTShArgNodeWithBinding,
-    DTShArgNodeWithVendor,
-    DTShArgNodeWithDescription,
-    DTShArgNodeWithBus,
-    DTShArgNodeWithOnBus,
-    DTShArgNodeWithDeviceLabel,
-    DTShArgNodeWithNodeLabel,
-    DTShArgNodeWithAlias,
-    DTShArgNodeWithChosen,
-    DTShArgNodeAlsoKnownAs,
     # Arguments for integer-based criteria.
     DTShArgIntCriterion,
-    DTShArgNodeWithUnitAddr,
+    DTShArgNodeAlsoKnownAs,
+    DTShArgNodeWithAlias,
+    DTShArgNodeWithBinding,
+    DTShArgNodeWithBindingDepth,
+    DTShArgNodeWithBus,
+    DTShArgNodeWithChosen,
+    DTShArgNodeWithCompatible,
+    DTShArgNodeWithDepOrd,
+    DTShArgNodeWithDescription,
+    DTShArgNodeWithDeviceLabel,
     DTShArgNodeWithIrqNumber,
     DTShArgNodeWithIrqPriority,
+    DTShArgNodeWithName,
+    DTShArgNodeWithNodeLabel,
+    DTShArgNodeWithOnBus,
+    DTShArgNodeWithPath,
     DTShArgNodeWithRegAddr,
     DTShArgNodeWithRegSize,
-    DTShArgNodeWithBindingDepth,
-    DTShArgNodeWithDepOrd,
+    DTShArgNodeWithStatus,
+    DTShArgNodeWithUnitAddr,
+    DTShArgNodeWithUnitName,
+    DTShArgNodeWithVendor,
     DTShArgOrderBy,
+    # Arguments for text-based criteria.
+    DTShArgTextCriterion,
+    DTShFlagCount,
+    DTShFlagEnabledOnly,
+    DTShFlagIgnoreCase,
+    DTShFlagLogicalNot,
+    DTShFlagLogicalOr,
+    DTShFlagNoChildren,
+    DTShFlagPager,
+    DTShFlagRecursive,
+    DTShFlagRegex,
+    DTShFlagReverse,
+    DTShFlagTreeLike,
+    DTShParamAlias,
+    DTShParamChosen,
     DTShParamDTPath,
     DTShParamDTPaths,
     DTShParamDTPathX,
-    DTShParamAlias,
-    DTShParamChosen,
-    DTSH_NODE_ORDER_BY,
-    DTSH_ARG_NODE_CRITERIA,
 )
 
 from .dtsh_uthelpers import DTShTests
@@ -143,10 +141,10 @@ def test_dtshflag_logical_not() -> None:
 def test_dtsharg_fixed_depth() -> None:
     arg = DTShArgFixedDepth()
     # Default value.
-    assert 0 == arg.depth
+    assert arg.depth == 0
 
     DTShTests.check_arg(arg, parsed="2")
-    assert 2 == arg.depth
+    assert arg.depth == 2
 
     with pytest.raises(DTShError):
         arg.parsed("not a number")
@@ -158,7 +156,7 @@ def test_dtsharg_fixed_depth() -> None:
 
 def test_dtsharg_criterion_integer_expr() -> None:
     # Criteria (args) with the attributes they depend on.
-    arg_on_attr: List[Tuple[DTShArgIntCriterion, str]] = [
+    arg_on_attr: list[tuple[DTShArgIntCriterion, str]] = [
         (DTShArgNodeWithUnitAddr(), "unit_addr"),
         (DTShArgNodeWithIrqNumber(), "interrupts"),
         (DTShArgNodeWithIrqPriority(), "interrupts"),
@@ -170,11 +168,7 @@ def test_dtsharg_criterion_integer_expr() -> None:
 
     # Check that no one has been forgotten.
     assert len(
-        list(
-            arg
-            for arg in DTSH_ARG_NODE_CRITERIA
-            if isinstance(arg, DTShArgIntCriterion)
-        )
+        list(arg for arg in DTSH_ARG_NODE_CRITERIA if isinstance(arg, DTShArgIntCriterion))
     ) == len(arg_on_attr)
 
     for arg, attr in arg_on_attr:
@@ -204,7 +198,7 @@ def test_dtsharg_criterion_integer_expr() -> None:
 def test_dtsharg_with_unit_addr() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000/bme680@76"]
-    assert 0x76 == node.unit_addr
+    assert node.unit_addr == 0x76
     arg = DTShArgNodeWithUnitAddr()
 
     # Without operator, defaults to equality.
@@ -238,7 +232,7 @@ def test_dtsharg_with_irq_number() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/timer@4000a000"]
     assert node.interrupts
-    10 == node.interrupts[0].number
+    node.interrupts[0].number == 10
     arg = DTShArgNodeWithIrqNumber()
 
     # Without operator, defaults to equality.
@@ -272,7 +266,7 @@ def test_dtsharg_with_irq_priority() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/timer@4000a000"]
     assert node.interrupts
-    assert 1 == node.interrupts[0].priority
+    assert node.interrupts[0].priority == 1
     arg = DTShArgNodeWithIrqPriority()
 
     # Without operator, defaults to equality.
@@ -305,7 +299,7 @@ def test_dtsharg_with_irq_priority() -> None:
 def test_dtsharg_with_reg_addr() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/gpio@50000000"]
-    assert [0x50000000, 0x50000500] == [reg.address for reg in node.registers]
+    assert [reg.address for reg in node.registers] == [0x50000000, 0x50000500]
 
     arg = DTShArgNodeWithRegAddr()
 
@@ -353,13 +347,13 @@ def test_dtsharg_with_reg_addr() -> None:
 def test_dtsharg_with_reg_size() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     dt_gpio = dtmodel["/soc/gpio@50000300"]
-    assert [512, 768] == [reg.size for reg in dt_gpio.registers]
+    assert [reg.size for reg in dt_gpio.registers] == [512, 768]
     dt_clock = dtmodel["/soc/clock@40000000"]
     # 4 kB.
-    assert [0x1000] == [reg.size for reg in dt_clock.registers]
+    assert [reg.size for reg in dt_clock.registers] == [0x1000]
     dt_flash = dtmodel["/soc/flash-controller@4001e000/flash@0"]
     # 1 MB.
-    assert [0x100000] == [reg.size for reg in dt_flash.registers]
+    assert [reg.size for reg in dt_flash.registers] == [0x100000]
 
     arg = DTShArgNodeWithRegSize()
 
@@ -458,7 +452,7 @@ def test_dtsharg_with_reg_size() -> None:
 
 def test_dtsharg_criterion_text_pattern() -> None:
     # Criteria (args) with the attributes they depend on.
-    arg_on_attr: List[Tuple[DTShArgTextCriterion, str]] = [
+    arg_on_attr: list[tuple[DTShArgTextCriterion, str]] = [
         (DTShArgNodeWithPath(), "path"),
         (DTShArgNodeWithStatus(), "status"),
         (DTShArgNodeWithName(), "name"),
@@ -477,13 +471,7 @@ def test_dtsharg_criterion_text_pattern() -> None:
 
     # Check that no one has been forgotten.
     assert (
-        len(
-            list(
-                arg
-                for arg in DTSH_ARG_NODE_CRITERIA
-                if isinstance(arg, DTShArgTextCriterion)
-            )
-        )
+        len(list(arg for arg in DTSH_ARG_NODE_CRITERIA if isinstance(arg, DTShArgTextCriterion)))
         # DTShArgNodeAlsoKnownAs may be provided by several attributes,
         # and is not in our list.
         == len(arg_on_attr) + 1
@@ -522,13 +510,9 @@ def test_dtsharg_with_path() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithPath(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithPath(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -536,13 +520,9 @@ def test_dtsharg_with_path() -> None:
     pattern = "*Timer*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithPath(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithPath(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -550,13 +530,9 @@ def test_dtsharg_with_path() -> None:
     pattern = ".*Timer.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithPath(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithPath(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -601,13 +577,9 @@ def test_dtsharg_with_name() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -615,13 +587,9 @@ def test_dtsharg_with_name() -> None:
     pattern = "*Timer*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -629,13 +597,9 @@ def test_dtsharg_with_name() -> None:
     pattern = ".*Timer.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -653,13 +617,9 @@ def test_dtsharg_with_unit_name() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithUnitName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithUnitName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -667,13 +627,9 @@ def test_dtsharg_with_unit_name() -> None:
     pattern = "*Timer*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithUnitName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithUnitName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -681,13 +637,9 @@ def test_dtsharg_with_unit_name() -> None:
     pattern = ".*Timer.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithUnitName(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithUnitName(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -706,13 +658,9 @@ def test_dtsharg_with_compatible() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithCompatible(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithCompatible(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -720,13 +668,9 @@ def test_dtsharg_with_compatible() -> None:
     pattern = "*nRF*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithCompatible(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithCompatible(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -734,13 +678,9 @@ def test_dtsharg_with_compatible() -> None:
     pattern = ".*nRF.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithCompatible(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithCompatible(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -759,13 +699,9 @@ def test_dtsharg_with_binding() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithBinding(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBinding(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -773,13 +709,9 @@ def test_dtsharg_with_binding() -> None:
     pattern = "*Sensor*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithBinding(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBinding(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -787,13 +719,9 @@ def test_dtsharg_with_binding() -> None:
     pattern = ".*Sensor.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithBinding(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBinding(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -812,13 +740,9 @@ def test_dtsharg_with_vendor() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithVendor(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithVendor(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -826,13 +750,9 @@ def test_dtsharg_with_vendor() -> None:
     pattern = "*gmbh*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithVendor(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithVendor(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -840,13 +760,9 @@ def test_dtsharg_with_vendor() -> None:
     pattern = ".*gmbh.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithVendor(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithVendor(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -865,13 +781,9 @@ def test_dtsharg_with_device_label() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithDeviceLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDeviceLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -879,13 +791,9 @@ def test_dtsharg_with_device_label() -> None:
     pattern = "*LED*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithDeviceLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDeviceLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -893,13 +801,9 @@ def test_dtsharg_with_device_label() -> None:
     pattern = ".*LED.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithDeviceLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDeviceLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -918,13 +822,9 @@ def test_dtsharg_with_node_label() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithNodeLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithNodeLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -932,13 +832,9 @@ def test_dtsharg_with_node_label() -> None:
     pattern = "*LED*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithNodeLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithNodeLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -946,13 +842,9 @@ def test_dtsharg_with_node_label() -> None:
     pattern = ".*LED.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithNodeLabel(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithNodeLabel(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -971,13 +863,9 @@ def test_dtsharg_with_alias() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithAlias(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithAlias(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -985,13 +873,9 @@ def test_dtsharg_with_alias() -> None:
     pattern = "*I2C*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithAlias(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithAlias(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -999,13 +883,9 @@ def test_dtsharg_with_alias() -> None:
     pattern = ".*I2C.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithAlias(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithAlias(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1024,13 +904,9 @@ def test_dtsharg_with_chosen() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithChosen(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithChosen(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1038,13 +914,9 @@ def test_dtsharg_with_chosen() -> None:
     pattern = "*Zephyr*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithChosen(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithChosen(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1052,13 +924,9 @@ def test_dtsharg_with_chosen() -> None:
     pattern = ".*Zephyr.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithChosen(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithChosen(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1077,13 +945,9 @@ def test_dtsharg_with_bus() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1091,13 +955,9 @@ def test_dtsharg_with_bus() -> None:
     pattern = "*I2C*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1105,13 +965,9 @@ def test_dtsharg_with_bus() -> None:
     pattern = r"I[\d]C"
     re_strict = True
 
-    raw_criterion = DTNodeWithBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1130,13 +986,9 @@ def test_dtsharg_with_on_bus() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithOnBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithOnBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1144,13 +996,9 @@ def test_dtsharg_with_on_bus() -> None:
     pattern = "*I2C*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithOnBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithOnBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1158,13 +1006,9 @@ def test_dtsharg_with_on_bus() -> None:
     pattern = r"I[\d]C"
     re_strict = True
 
-    raw_criterion = DTNodeWithOnBus(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithOnBus(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1183,13 +1027,9 @@ def test_dtsharg_with_desc() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeWithDescription(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDescription(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1197,13 +1037,9 @@ def test_dtsharg_with_desc() -> None:
     pattern = "*Sensor*"
     ignore_case = True
 
-    raw_criterion = DTNodeWithDescription(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDescription(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1211,13 +1047,9 @@ def test_dtsharg_with_desc() -> None:
     pattern = ".*Sensor.*"
     re_strict = True
 
-    raw_criterion = DTNodeWithDescription(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeWithDescription(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1236,13 +1068,9 @@ def test_dtsharg_with_aka() -> None:
     re_strict = False
     ignore_case = False
 
-    raw_criterion = DTNodeAlsoKnownAs(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeAlsoKnownAs(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1250,13 +1078,9 @@ def test_dtsharg_with_aka() -> None:
     pattern = "*LED*"
     ignore_case = True
 
-    raw_criterion = DTNodeAlsoKnownAs(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeAlsoKnownAs(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1264,13 +1088,9 @@ def test_dtsharg_with_aka() -> None:
     pattern = ".*LED.*"
     re_strict = True
 
-    raw_criterion = DTNodeAlsoKnownAs(
-        pattern, re_strict=re_strict, ignore_case=ignore_case
-    )
+    raw_criterion = DTNodeAlsoKnownAs(pattern, re_strict=re_strict, ignore_case=ignore_case)
     arg.parsed(pattern)
-    arg_criterion = arg.get_criterion(
-        re_strict=re_strict, ignore_case=ignore_case
-    )
+    arg_criterion = arg.get_criterion(re_strict=re_strict, ignore_case=ignore_case)
     assert arg_criterion
     for node in nodes:
         assert raw_criterion.match(node) == arg_criterion.match(node)
@@ -1315,9 +1135,9 @@ def test_dtsharg_orderby_autocomp() -> None:
 def test_dtshparam_dtpath() -> None:
     param = DTShParamDTPath()
     assert param.brief
-    assert "[PATH]" == param.usage
+    assert param.usage == "[PATH]"
     # Default value.
-    assert "" == param.path
+    assert param.path == ""
 
     # Parameter's state and multiplicity.
     DTShTests.check_param(param)
@@ -1325,7 +1145,7 @@ def test_dtshparam_dtpath() -> None:
     # Won't fault, the path parameter is returned unchanged,
     # path resolution is deferred to command execution.
     param.parsed(["value"])
-    assert "value" == param.path
+    assert param.path == "value"
 
 
 def test_dtshparam_dtpath_autocomp() -> None:
@@ -1338,26 +1158,28 @@ def test_dtshparam_dtpath_autocomp() -> None:
         state.rlstr for state in param.autocomp("", sh)
     ]
     # Exact match.
-    assert ["soc"] == [state.rlstr for state in param.autocomp("so", sh)]
+    assert [state.rlstr for state in param.autocomp("so", sh)] == ["soc"]
     # No match.
-    assert [] == param.autocomp("not/a/path", sh)
+    assert param.autocomp("not/a/path", sh) == []
 
     # Auto-complete DT label.
-    assert ["&i2c0", "&i2c0_default", "&i2c0_sleep"] == [
-        state.rlstr for state in param.autocomp("&i2c0", sh)
+    assert [state.rlstr for state in param.autocomp("&i2c0", sh)] == [
+        "&i2c0",
+        "&i2c0_default",
+        "&i2c0_sleep",
     ]
     # Exact match, substitute with path.
-    assert ["/pin-controller/i2c0_sleep"] == [
-        state.rlstr for state in param.autocomp("&i2c0_s", sh)
+    assert [state.rlstr for state in param.autocomp("&i2c0_s", sh)] == [
+        "/pin-controller/i2c0_sleep"
     ]
 
 
 def test_dtshparam_dtpaths() -> None:
     param = DTShParamDTPaths()
     assert param.brief
-    assert "[PATH ...]" == param.usage
+    assert param.usage == "[PATH ...]"
     # Default value.
-    assert [""] == param.paths
+    assert param.paths == [""]
 
     # Parameter's state and multiplicity.
     DTShTests.check_param(param)
@@ -1365,7 +1187,7 @@ def test_dtshparam_dtpaths() -> None:
     # Won't fault, the path parameter is returned unchanged,
     # path resolution is deferred to command execution.
     param.parsed(["value"])
-    assert ["value"] == param.paths
+    assert param.paths == ["value"]
 
 
 def test_dtshparam_dtpaths_expand() -> None:
@@ -1383,9 +1205,7 @@ def test_dtshparam_dtpaths_expand() -> None:
     assert [DTSh.PathExpansion("", sh.cwd.children)] == param.expand(cmd, sh)
 
     param.parsed(["*leds"])
-    assert [
-        DTSh.PathExpansion("", [sh.dt["/leds"], sh.dt["/pwmleds"]])
-    ] == param.expand(cmd, sh)
+    assert [DTSh.PathExpansion("", [sh.dt["/leds"], sh.dt["/pwmleds"]])] == param.expand(cmd, sh)
 
     sh.cd("soc")
     param.parsed(["../leds*"])
@@ -1395,11 +1215,11 @@ def test_dtshparam_dtpaths_expand() -> None:
 def test_dtshparam_dtpathx() -> None:
     param = DTShParamDTPathX()
     assert param.brief
-    assert "[XPATH]" == param.usage
+    assert param.usage == "[XPATH]"
     # Default value.
     assert not param.is_globexpr()
-    assert "" == param.xpath
-    assert ("", None) == param._xparse()
+    assert param.xpath == ""
+    assert param._xparse() == ("", None)
 
     # Parameter's state and multiplicity.
     DTShTests.check_param(param)
@@ -1407,18 +1227,18 @@ def test_dtshparam_dtpathx() -> None:
     # Won't fault, path resolution is deferred to command execution.
     param.parsed(["path"])
     assert not param.is_globexpr()
-    assert "path" == param.xpath
-    assert ("path", None) == param._xparse()
+    assert param.xpath == "path"
+    assert param._xparse() == ("path", None)
 
     param.parsed(["path$prop"])
     assert not param.is_globexpr()
-    assert "path$prop" == param.xpath
-    assert ("path", "prop") == param._xparse()
+    assert param.xpath == "path$prop"
+    assert param._xparse() == ("path", "prop")
 
     param.parsed(["path$prop*"])
     assert param.is_globexpr()
-    assert "path$prop*" == param.xpath
-    assert ("path", "prop*") == param._xparse()
+    assert param.xpath == "path$prop*"
+    assert param._xparse() == ("path", "prop*")
 
 
 def test_dtshparam_dtpathx_xsplit() -> None:
@@ -1432,9 +1252,7 @@ def test_dtshparam_dtpathx_xsplit() -> None:
 
     param.parsed(["$compatible"])
     assert not param.is_globexpr()
-    assert (sh.dt.root, [sh.dt.root.dtproperty("compatible")]) == param.xsplit(
-        cmd, sh
-    )
+    assert (sh.dt.root, [sh.dt.root.dtproperty("compatible")]) == param.xsplit(cmd, sh)
 
     param.parsed(["&nvic$reg"])
     assert not param.is_globexpr()
@@ -1489,27 +1307,27 @@ def test_dtshparam_dtpathx_autocomp() -> None:
         state.rlstr for state in param.autocomp("", sh)
     ]
     # Exact match.
-    assert ["soc"] == [state.rlstr for state in param.autocomp("so", sh)]
+    assert [state.rlstr for state in param.autocomp("so", sh)] == ["soc"]
     # No match.
-    assert [] == param.autocomp("not/a/path", sh)
+    assert param.autocomp("not/a/path", sh) == []
 
-    assert sorted(
-        [f"${prop.name}" for prop in dtmodel.root.all_dtproperties()]
-    ) == [state.rlstr for state in param.autocomp("$", sh)]
+    assert sorted([f"${prop.name}" for prop in dtmodel.root.all_dtproperties()]) == [
+        state.rlstr for state in param.autocomp("$", sh)
+    ]
 
     dt_power = sh.node_at("&power")
-    assert sorted(
-        [f"&power${prop.name}" for prop in dt_power.all_dtproperties()]
-    ) == [state.rlstr for state in param.autocomp("&power$", sh)]
+    assert sorted([f"&power${prop.name}" for prop in dt_power.all_dtproperties()]) == [
+        state.rlstr for state in param.autocomp("&power$", sh)
+    ]
 
 
 def test_dtshparam_alias() -> None:
     param = DTShParamAlias()
     assert param.brief
-    assert "[NAME]" == param.usage
-    assert [] == param.raw
+    assert param.usage == "[NAME]"
+    assert param.raw == []
     # Default value (means all aliased nodes).
-    assert "" == param.alias
+    assert param.alias == ""
 
     # Parameter's state and multiplicity.
     DTShTests.check_param(param)
@@ -1517,8 +1335,8 @@ def test_dtshparam_alias() -> None:
     # Won't fault, the alias parameter is returned unchanged,
     # name resolution is deferred to command execution.
     param.parsed(["not-an-alias"])
-    assert ["not-an-alias"] == param.raw
-    assert "not-an-alias" == param.alias
+    assert param.raw == ["not-an-alias"]
+    assert param.alias == "not-an-alias"
 
 
 def test_dtshparam_alias_autocomp() -> None:
@@ -1526,28 +1344,26 @@ def test_dtshparam_alias_autocomp() -> None:
     sh = DTSh(dtmodel, [])
     param = DTShParamAlias()
 
-    assert ["led0", "led1", "led2", "led3"] == [
-        state.rlstr for state in param.autocomp("led", sh)
-    ]
+    assert [state.rlstr for state in param.autocomp("led", sh)] == ["led0", "led1", "led2", "led3"]
     # Exact match.
-    assert ["led0"] == [state.rlstr for state in param.autocomp("led0", sh)]
+    assert [state.rlstr for state in param.autocomp("led0", sh)] == ["led0"]
     # No match.
-    assert [] == param.autocomp("ledX", sh)
+    assert param.autocomp("ledX", sh) == []
 
 
 def test_dtshparam_chosen() -> None:
     param = DTShParamChosen()
     assert param.brief
-    assert "[NAME]" == param.usage
-    assert [] == param.raw
+    assert param.usage == "[NAME]"
+    assert param.raw == []
     # Default value (means all chosen nodes).
-    assert "" == param.chosen
+    assert param.chosen == ""
 
     # Won't fault, the alias parameter is returned unchanged,
     # name resolution is deferred to command execution.
     param.parsed(["not-a-chosen"])
-    assert ["not-a-chosen"] == param.raw
-    assert "not-a-chosen" == param.chosen
+    assert param.raw == ["not-a-chosen"]
+    assert param.chosen == "not-a-chosen"
 
 
 def test_dtshparam_chosen_autocomp() -> None:
@@ -1555,12 +1371,12 @@ def test_dtshparam_chosen_autocomp() -> None:
     sh = DTSh(dtmodel, [])
     param = DTShParamChosen()
 
-    assert ["zephyr,bt-c2h-uart", "zephyr,bt-hci", "zephyr,bt-mon-uart"] == [
-        state.rlstr for state in param.autocomp("zephyr,bt", sh)
+    assert [state.rlstr for state in param.autocomp("zephyr,bt", sh)] == [
+        "zephyr,bt-c2h-uart",
+        "zephyr,bt-hci",
+        "zephyr,bt-mon-uart",
     ]
     # Exact match.
-    assert ["zephyr,bt-mon-uart"] == [
-        state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)
-    ]
+    assert [state.rlstr for state in param.autocomp("zephyr,bt-mon", sh)] == ["zephyr,bt-mon-uart"]
     # No match.
-    assert [] == param.autocomp("Zephyr,", sh)
+    assert param.autocomp("Zephyr,", sh) == []

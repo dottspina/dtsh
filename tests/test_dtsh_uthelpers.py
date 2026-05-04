@@ -7,7 +7,6 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
-
 import os
 
 from .dtsh_uthelpers import DTShTests
@@ -25,9 +24,7 @@ def test_dtsh_uthelpers_mockenv() -> None:
     tmp_kandiarok = "TMP2"
     assert not os.environ.get("KONDIARONK")
 
-    with DTShTests.mock_env(
-        {"PWD": tmp_pwd, "KONDIARONK": tmp_kandiarok, "USER": None}
-    ):
+    with DTShTests.mock_env({"PWD": tmp_pwd, "KONDIARONK": tmp_kandiarok, "USER": None}):
         assert tmp_pwd == os.environ["PWD"]
         assert not os.environ.get("USER")
         assert tmp_kandiarok == os.environ["KONDIARONK"]
@@ -42,9 +39,7 @@ def test_dtsh_uthelpers_zephyr_base() -> None:
 
 
 def test_dtsh_uthelpers_get_resource_path() -> None:
-    assert os.path.join(
-        DTShTests.RES_BASE, "README"
-    ) == DTShTests.get_resource_path("README")
+    assert os.path.join(DTShTests.RES_BASE, "README") == DTShTests.get_resource_path("README")
 
 
 def test_dtsh_uthelpers_from_res() -> None:

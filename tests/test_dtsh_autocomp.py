@@ -8,30 +8,27 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
-
-from typing import List
-
 import os
 
-from dtsh.model import DTPath
-from dtsh.shell import DTSh, DTShCommand, DTShArg, DTShFlagHelp
-from dtsh.shellutils import (
-    DTShFlagPager,
-    DTShFlagReverse,
-    DTShArgFixedDepth,
-    DTShParamDTPath,
-)
-from dtsh.rl import DTShReadline
 from dtsh.autocomp import (
     DTShAutocomp,
-    RlStateDTShCommand,
-    RlStateDTShOption,
-    RlStateDTPath,
-    RlStateDTVendor,
-    RlStateDTBus,
     RlStateDTAlias,
+    RlStateDTBus,
     RlStateDTChosen,
     RlStateDTLabel,
+    RlStateDTPath,
+    RlStateDTShCommand,
+    RlStateDTShOption,
+    RlStateDTVendor,
+)
+from dtsh.model import DTPath
+from dtsh.rl import DTShReadline
+from dtsh.shell import DTSh, DTShArg, DTShCommand, DTShFlagHelp
+from dtsh.shellutils import (
+    DTShArgFixedDepth,
+    DTShFlagPager,
+    DTShFlagReverse,
+    DTShParamDTPath,
 )
 
 from .dtsh_uthelpers import DTShTests
@@ -44,20 +41,14 @@ class MockDTShArg(DTShArg):
     def __init__(self) -> None:
         super().__init__(argname="arg")
 
-    RL_STATES: List[DTShReadline.CompleterState] = [
+    RL_STATES: list[DTShReadline.CompleterState] = [
         DTShReadline.CompleterState("a", 0),
         DTShReadline.CompleterState("ab", 1),
         DTShReadline.CompleterState("b", 2),
     ]
 
-    def autocomp(
-        self, txt: str, sh: "DTSh"
-    ) -> List[DTShReadline.CompleterState]:
-        return [
-            state
-            for state in MockDTShArg.RL_STATES
-            if state.rlstr.startswith(txt)
-        ]
+    def autocomp(self, txt: str, sh: "DTSh") -> list[DTShReadline.CompleterState]:
+        return [state for state in MockDTShArg.RL_STATES if state.rlstr.startswith(txt)]
 
 
 class MockDTShCmd(DTShCommand):
@@ -80,9 +71,7 @@ def test_dtshautocomp_complete_dtshcmd() -> None:
     cmd_ls = DTShCommand("ls", "", None, None)
     cmd_tree = DTShCommand("tree", "", None, None)
     cmd_lstree = DTShCommand("lstree", "", None, None)
-    sh = DTSh(
-        DTShTests.get_sample_dtmodel(), [cmd_mock, cmd_ls, cmd_tree, cmd_lstree]
-    )
+    sh = DTSh(DTShTests.get_sample_dtmodel(), [cmd_mock, cmd_ls, cmd_tree, cmd_lstree])
 
     assert sorted(
         [RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]
@@ -96,9 +85,7 @@ def test_dtshautocomp_complete_dtshcmd() -> None:
     ) == DTShAutocomp.complete_dtshcmd("l", sh)
 
     # Unique matches are not hidden.
-    assert [
-        RlStateDTShCommand(cmd_tree.name, cmd_tree)
-    ] == DTShAutocomp.complete_dtshcmd("t", sh)
+    assert [RlStateDTShCommand(cmd_tree.name, cmd_tree)] == DTShAutocomp.complete_dtshcmd("t", sh)
 
 
 def test_dtshautocomp_complete_dtshopt() -> None:
@@ -190,9 +177,8 @@ def test_dtshautocomp_complete_dtcompat() -> None:
     ) == [state.rlstr for state in DTShAutocomp.complete_dtcompat("a", sh)]
 
     # Unique matches are not hidden: arm,cortex-m4f
-    assert ["arm,cortex-m4f"] == [
-        state.rlstr
-        for state in DTShAutocomp.complete_dtcompat("arm,cortex", sh)
+    assert [state.rlstr for state in DTShAutocomp.complete_dtcompat("arm,cortex", sh)] == [
+        "arm,cortex-m4f"
     ]
 
 
@@ -201,10 +187,7 @@ def test_dtshautocomp_complete_dtvendor() -> None:
 
     # All vendors.
     assert sorted(
-        [
-            RlStateDTVendor(vendor.prefix, vendor.name)
-            for vendor in sh.dt.vendors
-        ]
+        [RlStateDTVendor(vendor.prefix, vendor.name) for vendor in sh.dt.vendors]
     ) == DTShAutocomp.complete_dtvendor("", sh)
 
     # Complete vendor prefix.
@@ -234,11 +217,7 @@ def test_dtshautocomp_complete_dtbus() -> None:
 
     # Complete bus protocol: i2c, i2s.
     assert sorted(
-        [
-            RlStateDTBus(bus)
-            for bus in sh.dt.bus_protocols
-            if bus.startswith("i2")
-        ]
+        [RlStateDTBus(bus) for bus in sh.dt.bus_protocols if bus.startswith("i2")]
     ) == DTShAutocomp.complete_dtbus("i2", sh)
 
     # Unique matches are not hidden: spi.
@@ -252,10 +231,7 @@ def test_dtshautocomp_complete_dtalias() -> None:
 
     # All aliased nodes.
     assert sorted(
-        [
-            RlStateDTAlias(alias, node)
-            for alias, node in sh.dt.aliased_nodes.items()
-        ]
+        [RlStateDTAlias(alias, node) for alias, node in sh.dt.aliased_nodes.items()]
     ) == DTShAutocomp.complete_dtalias("", sh)
 
     # Complete alias name: led0, led1, led2, led3.
@@ -280,10 +256,7 @@ def test_dtshautocomp_complete_dtchosen() -> None:
 
     # All chosen nodes.
     assert sorted(
-        [
-            RlStateDTChosen(chosen, node)
-            for chosen, node in sh.dt.chosen_nodes.items()
-        ]
+        [RlStateDTChosen(chosen, node) for chosen, node in sh.dt.chosen_nodes.items()]
     ) == DTShAutocomp.complete_dtchosen("", sh)
 
     # Complete chosen parameter name: zephyr,flash, zephyr,flash-controller.
@@ -373,9 +346,7 @@ def test_dtshautocomp_complete_fspath() -> None:
         ]
 
         # Unique matches are not hidden.
-        assert [f"foo{os.sep}"] == [
-            state.rlstr for state in DTShAutocomp.complete_fspath("foo")
-        ]
+        assert [f"foo{os.sep}"] == [state.rlstr for state in DTShAutocomp.complete_fspath("foo")]
 
 
 def test_dtshautocomp_complete() -> None:
@@ -386,39 +357,33 @@ def test_dtshautocomp_complete() -> None:
 
     # Command line: "|"
     # Expects: all commands
-    assert sorted(
-        [RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]
-    ) == autocomp.complete("", "", 0, 0)
+    assert sorted([RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]) == autocomp.complete(
+        "", "", 0, 0
+    )
 
     # Command line: " |"
     # Expects: all commands
-    assert sorted(
-        [RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]
-    ) == autocomp.complete("", "", 1, 1)
+    assert sorted([RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]) == autocomp.complete(
+        "", "", 1, 1
+    )
 
     # Command line: " | "
     # Expects: all commands
-    assert sorted(
-        [RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]
-    ) == autocomp.complete("", " ", 1, 1)
+    assert sorted([RlStateDTShCommand(cmd.name, cmd) for cmd in sh.commands]) == autocomp.complete(
+        "", " ", 1, 1
+    )
 
     # Command line: "l|"
     # Expects: ls
-    assert [RlStateDTShCommand(cmd_ls.name, cmd_ls)] == autocomp.complete(
-        "l", "l", 0, 1
-    )
+    assert [RlStateDTShCommand(cmd_ls.name, cmd_ls)] == autocomp.complete("l", "l", 0, 1)
 
     # Command line: " l|"
     # Expects: ls
-    assert [RlStateDTShCommand(cmd_ls.name, cmd_ls)] == autocomp.complete(
-        "l", " l", 1, 2
-    )
+    assert [RlStateDTShCommand(cmd_ls.name, cmd_ls)] == autocomp.complete("l", " l", 1, 2)
 
     # Command line: "mockcmd --mockarg |"
     # Expects: possible argument values
-    assert sorted(MockDTShArg.RL_STATES) == autocomp.complete(
-        "", "mockcmd --mockarg ", 18, 18
-    )
+    assert sorted(MockDTShArg.RL_STATES) == autocomp.complete("", "mockcmd --mockarg ", 18, 18)
 
     # Command line: "mockcmd --mockarg|"
     # Expects: the option name as unique match.
@@ -447,7 +412,7 @@ def test_dtshautocomp_complete() -> None:
 
         # Command line: " ls >|"
         # Expects: missing space after ">".
-        assert [] == autocomp.complete("", "ls >", 3, 3)
+        assert autocomp.complete("", "ls >", 3, 3) == []
 
 
 def test_dtsh_autocomp_complete_dtpathx() -> None:
@@ -458,14 +423,14 @@ def test_dtsh_autocomp_complete_dtpathx() -> None:
         [RlStateDTPath(node.name, node) for node in sh.dt.root.children]
     ) == DTShAutocomp.complete_dtpathx("", sh)
 
-    assert [] == DTShAutocomp.complete_dtpathx("not-a-node$", sh)
-    assert [] == DTShAutocomp.complete_dtpathx("soc$not-a-property", sh)
+    assert DTShAutocomp.complete_dtpathx("not-a-node$", sh) == []
+    assert DTShAutocomp.complete_dtpathx("soc$not-a-property", sh) == []
 
-    assert sorted(
-        [f"${prop.name}" for prop in sh.dt.root.all_dtproperties()]
-    ) == [state.rlstr for state in DTShAutocomp.complete_dtpathx("$", sh)]
+    assert sorted([f"${prop.name}" for prop in sh.dt.root.all_dtproperties()]) == [
+        state.rlstr for state in DTShAutocomp.complete_dtpathx("$", sh)
+    ]
 
     dt_power = sh.node_at("&power")
-    assert sorted(
-        [f"&power${prop.name}" for prop in dt_power.all_dtproperties()]
-    ) == [state.rlstr for state in DTShAutocomp.complete_dtpathx("&power$", sh)]
+    assert sorted([f"&power${prop.name}" for prop in dt_power.all_dtproperties()]) == [
+        state.rlstr for state in DTShAutocomp.complete_dtpathx("&power$", sh)
+    ]

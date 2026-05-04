@@ -8,11 +8,9 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=too-many-statements
 
-
 import os
 
 import pytest
-
 from rich.color import Color
 
 from dtsh.rich.theme import DTShTheme
@@ -41,9 +39,7 @@ def test_dtshtheme_load_theme_file() -> None:
 def test_dtshtheme_defaults() -> None:
     # All these constants MUST have suitable values in the bundled theme.ini.
     theme_ini = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "..", "src", "dtsh", "rich", "theme.ini"
-        )
+        os.path.join(os.path.dirname(__file__), "..", "src", "dtsh", "rich", "theme.ini")
     )
     assert os.path.isfile(theme_ini)
     theme_defaults = DTShTheme(theme_ini)

@@ -7,9 +7,9 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
+from dtsh.builtins.tree import DTShBuiltinTree
 from dtsh.io import DTShOutput
 from dtsh.shell import DTSh
-from dtsh.builtins.tree import DTShBuiltinTree
 
 from .dtsh_uthelpers import DTShTests
 

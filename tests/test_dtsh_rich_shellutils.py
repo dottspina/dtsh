@@ -7,27 +7,25 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
-
 import pytest
 
-from dtsh.shell import DTSh, DTShError
-from dtsh.shellutils import (
-    DTShFlagReverse,
-    DTShFlagEnabledOnly,
-    DTShArgOrderBy,
-    DTSH_NODE_ORDER_BY,
-)
+from dtsh.rich.modelview import SketchMV
 from dtsh.rich.shellutils import (
-    DTShNodeFmt,
-    DTShFlagLongList,
+    DTSH_NODE_FMT_SPEC,
     DTShArgLongFmt,
     DTShCommandLongFmt,
-    DTSH_NODE_FMT_SPEC,
+    DTShFlagLongList,
+    DTShNodeFmt,
 )
-from dtsh.rich.modelview import SketchMV
+from dtsh.shell import DTSh, DTShError
+from dtsh.shellutils import (
+    DTSH_NODE_ORDER_BY,
+    DTShArgOrderBy,
+    DTShFlagEnabledOnly,
+    DTShFlagReverse,
+)
 
 from .dtsh_uthelpers import DTShTests
-
 
 NODE_FMT_ALL = "".join(spec for spec in DTSH_NODE_FMT_SPEC)
 NODE_COL_ALL = [fmt.col for fmt in DTSH_NODE_FMT_SPEC.values()]
@@ -43,7 +41,7 @@ def test_dtsh_node_fmt_spc() -> None:
 
 def test_dtsh_node_fmt() -> None:
     # Parse all valid format specifiers.
-    assert NODE_COL_ALL == DTShNodeFmt.parse(NODE_FMT_ALL)
+    assert DTShNodeFmt.parse(NODE_FMT_ALL) == NODE_COL_ALL
 
     # Client code expect DTShError on invalid format string.
     with pytest.raises(DTShError):
@@ -59,7 +57,7 @@ def test_dtsharg_longfmt() -> None:
     assert not arg.fmt
 
     DTShTests.check_arg(arg, NODE_FMT_ALL)
-    assert NODE_COL_ALL == arg.fmt
+    assert arg.fmt == NODE_COL_ALL
 
 
 def test_dtsharg_longfmt_autocomp() -> None:
@@ -76,7 +74,7 @@ def test_dtsharg_longfmt_autocomp() -> None:
     assert autocomp_states == [state.rlstr for state in arg.autocomp("na", sh)]
 
     # No match
-    assert [] == arg.autocomp("invalid_fmt", sh)
+    assert arg.autocomp("invalid_fmt", sh) == []
 
 
 def test_dtsh_command_lonfmt() -> None:
@@ -96,18 +94,18 @@ def test_dtsh_command_lonfmt() -> None:
     assert not cmd.with_arg(DTShArgLongFmt).fmt
     # get_longformat() is intended to be used once the parser has finished,
     # and will answer "something" (fallback).
-    assert 0 < len(cmd.get_longfmt(""))
+    assert len(cmd.get_longfmt("")) > 0
 
     # Caller my also provide a default value when calling get_fields(),
     # typically using long lists without explicit format.
-    assert 3 == len(cmd.get_longfmt("nac"))
+    assert len(cmd.get_longfmt("nac")) == 3
 
     # Set all fields in format string.
     cmd.parse_argv(["--format", NODE_FMT_ALL])
-    assert NODE_COL_ALL == cmd.with_arg(DTShArgLongFmt).fmt
+    assert cmd.with_arg(DTShArgLongFmt).fmt == NODE_COL_ALL
     # A format is explicitly provided: default is ignored.
-    assert NODE_COL_ALL == cmd.get_longfmt("")
-    assert NODE_COL_ALL == cmd.get_longfmt("pd")
+    assert cmd.get_longfmt("") == NODE_COL_ALL
+    assert cmd.get_longfmt("pd") == NODE_COL_ALL
 
     with pytest.raises(DTShError):
         cmd.parse_argv(["--format", "invalid format string"])

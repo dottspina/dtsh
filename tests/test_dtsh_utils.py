@@ -12,14 +12,14 @@ from pathlib import Path
 
 import pytest
 
-from dtsh.utils import CMakeCache, YAMLFile, YAMLFilesystem, PropertyLineage
+from dtsh.utils import CMakeCache, PropertyLineage, YAMLFile, YAMLFilesystem
 
 from .dtsh_uthelpers import DTShTests
 
 
 def test_cmakecache_init() -> None:
     with DTShTests.from_res():
-        assert 4 == len(CMakeCache("CMakeCache.txt"))
+        assert len(CMakeCache("CMakeCache.txt")) == 4
 
     # Opening a non existing file should not fault.
     assert CMakeCache.open("notafile") is None
@@ -29,21 +29,21 @@ def test_cmakecache_init() -> None:
     with DTShTests.from_res():
         cache = CMakeCache.open("zephyr.dts")
         assert cache is not None
-        assert 0 == len(cache)
+        assert len(cache) == 0
 
 
 def test_cmakecache_getstr() -> None:
     with DTShTests.from_res():
         cache = CMakeCache("CMakeCache.txt")
-    assert "foobar" == cache.getstr("DTSH_TEST_STRING")
+    assert cache.getstr("DTSH_TEST_STRING") == "foobar"
     assert cache.getstr("NOT_AN_ENTRY") is None
 
 
 def test_cmakecache_getstrs() -> None:
     with DTShTests.from_res():
         cache = CMakeCache("CMakeCache.txt")
-    assert ["foo", "bar"] == cache.getstrs("DTSH_TEST_STRING_LIST")
-    assert [] == cache.getstrs("NOT_AN_ENTRY")
+    assert cache.getstrs("DTSH_TEST_STRING_LIST") == ["foo", "bar"]
+    assert cache.getstrs("NOT_AN_ENTRY") == []
 
 
 def test_cmakecache_getbool() -> None:
@@ -80,9 +80,7 @@ def test_yamlfs_find_file() -> None:
 
     fyaml = yamlfs.find_file("i2c-device.yaml")
     assert fyaml
-    assert DTShTests.get_resource_path("yaml", "i2c-device.yaml") == str(
-        fyaml.path.absolute()
-    )
+    assert DTShTests.get_resource_path("yaml", "i2c-device.yaml") == str(fyaml.path.absolute())
 
     # Opening a non existing file should not fault.
     assert yamlfs.find_file("notafile") is None
@@ -92,7 +90,7 @@ def test_yamlfs_name2path() -> None:
     with DTShTests.from_res():
         yamlfs = YAMLFilesystem(["yaml"])
 
-    assert 7 == len(yamlfs.name2path)
+    assert len(yamlfs.name2path) == 7
     assert (
         DTShTests.get_resource_path("yaml", "i2c-device.yaml")
         == yamlfs.name2path["i2c-device.yaml"]
@@ -106,9 +104,9 @@ def test_dtshdts_yamlfs_find_path() -> None:
     with DTShTests.from_res():
         yamlfs = YAMLFilesystem(["yaml"])
 
-    assert DTShTests.get_resource_path(
-        "yaml", "sensor-device.yaml"
-    ) == yamlfs.find_path("sensor-device.yaml")
+    assert DTShTests.get_resource_path("yaml", "sensor-device.yaml") == yamlfs.find_path(
+        "sensor-device.yaml"
+    )
 
 
 def test_dtshdts_yamlfs_find_file() -> None:
@@ -117,9 +115,7 @@ def test_dtshdts_yamlfs_find_file() -> None:
 
     yaml = yamlfs.find_file("sensor-device.yaml")
     assert yaml
-    assert DTShTests.get_resource_path("yaml", "sensor-device.yaml") == str(
-        yaml.path.absolute()
-    )
+    assert DTShTests.get_resource_path("yaml", "sensor-device.yaml") == str(yaml.path.absolute())
 
 
 def test_yamlfile() -> None:
@@ -131,13 +127,13 @@ def test_yamlfile() -> None:
     assert not yaml._depth2included
     assert yaml.content.startswith("# Copyright (c) 2017, Linaro Limited")
     assert yaml.content.endswith("i2c bus")
-    assert "i2c" == yaml.raw["on-bus"]
-    assert ["base.yaml", "power.yaml"] == yaml.includes
+    assert yaml.raw["on-bus"] == "i2c"
+    assert yaml.includes == ["base.yaml", "power.yaml"]
 
     # Fail-safe
     yaml = YAMLFile("notafile")
-    assert "" == yaml.content
-    assert {} == yaml.raw
+    assert yaml.content == ""
+    assert yaml.raw == {}
     assert not yaml.includes
 
 
@@ -146,10 +142,10 @@ def test_included_at_depth() -> None:
         fyaml = YAMLFile(Path("yaml") / "included_at_depth.yaml")
         assert fyaml.raw
 
-    assert ["inc1.yaml", "inc2.yaml", "inc3.yaml"] == fyaml.includes
-    assert ["inc1.yaml"] == [inc.name for inc in fyaml.includes_at_depth(0)]
-    assert ["inc2.yaml"] == [inc.name for inc in fyaml.includes_at_depth(1)]
-    assert ["inc3.yaml"] == [inc.name for inc in fyaml.includes_at_depth(2)]
+    assert fyaml.includes == ["inc1.yaml", "inc2.yaml", "inc3.yaml"]
+    assert [inc.name for inc in fyaml.includes_at_depth(0)] == ["inc1.yaml"]
+    assert [inc.name for inc in fyaml.includes_at_depth(1)] == ["inc2.yaml"]
+    assert [inc.name for inc in fyaml.includes_at_depth(2)] == ["inc3.yaml"]
 
 
 def test_find_property() -> None:
@@ -164,11 +160,11 @@ def test_find_property() -> None:
     # From inc1.yaml.
     fyaml = yamlfs.find_property("inc1_depth0_p1", fyaml_base, 0)
     assert fyaml
-    assert "inc1.yaml" == fyaml.path.name
+    assert fyaml.path.name == "inc1.yaml"
     # Last modified in included_at_depth.yaml.
     fyaml = yamlfs.find_property("inc1_depth0_p2", fyaml_base, 0)
     assert fyaml
-    assert "included_at_depth.yaml" == fyaml.path.name
+    assert fyaml.path.name == "included_at_depth.yaml"
     assert not yamlfs.find_property("inc1_depth0_p2", fyaml_base, 1)
 
     # Child-bindings.
@@ -178,11 +174,11 @@ def test_find_property() -> None:
     # From inc2.yaml.
     fyaml = yamlfs.find_property("inc2_depth0_p1", fyaml_base, 1)
     assert fyaml
-    assert "inc2.yaml" == fyaml.path.name
+    assert fyaml.path.name == "inc2.yaml"
     # Last modified in included_at_depth.yaml.
     fyaml = yamlfs.find_property("inc2_depth0_p2", fyaml_base, 1)
     assert fyaml
-    assert "included_at_depth.yaml" == fyaml.path.name
+    assert fyaml.path.name == "included_at_depth.yaml"
 
     # Grandchild-bindings.
     assert not yamlfs.find_property("inc3_depth0_p1", fyaml_base, 0)
@@ -191,11 +187,11 @@ def test_find_property() -> None:
     # From inc3.yaml.
     fyaml = yamlfs.find_property("inc3_depth0_p1", fyaml_base, 2)
     assert fyaml
-    assert "inc3.yaml" == fyaml.path.name
+    assert fyaml.path.name == "inc3.yaml"
     # Last modified in included_at_depth.yaml.
     fyaml = yamlfs.find_property("inc3_depth0_p2", fyaml_base, 2)
     assert fyaml
-    assert "included_at_depth.yaml" == fyaml.path.name
+    assert fyaml.path.name == "included_at_depth.yaml"
 
 
 def test_backtrack_property_depth0() -> None:
@@ -208,21 +204,21 @@ def test_backtrack_property_depth0() -> None:
     # Included from inc1.yaml.
     yamlfs.backtrack_property(backtrack, "inc1_depth0_p1", fyaml_base, 0)
     assert backtrack.fyaml_last
-    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc1.yaml"
     assert backtrack.fyaml_spec
-    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc1.yaml"
     # Included from inc1.yaml, last modified in included_at_depth.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc1_depth0_p2", fyaml_base, 0)
     assert backtrack.fyaml_last
-    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "included_at_depth.yaml"
     assert backtrack.fyaml_spec
-    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc1.yaml"
     # Included from inc1.yaml, does not have a description.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc1_depth0_p3", fyaml_base, 0)
     assert backtrack.fyaml_last
-    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc1.yaml"
     assert not backtrack.fyaml_spec
 
     # Undefined at other levels.
@@ -250,28 +246,28 @@ def test_backtrack_property_child_binding() -> None:
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc1_depth1_p1", fyaml_base, 1)
     assert backtrack.fyaml_last
-    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc1.yaml"
     assert backtrack.fyaml_spec
-    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc1.yaml"
     # Included from inc2.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc2_depth0_p1", fyaml_base, 1)
     assert backtrack.fyaml_last
-    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc2.yaml"
     assert backtrack.fyaml_spec
-    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc2.yaml"
     # Included from inc2.yaml, last modified in included_at_depth.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc2_depth0_p2", fyaml_base, 1)
     assert backtrack.fyaml_last
-    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "included_at_depth.yaml"
     assert backtrack.fyaml_spec
-    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc2.yaml"
     # Included from inc2.yaml, does not have a description.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc2_depth0_p3", fyaml_base, 1)
     assert backtrack.fyaml_last
-    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc2.yaml"
     assert not backtrack.fyaml_spec
 
     # Undefined at other levels.
@@ -295,34 +291,34 @@ def test_backtrack_property_grandchild_binding() -> None:
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc1_depth2_p1", fyaml_base, 2)
     assert backtrack.fyaml_last
-    assert "inc1.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc1.yaml"
     assert backtrack.fyaml_spec
-    assert "inc1.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc1.yaml"
     # Included from inc2.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc2_depth1_p1", fyaml_base, 2)
     assert backtrack.fyaml_last
-    assert "inc2.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc2.yaml"
     assert backtrack.fyaml_spec
-    assert "inc2.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc2.yaml"
 
     # Included from inc3.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc3_depth0_p1", fyaml_base, 2)
     assert backtrack.fyaml_last
-    assert "inc3.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc3.yaml"
     assert backtrack.fyaml_spec
-    assert "inc3.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc3.yaml"
     # Included from inc3.yaml, last modified in included_at_depth.yaml.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc3_depth0_p2", fyaml_base, 2)
     assert backtrack.fyaml_last
-    assert "included_at_depth.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "included_at_depth.yaml"
     assert backtrack.fyaml_spec
-    assert "inc3.yaml" == backtrack.fyaml_spec.path.name
+    assert backtrack.fyaml_spec.path.name == "inc3.yaml"
     # Included from inc3.yaml, does not have a description.
     backtrack = PropertyLineage()
     yamlfs.backtrack_property(backtrack, "inc3_depth0_p3", fyaml_base, 2)
     assert backtrack.fyaml_last
-    assert "inc3.yaml" == backtrack.fyaml_last.path.name
+    assert backtrack.fyaml_last.path.name == "inc3.yaml"
     assert not backtrack.fyaml_spec

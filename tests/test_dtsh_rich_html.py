@@ -7,9 +7,7 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
-from typing import List
-
-from dtsh.rich.html import HtmlStyle, HtmlPreformatted, HtmlDocument
+from dtsh.rich.html import HtmlDocument, HtmlPreformatted, HtmlStyle
 
 SAMPLE_HTML_CAPTURE = """\
 <!DOCTYPE html>
@@ -77,8 +75,8 @@ body {
 
 def test_html_style() -> None:
     html_style: HtmlStyle = HtmlStyle.ifind(SAMPLE_HTML_CAPTURE.splitlines())
-    assert 13 == html_style.i_end
-    assert 8 == len(html_style.content)
+    assert html_style.i_end == 13
+    assert len(html_style.content) == 8
     assert (
         """\
 <style>
@@ -93,11 +91,11 @@ body {
         == html_style.content
     )
 
-    assert 2 == len(html_style.rclasses)
+    assert len(html_style.rclasses) == 2
     assert html_style.rclasses[0].startswith(".r1")
     assert html_style.rclasses[1].startswith(".r2")
 
-    assert 4 == len(html_style.body)
+    assert len(html_style.body) == 4
     assert (
         """\
 body {
@@ -109,17 +107,15 @@ body {
     )
 
     html_style.shift_rclasses(5)
-    assert 2 == len(html_style.rclasses)
+    assert len(html_style.rclasses) == 2
     assert html_style.rclasses[0].startswith(".r6")
     assert html_style.rclasses[1].startswith(".r7")
 
 
 def test_html_preformatted() -> None:
-    pre_code: HtmlPreformatted = HtmlPreformatted.ifind(
-        SAMPLE_HTML_CAPTURE.splitlines()
-    )
-    assert 20 == pre_code.i_end
-    assert 4 == len(pre_code.content)
+    pre_code: HtmlPreformatted = HtmlPreformatted.ifind(SAMPLE_HTML_CAPTURE.splitlines())
+    assert pre_code.i_end == 20
+    assert len(pre_code.content) == 4
     assert "r1" in pre_code.content[0]
     assert "r2" in pre_code.content[1]
 
@@ -127,12 +123,12 @@ def test_html_preformatted() -> None:
     assert "r6" in pre_code.content[0]
     assert "r7" in pre_code.content[1]
 
-    pre_codes: List[HtmlPreformatted] = HtmlPreformatted.ifind_list(
+    pre_codes: list[HtmlPreformatted] = HtmlPreformatted.ifind_list(
         SAMPLE_HTML_DOCUMENT.splitlines()
     )
-    assert 2 == len(pre_codes)
+    assert len(pre_codes) == 2
 
-    assert 4 == len(pre_codes[0].content)
+    assert len(pre_codes[0].content) == 4
     assert "r1" in pre_codes[0].content[0]
     assert "r2" in pre_codes[0].content[1]
     assert "r3" in pre_codes[1].content[0]
@@ -144,11 +140,11 @@ def test_html_doc() -> None:
     other_doc: HtmlDocument = HtmlDocument(SAMPLE_HTML_CAPTURE)
 
     doc.append(other_doc)
-    assert 6 == len(doc.style.rclasses)
+    assert len(doc.style.rclasses) == 6
     assert doc.style.rclasses[0].startswith(".r1")
     assert doc.style.rclasses[5].startswith(".r6")
 
-    assert 3 == len(doc.codes)
+    assert len(doc.codes) == 3
     assert "r1" in doc.codes[0].content[0]
     assert "r2" in doc.codes[0].content[1]
     assert "r3" in doc.codes[1].content[0]

@@ -11,65 +11,64 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-many-statements
 
-
-from typing import Any, Set, Tuple, List, Sequence
-
 import os
 import sys
+from collections.abc import Sequence
+from typing import Any
 
 import pytest
 
 from dtsh.model import (
-    DTPath,
-    DTVendor,
+    DTNode,
+    DTNodeCriteria,
+    DTNodeCriterion,
     DTNodeInterrupt,
     DTNodeRegister,
-    DTNode,
     DTNodeSorter,
-    DTNodeCriterion,
-    DTNodeCriteria,
+    DTPath,
+    DTVendor,
 )
 
 from .dtsh_uthelpers import DTShTests
 
 
 def test_dtpath_split() -> None:
-    assert ["a"] == DTPath.split("a")
-    assert ["a", "b", "c"] == DTPath.split("a/b/c")
+    assert DTPath.split("a") == ["a"]
+    assert DTPath.split("a/b/c") == ["a", "b", "c"]
     # "/" always represent the first node name of a path name.
-    assert ["/"] == DTPath.split("/")
-    assert ["/", "x"] == DTPath.split("/x")
-    assert ["/", "x", "y", "z"] == DTPath.split("/x/y/z")
+    assert DTPath.split("/") == ["/"]
+    assert DTPath.split("/x") == ["/", "x"]
+    assert DTPath.split("/x/y/z") == ["/", "x", "y", "z"]
     # Removed trailing empty node name.
-    assert ["/", "a"] == DTPath.split("/a/")
-    assert [] == DTPath.split("")
+    assert DTPath.split("/a/") == ["/", "a"]
+    assert DTPath.split("") == []
 
 
 def test_dtpath_join() -> None:
-    assert "/a/b" == DTPath.join("/", "a", "b")
-    assert "/a/b" == DTPath.join("/a", "b")
-    assert "a/b" == DTPath.join("a/", "b")
+    assert DTPath.join("/", "a", "b") == "/a/b"
+    assert DTPath.join("/a", "b") == "/a/b"
+    assert DTPath.join("a/", "b") == "a/b"
     # Path is NOT normalized.
-    assert "a/." == DTPath.join("a", ".")
-    assert "a/b/" == DTPath.join("a", "b/")
-    assert "a/" == DTPath.join("a", "")
+    assert DTPath.join("a", ".") == "a/."
+    assert DTPath.join("a", "b/") == "a/b/"
+    assert DTPath.join("a", "") == "a/"
     # Joining an absolute path will reset the join chain.
-    assert "/x/y" == DTPath.join("/a", "b", "/x", "y")
+    assert DTPath.join("/a", "b", "/x", "y") == "/x/y"
 
 
 def test_dtpath_normpath() -> None:
     # Remove redundant trailing ".".
-    assert "/" == DTPath.normpath("/.")
+    assert DTPath.normpath("/.") == "/"
     # Remove redundant "/".
-    assert "a/b" == DTPath.normpath("a/b/")
-    assert "a/b" == DTPath.normpath("a//b")
+    assert DTPath.normpath("a/b/") == "a/b"
+    assert DTPath.normpath("a//b") == "a/b"
     # Remove redundant "." and "..".
-    assert "a/b" == DTPath.normpath("a/foo/../b")
-    assert "a/b" == DTPath.normpath("a/./b")
+    assert DTPath.normpath("a/foo/../b") == "a/b"
+    assert DTPath.normpath("a/./b") == "a/b"
     # Root is its own parent.
-    assert "/a" == DTPath.normpath("/../a")
+    assert DTPath.normpath("/../a") == "/a"
     # Normalize empty paths.
-    assert "." == DTPath.normpath("")
+    assert DTPath.normpath("") == "."
 
 
 def test_dtpath_abspath() -> None:
@@ -92,11 +91,11 @@ def test_dtpath_abspath() -> None:
 
 def test_dtpath_relpath() -> None:
     # Relative paths from "/".
-    assert "." == DTPath.relpath("/")
-    assert "a" == DTPath.relpath("/a")
+    assert DTPath.relpath("/") == "."
+    assert DTPath.relpath("/a") == "a"
     # Relative paths from "/a".
-    assert "." == DTPath.relpath("/a", "/a")
-    assert "b/c" == DTPath.relpath("/a/b/c", "/a")
+    assert DTPath.relpath("/a", "/a") == "."
+    assert DTPath.relpath("/a/b/c", "/a") == "b/c"
 
     with pytest.raises(ValueError):
         # Expect absolute path parameter..
@@ -107,45 +106,45 @@ def test_dtpath_relpath() -> None:
 
 
 def test_dtpath_dirname() -> None:
-    assert "/" == DTPath.dirname("/a")
-    assert "/a/b" == DTPath.dirname("/a/b/c")
-    assert "a" == DTPath.dirname("a/b")
+    assert DTPath.dirname("/a") == "/"
+    assert DTPath.dirname("/a/b/c") == "/a/b"
+    assert DTPath.dirname("a/b") == "a"
     # The root node is its own parent.
-    assert "/" == DTPath.dirname("/")
+    assert DTPath.dirname("/") == "/"
     # A trailing '/' is interpreted as an empty trailing node name.
-    assert "." == DTPath.dirname("./")
-    assert "/a" == DTPath.dirname("/a/")
+    assert DTPath.dirname("./") == "."
+    assert DTPath.dirname("/a/") == "/a"
     # Returns "." when path does not contain any "/".
-    assert "." == DTPath.dirname("")
-    assert "." == DTPath.dirname("a")
-    assert "." == DTPath.dirname(".")
-    assert "." == DTPath.dirname("..")
+    assert DTPath.dirname("") == "."
+    assert DTPath.dirname("a") == "."
+    assert DTPath.dirname(".") == "."
+    assert DTPath.dirname("..") == "."
 
 
 def test_dtpath_basename() -> None:
-    assert "a" == DTPath.basename("/a")
-    assert "a" == DTPath.basename("a")
-    assert "b" == DTPath.basename("a/b")
-    assert "b" == DTPath.basename("/a/b")
-    assert "*" == DTPath.basename("/*")
-    assert "b*" == DTPath.basename("a/b*")
+    assert DTPath.basename("/a") == "a"
+    assert DTPath.basename("a") == "a"
+    assert DTPath.basename("a/b") == "b"
+    assert DTPath.basename("/a/b") == "b"
+    assert DTPath.basename("/*") == "*"
+    assert DTPath.basename("a/b*") == "b*"
     # A trailing '/' is interpreted as an empty trailing node name.
-    assert "" == DTPath.basename("/")
-    assert "" == DTPath.basename("a/")
+    assert DTPath.basename("/") == ""
+    assert DTPath.basename("a/") == ""
     # By convention.
-    assert "" == DTPath.basename("")
-    assert "." == DTPath.basename(".")
-    assert ".." == DTPath.basename("..")
+    assert DTPath.basename("") == ""
+    assert DTPath.basename(".") == "."
+    assert DTPath.basename("..") == ".."
 
 
 def test_dtvendor() -> None:
     vendor = DTVendor("prefix", "vendor")
-    assert "prefix" == vendor.prefix
-    assert "vendor" == vendor.name
+    assert vendor.prefix == "prefix"
+    assert vendor.name == "vendor"
 
     # Only the prefix is relevant for identity and equality.
-    assert 1 == len({vendor, DTVendor("prefix", "")})
-    assert 2 == len({vendor, DTVendor("other", "")})
+    assert len({vendor, DTVendor("prefix", "")}) == 1
+    assert len({vendor, DTVendor("other", "")}) == 2
     assert DTVendor("prefix", "") == vendor
     assert vendor != DTVendor("other", "")
 
@@ -164,36 +163,28 @@ def test_dtbinding() -> None:
 
     assert not dt_partitions.binding
     assert dt_partition0.binding
-    assert 0 == dt_partition0.binding.cb_depth
-    assert "zephyr,mapped-partition" == dt_partition0.binding.compatible
+    assert dt_partition0.binding.cb_depth == 0
+    assert dt_partition0.binding.compatible == "zephyr,mapped-partition"
     assert dt_partition1.binding
-    assert 0 == dt_partition1.binding.cb_depth
-    assert "zephyr,mapped-partition" == dt_partition1.binding.compatible
+    assert dt_partition1.binding.cb_depth == 0
+    assert dt_partition1.binding.compatible == "zephyr,mapped-partition"
 
     assert dt_bme680.binding
-    assert 0 == dt_bme680.binding.cb_depth
-    assert "bosch,bme680" == dt_bme680.binding.compatible
+    assert dt_bme680.binding.cb_depth == 0
+    assert dt_bme680.binding.compatible == "bosch,bme680"
 
     # Identity.
     # Nodes "partition@0" and "partition@c000" are specified by the same
     # child-binding of "partitions".
-    assert 1 == len({dt_partition0.binding, dt_partition1.binding})
+    assert len({dt_partition0.binding, dt_partition1.binding}) == 1
     # Bindings for "partition@0" and "partitions" are defined in the same
     # YAML file, but the former is a child-binding of the later.
-    assert 2 == len({dt_partitions.binding, dt_partition0.binding})
+    assert len({dt_partitions.binding, dt_partition0.binding}) == 2
     # Then ,obviously.
-    assert 3 == len(
-        {dt_partitions.binding, dt_partition0.binding, dt_bme680.binding}
-    )
+    assert len({dt_partitions.binding, dt_partition0.binding, dt_bme680.binding}) == 3
 
-    assert (
-        dtmodel.get_compatible_binding("bosch,bme680", "i2c")
-        is dt_bme680.binding
-    )
-    assert (
-        dtmodel.get_compatible_binding("fixed-partitions")
-        is dt_partitions.binding
-    )
+    assert dtmodel.get_compatible_binding("bosch,bme680", "i2c") is dt_bme680.binding
+    assert dtmodel.get_compatible_binding("fixed-partitions") is dt_partitions.binding
 
     # Equality
     assert dt_partition0.binding == dt_partition0.binding
@@ -217,19 +208,15 @@ def test_dtbinding_buses() -> None:
     assert dt_spi.binding
     assert dt_bme680_i2c.binding
     assert dt_bme680_spi.binding
-    assert ["i2c"] == dt_i2c.binding.buses
-    assert ["spi"] == dt_spi.binding.buses
+    assert dt_i2c.binding.buses == ["i2c"]
+    assert dt_spi.binding.buses == ["spi"]
 
-    assert "i2c" == dt_bme680_i2c.binding.on_bus
-    assert "bosch,bme680-i2c.yaml" == os.path.basename(
-        dt_bme680_i2c.binding.path
-    )
+    assert dt_bme680_i2c.binding.on_bus == "i2c"
+    assert os.path.basename(dt_bme680_i2c.binding.path) == "bosch,bme680-i2c.yaml"
     assert not dt_bme680_i2c.binding.buses
 
-    assert "spi" == dt_bme680_spi.binding.on_bus
-    assert "bosch,bme680-spi.yaml" == os.path.basename(
-        dt_bme680_spi.binding.path
-    )
+    assert dt_bme680_spi.binding.on_bus == "spi"
+    assert os.path.basename(dt_bme680_spi.binding.path) == "bosch,bme680-spi.yaml"
     assert not dt_bme680_spi.binding.buses
 
 
@@ -249,16 +236,16 @@ def test_dtbinding_child_binding() -> None:
     dt_led0 = dt_leds.get_child("led_0")
     dt_led1 = dt_leds.get_child("led_1")
     assert dt_leds.binding
-    assert 0 == dt_leds.binding.cb_depth
+    assert dt_leds.binding.cb_depth == 0
     assert dt_leds.binding.child_binding
 
     assert dt_led0.binding
-    assert 1 == dt_led0.binding.cb_depth
+    assert dt_led0.binding.cb_depth == 1
     assert not dt_led0.binding.child_binding
     assert dt_led0.binding == dt_leds.binding.child_binding
 
     assert dt_led1.binding
-    assert 1 == dt_led1.binding.cb_depth
+    assert dt_led1.binding.cb_depth == 1
     assert not dt_led1.binding.child_binding
     assert dt_led1.binding == dt_leds.binding.child_binding
 
@@ -271,21 +258,21 @@ def test_dtinterrupt() -> None:
     edtirq_gpiote = dt_gpiote._edtnode.interrupts[0]
 
     irq_i2c0 = DTNodeInterrupt(edtirq_i2c0, dt_i2c0)
-    assert 3 == irq_i2c0.number
-    assert 1 == irq_i2c0.priority
-    assert "IRQ_i2c0" == irq_i2c0.name
+    assert irq_i2c0.number == 3
+    assert irq_i2c0.priority == 1
+    assert irq_i2c0.name == "IRQ_i2c0"
     assert dt_i2c0 == irq_i2c0.emitter
     assert irq_i2c0.controller is dtmodel[edtirq_i2c0.controller.path]
 
     irq_gpiote = DTNodeInterrupt(edtirq_gpiote, dt_gpiote)
-    assert 6 == irq_gpiote.number
-    assert 5 == irq_gpiote.priority
+    assert irq_gpiote.number == 6
+    assert irq_gpiote.priority == 5
     assert dt_gpiote == irq_gpiote.emitter
     assert irq_gpiote.controller is dtmodel[edtirq_gpiote.controller.path]
 
     # Identity.
-    assert 1 == len({irq_i2c0, DTNodeInterrupt(edtirq_i2c0, dt_i2c0)})
-    assert 2 == len({irq_i2c0, DTNodeInterrupt(edtirq_gpiote, dt_gpiote)})
+    assert len({irq_i2c0, DTNodeInterrupt(edtirq_i2c0, dt_i2c0)}) == 1
+    assert len({irq_i2c0, DTNodeInterrupt(edtirq_gpiote, dt_gpiote)}) == 2
 
     # Equality.
     assert DTNodeInterrupt(edtirq_i2c0, dt_i2c0) == irq_i2c0
@@ -304,19 +291,19 @@ def test_dtregister() -> None:
     edtreg_qspi = dt_qspi._edtnode.regs[0]
 
     reg_qspi = DTNodeRegister(edtreg_qspi)
-    assert 0x40029000 == reg_qspi.address
-    assert 0x1000 == reg_qspi.size
+    assert reg_qspi.address == 0x40029000
+    assert reg_qspi.size == 0x1000
     assert reg_qspi.address + reg_qspi.size - 1 == reg_qspi.tail
-    assert "qspi" == reg_qspi.name
+    assert reg_qspi.name == "qspi"
 
     edtreg_bme680 = dtmodel["/soc/i2c@40003000/bme680@76"]._edtnode.regs[0]
     reg_bme680 = DTNodeRegister(edtreg_bme680)
-    assert 0x76 == reg_bme680.address
-    assert 0 == reg_bme680.size
+    assert reg_bme680.address == 0x76
+    assert reg_bme680.size == 0
     assert reg_bme680.address == reg_bme680.tail
 
     # Neither identity nor equality.
-    assert 2 == len({reg_qspi, DTNodeRegister(edtreg_qspi)})
+    assert len({reg_qspi, DTNodeRegister(edtreg_qspi)}) == 2
     assert DTNodeRegister(edtreg_qspi) != reg_qspi
 
     # Default order.
@@ -331,8 +318,8 @@ def test_dtnode() -> None:
     edt = dtmodel._edt
 
     # Identity.
-    assert 1 == len({dtmodel["/soc"], dtmodel["/soc"]})
-    assert 2 == len({dtmodel["/soc"], dtmodel["/cpus"]})
+    assert len({dtmodel["/soc"], dtmodel["/soc"]}) == 1
+    assert len({dtmodel["/soc"], dtmodel["/cpus"]}) == 2
 
     # Equality.
     assert dtmodel["/soc"] == dtmodel["/soc"]
@@ -343,19 +330,14 @@ def test_dtnode() -> None:
 
     # Test some known values.
     dt_button0 = dtmodel["/buttons/button_0"]
-    assert "Push button switch 0" == dt_button0.label
-    assert ["button0"] == dt_button0.labels
+    assert dt_button0.label == "Push button switch 0"
+    assert dt_button0.labels == ["button0"]
     assert edt.get_node(dt_button0.path).description
     assert edt.get_node(dt_button0.path).description == dt_button0.description
-    assert sorted(["led0", "mcuboot-led0"]) == sorted(
-        dtmodel["/leds/led_0"].aliases
-    )
-    assert ["zephyr,entropy"] == dtmodel["/soc/random@4000d000"].chosen
-    assert (
-        DTVendor("nordic", "Nordic Semiconductor")
-        == dtmodel["/soc/egu@40014000"].vendor
-    )
-    assert "i2c" == dtmodel["/soc/i2c@40003000/bme680@76"].on_bus
+    assert sorted(["led0", "mcuboot-led0"]) == sorted(dtmodel["/leds/led_0"].aliases)
+    assert dtmodel["/soc/random@4000d000"].chosen == ["zephyr,entropy"]
+    assert DTVendor("nordic", "Nordic Semiconductor") == dtmodel["/soc/egu@40014000"].vendor
+    assert dtmodel["/soc/i2c@40003000/bme680@76"].on_bus == "i2c"
 
 
 def test_dtnodes() -> None:
@@ -378,9 +360,7 @@ def test_dtnodes() -> None:
         assert edtnode.binding_path == node.binding_path
         assert edtnode.dep_ordinal == node.dep_ordinal
         assert node.buses == edtnode.buses
-        assert (
-            edtnode._binding.on_bus if edtnode._binding else None
-        ) == node.on_bus
+        assert (edtnode._binding.on_bus if edtnode._binding else None) == node.on_bus
 
         if node.binding:
             assert node.binding.path == edtnode.binding_path
@@ -410,11 +390,9 @@ def test_dtnode_binding() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
 
     # Binding for compatible value.
-    dt_partition0 = dtmodel[
-        "/soc/flash-controller@4001e000/flash@0/partitions/partition@0"
-    ]
+    dt_partition0 = dtmodel["/soc/flash-controller@4001e000/flash@0/partitions/partition@0"]
     assert dt_partition0.binding
-    assert "zephyr,mapped-partition" == dt_partition0.binding.compatible
+    assert dt_partition0.binding.compatible == "zephyr,mapped-partition"
 
     # Child-binding without compatible value.
     dt_leds = dtmodel["/leds"]
@@ -453,13 +431,13 @@ def test_dtnode_buses() -> None:
     dt_spi = dtmodel["/soc/spi@40004000"]
     dt_bme680_spi = dt_spi.get_child("bme680@0")
 
-    assert ["i2c"] == dt_i2c.buses
-    assert ["spi"] == dt_spi.buses
+    assert dt_i2c.buses == ["i2c"]
+    assert dt_spi.buses == ["spi"]
 
-    assert "i2c" == dt_bme680_i2c.on_bus
+    assert dt_bme680_i2c.on_bus == "i2c"
     assert dt_i2c == dt_bme680_i2c.on_bus_device
 
-    assert "spi" == dt_bme680_spi.on_bus
+    assert dt_bme680_spi.on_bus == "spi"
     assert dt_spi == dt_bme680_spi.on_bus_device
 
 
@@ -468,10 +446,10 @@ def test_dtnode_registers() -> None:
     dt_qspi = dtmodel["/soc/qspi@40029000"]
     reg_qspi = dt_qspi.registers[0]
 
-    assert 0x40029000 == reg_qspi.address
-    assert 0x1000 == reg_qspi.size
+    assert reg_qspi.address == 0x40029000
+    assert reg_qspi.size == 0x1000
     assert reg_qspi.address + reg_qspi.size - 1 == reg_qspi.tail
-    assert "qspi" == reg_qspi.name
+    assert reg_qspi.name == "qspi"
 
 
 def test_dtnode_walk() -> None:
@@ -493,7 +471,7 @@ def test_dtnode_walk() -> None:
     #       ├── partitions/partition@82000
     #       └── partitions/partition@f8000
     dt_flash_ctrl = dtmodel["/soc/flash-controller@4001e000"]
-    assert [
+    assert [node.name for node in dt_flash_ctrl.walk()] == [
         "flash-controller@4001e000",
         "flash@0",
         "partitions",
@@ -501,10 +479,10 @@ def test_dtnode_walk() -> None:
         "partition@c000",
         "partition@82000",
         "partition@f8000",
-    ] == [node.name for node in dt_flash_ctrl.walk()]
+    ]
 
     # Child nodes in reverse order.
-    assert [
+    assert [node.name for node in dt_flash_ctrl.walk(reverse=True)] == [
         "flash-controller@4001e000",
         "flash@0",
         "partitions",
@@ -512,14 +490,14 @@ def test_dtnode_walk() -> None:
         "partition@82000",
         "partition@c000",
         "partition@0",
-    ] == [node.name for node in dt_flash_ctrl.walk(reverse=True)]
+    ]
 
     # Fixed depth.
-    assert [
+    assert [node.name for node in dt_flash_ctrl.walk(fixed_depth=2)] == [
         "flash-controller@4001e000",
         "flash@0",
         "partitions",
-    ] == [node.name for node in dt_flash_ctrl.walk(fixed_depth=2)]
+    ]
 
 
 def test_dtnode_walk_order_by() -> None:
@@ -569,11 +547,8 @@ def test_dtnode_find() -> None:
         node.name for node in dtmodel.root.find(FindPwmNodes())
     ]
 
-    assert sorted(
-        [node.path for node in dtmodel if node.name.find("pwm") != -1]
-    ) == [
-        node.path
-        for node in dtmodel.root.find(FindPwmNodes(), order_by=DTNodeSorter())
+    assert sorted([node.path for node in dtmodel if node.name.find("pwm") != -1]) == [
+        node.path for node in dtmodel.root.find(FindPwmNodes(), order_by=DTNodeSorter())
     ]
 
     # An empty criterion list should match all nodes, like in POSIX find.
@@ -607,9 +582,7 @@ def test_dtmodel_init() -> None:
                 assert binding._edtbinding is edtbinding
                 assert node.compatible == binding.compatible
                 assert edtnode.matching_compat == binding.compatible
-                assert binding == dtmodel.get_compatible_binding(
-                    binding.compatible, node.on_bus
-                )
+                assert binding == dtmodel.get_compatible_binding(binding.compatible, node.on_bus)
             else:
                 assert not edtnode.matching_compat
                 # This SHOULD be a child-binding without compat string.
@@ -650,9 +623,9 @@ def test_dtmodel_init() -> None:
         assert len(node._edtnode.regs) == len(node.registers)
 
         # Preserve children order.
-        assert [
-            edt_child.path for edt_child in node._edtnode.children.values()
-        ] == [child.path for child in node.children]
+        assert [edt_child.path for edt_child in node._edtnode.children.values()] == [
+            child.path for child in node.children
+        ]
 
         if node.path == "/":
             # Consume EDT root node: contrary to dtsh (and according to DTSpec),
@@ -667,9 +640,9 @@ def test_dtmodel_aliased_nodes() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     edt = dtmodel._edt
 
-    assert [
-        (alias, edtnode.path) for (alias, edtnode) in edt._dt.alias2node.items()
-    ] == [(alias, node.path) for alias, node in dtmodel.aliased_nodes.items()]
+    assert [(alias, edtnode.path) for (alias, edtnode) in edt._dt.alias2node.items()] == [
+        (alias, node.path) for alias, node in dtmodel.aliased_nodes.items()
+    ]
 
     with pytest.raises(KeyError):
         dtmodel.aliased_nodes["notanalias"]
@@ -679,9 +652,9 @@ def test_dtmodel_chosen_nodes() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     edt = dtmodel._edt
 
-    assert [
-        (chosen, edtnode.path) for (chosen, edtnode) in edt.chosen_nodes.items()
-    ] == [(chosen, node.path) for chosen, node in dtmodel.chosen_nodes.items()]
+    assert [(chosen, edtnode.path) for (chosen, edtnode) in edt.chosen_nodes.items()] == [
+        (chosen, node.path) for chosen, node in dtmodel.chosen_nodes.items()
+    ]
 
     with pytest.raises(KeyError):
         dtmodel.chosen_nodes["notachosen"]
@@ -691,7 +664,7 @@ def test_dtmodel_labeled_nodes() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     edt = dtmodel._edt
 
-    labeled_nodes: List[Tuple[str, DTNode]] = []
+    labeled_nodes: list[tuple[str, DTNode]] = []
     for edtnode, labels in [(node_, node_.labels) for node_ in edt.nodes]:
         labeled_nodes.extend((label, dtmodel[edtnode.path]) for label in labels)
 
@@ -705,7 +678,7 @@ def test_dtmodel_bus_protocols() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     edt = dtmodel._edt
 
-    buses: Set[str] = set()
+    buses: set[str] = set()
     for edtnode in edt.nodes:
         buses.update(edtnode.buses)
     assert buses == set(dtmodel.bus_protocols)
@@ -723,9 +696,7 @@ def test_dtmodel_vendors() -> None:
 
     unique_vendors = set(edt.compat2vendor.values())
     assert len(unique_vendors) == len(dtmodel.vendors)
-    assert sorted(unique_vendors) == sorted(
-        [vendor.name for vendor in dtmodel.vendors]
-    )
+    assert sorted(unique_vendors) == sorted([vendor.name for vendor in dtmodel.vendors])
 
 
 def test_dtmodel_get_compatible_binding() -> None:
@@ -734,9 +705,7 @@ def test_dtmodel_get_compatible_binding() -> None:
 
     binding = dtmodel.get_compatible_binding("bosch,bme680", "i2c")
     assert binding
-    assert (
-        edt.get_node("/soc/i2c@40003000/bme680@76").binding_path == binding.path
-    )
+    assert edt.get_node("/soc/i2c@40003000/bme680@76").binding_path == binding.path
 
     # Lazy-cache.
     assert binding is dtmodel.get_compatible_binding("bosch,bme680", "i2c")
@@ -751,9 +720,9 @@ def test_dtmodel_get_compatible_binding() -> None:
     # get_compatible_binding() should succeed even if a non relevant
     # bus parameter is given.
     assert dtmodel.get_compatible_binding("nordic,nrf-pwm")
-    assert dtmodel.get_compatible_binding(
-        "nordic,nrf-pwm"
-    ) == dtmodel.get_compatible_binding("nordic,nrf-pwm", "i2c")
+    assert dtmodel.get_compatible_binding("nordic,nrf-pwm") == dtmodel.get_compatible_binding(
+        "nordic,nrf-pwm", "i2c"
+    )
 
     # get_compatible_binding() should never fault.
     assert dtmodel.get_compatible_binding("notavendor,notamodel") is None
@@ -779,9 +748,7 @@ def test_dtmodel_get_base_binding() -> None:
         dtmodel.get_base_binding("notafile")
 
     # Lazy-cache.
-    assert dtmodel.get_base_binding("base.yaml") is dtmodel.get_base_binding(
-        "base.yaml"
-    )
+    assert dtmodel.get_base_binding("base.yaml") is dtmodel.get_base_binding("base.yaml")
 
 
 def test_dtmodel_get_vendor() -> None:
@@ -789,8 +756,8 @@ def test_dtmodel_get_vendor() -> None:
 
     vendor = dtmodel.get_vendor("nordic,nrf-swi")
     assert vendor
-    assert "Nordic Semiconductor" == vendor.name
-    assert "nordic" == vendor.prefix
+    assert vendor.name == "Nordic Semiconductor"
+    assert vendor.prefix == "nordic"
 
     # get_vendor() should not fault.
     assert dtmodel.get_vendor("notapreifx,notavendor") is None
@@ -803,9 +770,7 @@ def test_dtmodel_get_compatible_devices() -> None:
     dt_bme680_i2c = dtmodel["/soc/i2c@40003000/bme680@76"]
     dt_bme680_spi = dtmodel["/soc/spi@40004000/bme680@0"]
 
-    assert [dt_bme680_i2c, dt_bme680_spi] == dtmodel.get_compatible_devices(
-        "bosch,bme680"
-    )
+    assert [dt_bme680_i2c, dt_bme680_spi] == dtmodel.get_compatible_devices("bosch,bme680")
 
 
 def test_dtmodel_walk() -> None:
@@ -815,18 +780,12 @@ def test_dtmodel_walk() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
 
     assert list(dtmodel.root.walk()) == list(dtmodel.walk())
-    assert list(dtmodel.root.walk(enabled_only=True)) == list(
-        dtmodel.walk(enabled_only=True)
-    )
-    assert list(dtmodel.root.walk(fixed_depth=3)) == list(
-        dtmodel.walk(fixed_depth=3)
-    )
+    assert list(dtmodel.root.walk(enabled_only=True)) == list(dtmodel.walk(enabled_only=True))
+    assert list(dtmodel.root.walk(fixed_depth=3)) == list(dtmodel.walk(fixed_depth=3))
 
     # Natural node order is by DT path name.
     order_by = DTNodeSorter()
-    assert list(dtmodel.root.walk(order_by=order_by)) == list(
-        dtmodel.walk(order_by=order_by)
-    )
+    assert list(dtmodel.root.walk(order_by=order_by)) == list(dtmodel.walk(order_by=order_by))
     assert list(dtmodel.root.walk(order_by=order_by, reverse=True)) == list(
         dtmodel.walk(order_by=order_by, reverse=True)
     )
@@ -855,9 +814,9 @@ def test_dtmodel_find() -> None:
     assert list(dtmodel.root.find(criterion, order_by=order_by)) == list(
         dtmodel.find(criterion, order_by=order_by)
     )
-    assert list(
-        dtmodel.root.find(criterion, order_by=order_by, reverse=True)
-    ) == list(dtmodel.find(criterion, order_by=order_by, reverse=True))
+    assert list(dtmodel.root.find(criterion, order_by=order_by, reverse=True)) == list(
+        dtmodel.find(criterion, order_by=order_by, reverse=True)
+    )
 
 
 def test_dtmodel_index_based() -> None:
@@ -895,16 +854,16 @@ def test_dtnode_sorter() -> None:
         sample_nodes,
         key=lambda x: x.path,
     ) == natural_order.sort(sample_nodes)
-    assert sorted(
-        sample_nodes, key=lambda x: x.path, reverse=True
-    ) == natural_order.sort(sample_nodes, reverse=True)
+    assert sorted(sample_nodes, key=lambda x: x.path, reverse=True) == natural_order.sort(
+        sample_nodes, reverse=True
+    )
 
     class OrderByUnitAddr(DTNodeSorter):
         """Oder by e.g. unit addresses."""
 
         def split_sortable_unsortable(
             self, nodes: Sequence[DTNode]
-        ) -> Tuple[List[DTNode], List[DTNode]]:
+        ) -> tuple[list[DTNode], list[DTNode]]:
             return (
                 [node for node in nodes if node.unit_addr is not None],
                 [node for node in nodes if node.unit_addr is None],
@@ -956,14 +915,10 @@ def test_dtnode_criteria() -> None:
             return True
 
     assert len(dtmodel) == len(dtmodel.find(CriterionMatchAll()))
-    assert 0 == len(dtmodel.find(CriterionMatchNone()))
+    assert len(dtmodel.find(CriterionMatchNone())) == 0
 
     # Logical conjunction (default): fails on first non matched criterion.
-    assert 0 == len(
-        dtmodel.find(
-            DTNodeCriteria([CriterionMatchNone(), CriterionMatchAll()])
-        )
-    )
+    assert len(dtmodel.find(DTNodeCriteria([CriterionMatchNone(), CriterionMatchAll()]))) == 0
 
     # Logical disjunction: criteria will succeed on first match.
     assert len(dtmodel) == len(
@@ -977,9 +932,7 @@ def test_dtnode_criteria() -> None:
 
     # Logical negation.
     assert not dtmodel.find(DTNodeCriteria(negative_chain=True))
-    assert not dtmodel.find(
-        DTNodeCriteria([CriterionMatchAll()], negative_chain=True)
-    )
+    assert not dtmodel.find(DTNodeCriteria([CriterionMatchAll()], negative_chain=True))
 
 
 def test_dtnode_properties() -> None:
@@ -989,35 +942,35 @@ def test_dtnode_properties() -> None:
     assert dt_qspi.has_dtproperty("interrupts")
     dtprop_irqs = dt_qspi.dtproperty("interrupts")
     assert dtprop_irqs
-    assert "array" == dtprop_irqs.dttype
+    assert dtprop_irqs.dttype == "array"
     assert isinstance(dtprop_irqs.value, list)
-    assert [0x29, 0x1] == dtprop_irqs.value
+    assert dtprop_irqs.value == [0x29, 0x1]
 
     assert dt_qspi.has_dtproperty("pinctrl-0")
     dtprop_pinctrl0 = dt_qspi.dtproperty("pinctrl-0")
     assert dtprop_pinctrl0
     # NOTE: why isn't this a single phandle ?
-    assert "phandles" == dtprop_pinctrl0.dttype
+    assert dtprop_pinctrl0.dttype == "phandles"
     assert isinstance(dtprop_pinctrl0.value, list)
 
     assert dt_qspi.has_dtproperty("pinctrl-names")
     dtprop_pinctrl_names = dt_qspi.dtproperty("pinctrl-names")
     assert dtprop_pinctrl_names
-    assert "string-array" == dtprop_pinctrl_names.dttype
-    assert ["default", "sleep"] == dtprop_pinctrl_names.value
+    assert dtprop_pinctrl_names.dttype == "string-array"
+    assert dtprop_pinctrl_names.value == ["default", "sleep"]
 
     dt_mx25r64 = dt_qspi.get_child("mx25r6435f@0")
     assert dt_mx25r64.has_dtproperty("jedec-id")
     dtprop_jedec = dt_mx25r64.dtproperty("jedec-id")
     assert dtprop_jedec
-    assert "uint8-array" == dtprop_jedec.dttype
+    assert dtprop_jedec.dttype == "uint8-array"
     assert isinstance(dtprop_jedec.value, bytes)
     assert bytes([0xC2, 0x28, 0x17]) == dtprop_jedec.value
 
     assert dt_mx25r64.has_dtproperty("has-dpd")
     dtprop_dpd = dt_mx25r64.dtproperty("has-dpd")
     assert dtprop_dpd
-    assert "boolean" == dtprop_dpd.dttype
+    assert dtprop_dpd.dttype == "boolean"
     assert isinstance(dtprop_dpd.value, bool)
     assert dtprop_dpd.value is True
 
@@ -1026,11 +979,11 @@ def test_dtnode_properties() -> None:
         # Properties MUST exist.
         dt_qspi.dtproperty("not-a-property")
 
-    assert [
+    assert [prop.name for prop in dtmodel.root.all_dtproperties()] == [
         # Although these are properties of the root node in the DTS,
         # they do not actually appear as properties via the edtlib API:
         # - "#address-cells",
         # - "#size-cells",
         # - "model",
         "compatible",
-    ] == [prop.name for prop in dtmodel.root.all_dtproperties()]
+    ]

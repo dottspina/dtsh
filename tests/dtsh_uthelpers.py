@@ -4,40 +4,38 @@
 
 """Helpers for DTSh unit tests."""
 
-from typing import Optional, Dict, List, Generator
-
-from pathlib import Path
-import os
 import contextlib
+import os
+from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 
 from devicetree import edtlib
-
-from dtsh.model import DTModel
 from dtsh.io import DTShOutput
+from dtsh.model import DTModel
+from dtsh.rich.shellutils import DTSH_NODE_FMT_SPEC, DTShArgLongFmt
 from dtsh.shell import (
     DTSh,
-    DTShCommand,
-    DTShOption,
-    DTShFlag,
     DTShArg,
-    DTShParameter,
-    DTShFlagHelp,
-    DTShError,
-    DTShUsageError,
+    DTShCommand,
     DTShCommandError,
+    DTShError,
+    DTShFlag,
+    DTShFlagHelp,
+    DTShOption,
+    DTShParameter,
+    DTShUsageError,
 )
 from dtsh.shellutils import (
+    DTSH_NODE_ORDER_BY,
     DTShArgFixedDepth,
     DTShArgOrderBy,
-    DTShParamDTPath,
-    DTShParamDTPaths,
     DTShParamAlias,
     DTShParamChosen,
-    DTSH_NODE_ORDER_BY,
+    DTShParamDTPath,
+    DTShParamDTPaths,
 )
-from dtsh.rich.shellutils import DTShArgLongFmt, DTSH_NODE_FMT_SPEC
 
 
 class DTShTests:
@@ -66,14 +64,12 @@ class DTShTests:
     BOARD = "nrf52840dk_nrf52840"
     """The unit tests board model."""
 
-    _sample_edt: Optional[edtlib.EDT] = None
-    _sample_dtmodel: Optional[DTModel] = None
+    _sample_edt: edtlib.EDT | None = None
+    _sample_dtmodel: DTModel | None = None
 
     @classmethod
     @contextlib.contextmanager
-    def mock_env(
-        cls, tmpenv: Dict[str, Optional[str]]
-    ) -> Generator[None, None, None]:
+    def mock_env(cls, tmpenv: dict[str, str | None]) -> Generator[None, None, None]:
         """Temporarily change the OS environment.
 
            None values will unset the variables.
@@ -189,9 +185,9 @@ class DTShTests:
         """
         assert opt.shortname or opt.longname
         if opt.shortname:
-            assert 1 == len(opt.shortname)
+            assert len(opt.shortname) == 1
         if opt.longname:
-            assert 1 < len(opt.longname)
+            assert len(opt.longname) > 1
         assert opt.brief
 
     @classmethod
@@ -232,7 +228,7 @@ class DTShTests:
         assert parsed == arg.raw
 
     @classmethod
-    def get_param_placeholder(cls, param: DTShParameter) -> List[str]:
+    def get_param_placeholder(cls, param: DTShParameter) -> list[str]:
         """Get a parameter placeholder with valid multiplicity."""
         if param.multiplicity in ["?", "*"]:
             return []
@@ -244,7 +240,7 @@ class DTShTests:
         raise ValueError(param.multiplicity)
 
     @classmethod
-    def get_param_placeholder_inval(cls, multiplicity: int) -> List[str]:
+    def get_param_placeholder_inval(cls, multiplicity: int) -> list[str]:
         """Get a parameter placeholder with invalid multiplicity."""
         n_inval: int = multiplicity - 1
         return n_inval * ["param"]
@@ -258,25 +254,23 @@ class DTShTests:
         Args:
             The parameter to test.
         """
-        assert param.multiplicity in ["*", "?", "+"] or isinstance(
-            param.multiplicity, int
-        )
+        assert param.multiplicity in ["*", "?", "+"] or isinstance(param.multiplicity, int)
         if isinstance(param.multiplicity, int):
             assert param.multiplicity > 0
 
-        assert [] == param.raw
+        assert param.raw == []
         values = cls.get_param_placeholder(param)
         param.parsed(values)
         assert values == param.raw
         param.reset()
-        assert [] == param.raw
+        assert param.raw == []
 
         if param.multiplicity == "?":
             # Allows zero or one value.
             param.parsed([])
-            assert [] == param.raw
+            assert param.raw == []
             param.parsed(["value"])
-            assert ["value"] == param.raw
+            assert param.raw == ["value"]
             # Fails with more than one value.
             with pytest.raises(DTShError):
                 param.parsed(["param", "param"])
@@ -287,16 +281,14 @@ class DTShTests:
                 param.parsed([])
             # Allows more than one value.
             param.parsed(["value"])
-            assert ["value"] == param.raw
+            assert param.raw == ["value"]
             param.parsed(["value", "value"])
-            assert ["value", "value"] == param.raw
+            assert param.raw == ["value", "value"]
 
         elif isinstance(param.multiplicity, int):
             # Fails when the number of values does not match multiplicity.
             with pytest.raises(DTShError):
-                param.parsed(
-                    cls.get_param_placeholder_inval(param.multiplicity)
-                )
+                param.parsed(cls.get_param_placeholder_inval(param.multiplicity))
 
         param.reset()
 
@@ -314,9 +306,7 @@ class DTShTests:
         assert DTShCommand("other", "", [], None) != cmd
 
     @classmethod
-    def check_cmd_flags(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_flags(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check flags state upon command execution.
 
         On return, all the command's flags are set.
@@ -327,9 +317,7 @@ class DTShTests:
             out: An output stream.
         """
         # Retrieve all command flags.
-        flags: List[DTShFlag] = [
-            opt for opt in cmd.options if isinstance(opt, DTShFlag)
-        ]
+        flags: list[DTShFlag] = [opt for opt in cmd.options if isinstance(opt, DTShFlag)]
 
         # Assert all flags are initially unset.
         cmd.reset()
@@ -338,7 +326,7 @@ class DTShTests:
             assert not cmd.with_flag(flag.__class__)
 
         # Parse command arguments that set all flags under test.
-        argv: List[str] = [
+        argv: list[str] = [
             f"-{flag.shortname}" if flag.shortname else f"--{flag.longname}"
             for flag in flags
             # Would raise DTShUsageError to trigger command help.
@@ -361,9 +349,7 @@ class DTShTests:
                 assert cmd.with_flag(flag.__class__)
 
     @classmethod
-    def check_cmd_arg_order_by(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_arg_order_by(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check "--order-by KEY" argument upon command execution.
 
         Test:
@@ -380,18 +366,13 @@ class DTShTests:
         for key in DTSH_NODE_ORDER_BY:
             cmd.execute(["--order-by", key], sh, out)
             assert DTSH_NODE_ORDER_BY[key].sorter is arg.sorter
-            assert (
-                DTSH_NODE_ORDER_BY[key].sorter
-                is cmd.with_arg(DTShArgOrderBy).sorter
-            )
+            assert DTSH_NODE_ORDER_BY[key].sorter is cmd.with_arg(DTShArgOrderBy).sorter
 
         with pytest.raises(DTShUsageError):
             cmd.execute(["--order-by", "not a key"], sh, out)
 
     @classmethod
-    def check_cmd_arg_fixed_depth(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_arg_fixed_depth(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check "--fixed-depth DEPTH" argument upon command execution.
 
         Test:
@@ -407,8 +388,8 @@ class DTShTests:
 
         cmd.execute(["--fixed-depth", "2"], sh, out)
         assert arg.isset
-        assert 2 == arg.depth
-        assert 2 == cmd.with_arg(DTShArgFixedDepth).depth
+        assert arg.depth == 2
+        assert cmd.with_arg(DTShArgFixedDepth).depth == 2
 
         with pytest.raises(DTShUsageError):
             cmd.execute(["--fixed-depth", "not an int"], sh, out)
@@ -417,9 +398,7 @@ class DTShTests:
             cmd.execute(["--fixed-depth", "-2"], sh, out)
 
     @classmethod
-    def check_cmd_arg_longfmt(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_arg_longfmt(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check "--format FMT" argument when executing the command.
 
         Test:
@@ -446,9 +425,7 @@ class DTShTests:
             cmd.execute(["--format", "invalid format string"], sh, out)
 
     @classmethod
-    def check_cmd_param_dtpath(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_param_dtpath(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check the PATH parameter upon command execution.
 
         Will test:
@@ -476,9 +453,7 @@ class DTShTests:
             cmd.execute(["/leds*"], sh, out)
 
     @classmethod
-    def check_cmd_param_dtpaths(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_param_dtpaths(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check the PATHs parameter upon command execution.
 
         Will test:
@@ -506,9 +481,7 @@ class DTShTests:
             cmd.execute(["/soc/empty*"], sh, out)
 
     @classmethod
-    def check_cmd_param_alias(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_param_alias(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check the ALIAS parameter upon command execution.
 
         Will test:
@@ -537,9 +510,7 @@ class DTShTests:
         cmd.execute(["not-an-alias"], sh, out)
 
     @classmethod
-    def check_cmd_param_chosen(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_param_chosen(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check the CHOSEN parameter upon command execution.
 
         Will test:
@@ -558,7 +529,7 @@ class DTShTests:
 
         # Parameter's state and multiplicity.
         cls.check_param(param)
-        assert "" == param.chosen
+        assert param.chosen == ""
 
         # Must be a valid choice.
         chosen = "zephyr,entropy"
@@ -570,9 +541,7 @@ class DTShTests:
         cmd.execute(["not-a-chosen"], sh, out)
 
     @classmethod
-    def check_cmd_execute(
-        cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput
-    ) -> None:
+    def check_cmd_execute(cls, cmd: DTShCommand, sh: DTSh, out: DTShOutput) -> None:
         """Check common exception cases when executing a command.
 
         Test:
@@ -620,9 +589,7 @@ class DTShTests:
         with cls.from_res():
             return edtlib.EDT(
                 dts="zephyr.dts",
-                bindings_dirs=[
-                    os.path.join(cls.ZEPHYR_BASE, "dts", "bindings")
-                ],
+                bindings_dirs=[os.path.join(cls.ZEPHYR_BASE, "dts", "bindings")],
             )
 
     @classmethod

@@ -9,60 +9,59 @@
 # pylint: disable=too-many-branches
 # pylint: disable=missing-function-docstring
 
-
-from typing import cast, List, Tuple, Type
 import operator
 import re
 import sys
+from typing import cast
 
 import pytest
 
 from dtsh.model import DTNode, DTNodePHandleData, DTNodeSorter
 from dtsh.modelutils import (
-    DTSUtil,
-    # Text-based criteria.
-    DTNodeTextCriterion,
-    DTNodeWithPath,
-    DTNodeWithName,
-    DTNodeWithUnitName,
-    DTNodeWithCompatible,
-    DTNodeWithBinding,
-    DTNodeWithVendor,
-    DTNodeWithDeviceLabel,
-    DTNodeWithNodeLabel,
-    DTNodeWithAlias,
-    DTNodeWithChosen,
     DTNodeAlsoKnownAs,
-    DTNodeWithBus,
-    DTNodeWithOnBus,
-    DTNodeWithDescription,
     # Integer-based criteria.
     DTNodeIntCriterion,
-    DTNodeWithUnitAddr,
-    DTNodeWithIrqNumber,
-    DTNodeWithIrqPriority,
-    DTNodeWithRegAddr,
-    DTNodeWithRegSize,
-    DTNodeWithBindingDepth,
-    # Sorters.
-    DTNodeSortByPathName,
-    DTNodeSortByNodeName,
-    DTNodeSortByUnitName,
-    DTNodeSortByUnitAddr,
-    DTNodeSortByCompatible,
-    DTNodeSortByBinding,
-    DTNodeSortByVendor,
-    DTNodeSortByDeviceLabel,
-    DTNodeSortByNodeLabel,
     DTNodeSortByAlias,
+    DTNodeSortByBinding,
+    DTNodeSortByBindingDepth,
     DTNodeSortByBus,
-    DTNodeSortByOnBus,
+    DTNodeSortByCompatible,
     DTNodeSortByDepOrdinal,
+    DTNodeSortByDeviceLabel,
     DTNodeSortByIrqNumber,
     DTNodeSortByIrqPriority,
+    DTNodeSortByNodeLabel,
+    DTNodeSortByNodeName,
+    DTNodeSortByOnBus,
+    # Sorters.
+    DTNodeSortByPathName,
     DTNodeSortByRegAddr,
     DTNodeSortByRegSize,
-    DTNodeSortByBindingDepth,
+    DTNodeSortByUnitAddr,
+    DTNodeSortByUnitName,
+    DTNodeSortByVendor,
+    # Text-based criteria.
+    DTNodeTextCriterion,
+    DTNodeWithAlias,
+    DTNodeWithBinding,
+    DTNodeWithBindingDepth,
+    DTNodeWithBus,
+    DTNodeWithChosen,
+    DTNodeWithCompatible,
+    DTNodeWithDescription,
+    DTNodeWithDeviceLabel,
+    DTNodeWithIrqNumber,
+    DTNodeWithIrqPriority,
+    DTNodeWithName,
+    DTNodeWithNodeLabel,
+    DTNodeWithOnBus,
+    DTNodeWithPath,
+    DTNodeWithRegAddr,
+    DTNodeWithRegSize,
+    DTNodeWithUnitAddr,
+    DTNodeWithUnitName,
+    DTNodeWithVendor,
+    DTSUtil,
     # Virtual trees.
     DTWalkableComb,
 )
@@ -75,7 +74,7 @@ def test_dtnode_sorters() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     nodes = list(dtmodel)
 
-    sorters: List[DTNodeSorter] = [
+    sorters: list[DTNodeSorter] = [
         DTNodeSortByPathName(),
         DTNodeSortByNodeName(),
         DTNodeSortByUnitName(),
@@ -105,9 +104,7 @@ def test_dtnodesorter_by_path_name() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByPathName()
 
-    assert sorted([node.path for node in dtmodel]) == [
-        node.path for node in sorter.sort(nodes)
-    ]
+    assert sorted([node.path for node in dtmodel]) == [node.path for node in sorter.sort(nodes)]
     assert sorted([node.path for node in dtmodel], reverse=True) == [
         node.path for node in sorter.sort(nodes, reverse=True)
     ]
@@ -118,9 +115,7 @@ def test_dtnodesorter_by_node_name() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByNodeName()
 
-    assert sorted([node.name for node in dtmodel]) == [
-        node.name for node in sorter.sort(nodes)
-    ]
+    assert sorted([node.name for node in dtmodel]) == [node.name for node in sorter.sort(nodes)]
     assert sorted([node.name for node in dtmodel], reverse=True) == [
         node.name for node in sorter.sort(nodes, reverse=True)
     ]
@@ -144,8 +139,8 @@ def test_dtnodesorter_by_unit_addr() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByUnitAddr()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.unit_addr is not None:
             sortable.append(node)
@@ -165,8 +160,8 @@ def test_dtnodesorter_by_compatible() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByCompatible()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.compatibles:
             sortable.append(node)
@@ -190,8 +185,8 @@ def test_dtnodesorter_by_binding() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByBinding()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.compatible:
             sortable.append(node)
@@ -211,8 +206,8 @@ def test_dtnodesorter_by_vendor() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByVendor()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.vendor:
             sortable.append(node)
@@ -232,8 +227,8 @@ def test_dtnodesorter_by_device_label() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByDeviceLabel()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.label:
             sortable.append(node)
@@ -253,8 +248,8 @@ def test_dtnodesorter_by_node_label() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByNodeLabel()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.labels:
             sortable.append(node)
@@ -277,8 +272,8 @@ def test_dtnodesorter_by_alias() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByAlias()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.aliases:
             sortable.append(node)
@@ -301,8 +296,8 @@ def test_dtnodesorter_by_bus() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByBus()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.buses:
             sortable.append(node)
@@ -325,8 +320,8 @@ def test_dtnodesorter_by_on_bus() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByOnBus()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.on_bus:
             sortable.append(node)
@@ -359,24 +354,20 @@ def test_dtnodesorter_by_irq_number() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByIrqNumber()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.interrupts:
             sortable.append(node)
         else:
             unsortable.append(node)
 
-    sorted_sortable = sorted(
-        sortable, key=lambda node: min(irq.number for irq in node.interrupts)
-    )
+    sorted_sortable = sorted(sortable, key=lambda node: min(irq.number for irq in node.interrupts))
     assert [*sorted_sortable, *unsortable] == sorter.sort(nodes)
 
     # Note: here sorted(reverse=True) is not granted to answer
     # the same order as sorted().reverse().
-    sorted_sortable = sorted(
-        sortable, key=lambda node: max(irq.number for irq in node.interrupts)
-    )
+    sorted_sortable = sorted(sortable, key=lambda node: max(irq.number for irq in node.interrupts))
     sorted_sortable.reverse()
     unsortable.reverse()
     assert [*unsortable, *sorted_sortable] == sorter.sort(nodes, reverse=True)
@@ -387,8 +378,8 @@ def test_dtnodesorter_by_irq_priority() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByIrqPriority()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.interrupts:
             sortable.append(node)
@@ -398,8 +389,7 @@ def test_dtnodesorter_by_irq_priority() -> None:
     sorted_sortable = sorted(
         sortable,
         key=lambda node: min(
-            irq.priority if irq.priority is not None else sys.maxsize
-            for irq in node.interrupts
+            irq.priority if irq.priority is not None else sys.maxsize for irq in node.interrupts
         ),
     )
     assert [*sorted_sortable, *unsortable] == sorter.sort(nodes)
@@ -409,8 +399,7 @@ def test_dtnodesorter_by_irq_priority() -> None:
     sorted_sortable = sorted(
         sortable,
         key=lambda node: max(
-            irq.priority if irq.priority is not None else sys.maxsize
-            for irq in node.interrupts
+            irq.priority if irq.priority is not None else sys.maxsize for irq in node.interrupts
         ),
     )
     sorted_sortable.reverse()
@@ -423,24 +412,20 @@ def test_dtnodesorter_by_reg_addr() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByRegAddr()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.registers:
             sortable.append(node)
         else:
             unsortable.append(node)
 
-    sorted_sortable = sorted(
-        sortable, key=lambda x: min(reg.address for reg in x.registers)
-    )
+    sorted_sortable = sorted(sortable, key=lambda x: min(reg.address for reg in x.registers))
     assert [*sorted_sortable, *unsortable] == sorter.sort(nodes)
 
     # Note: here sorted(reverse=True) is not granted to answer
     # the same order as sorted().reverse().
-    sorted_sortable = sorted(
-        sortable, key=lambda x: max(reg.address for reg in x.registers)
-    )
+    sorted_sortable = sorted(sortable, key=lambda x: max(reg.address for reg in x.registers))
     sorted_sortable.reverse()
     unsortable.reverse()
     assert [*unsortable, *sorted_sortable] == sorter.sort(nodes, reverse=True)
@@ -451,24 +436,20 @@ def test_dtnodesorter_by_reg_size() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByRegSize()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.registers:
             sortable.append(node)
         else:
             unsortable.append(node)
 
-    sorted_sortable = sorted(
-        sortable, key=lambda x: min(reg.size for reg in x.registers)
-    )
+    sorted_sortable = sorted(sortable, key=lambda x: min(reg.size for reg in x.registers))
     assert [*sorted_sortable, *unsortable] == sorter.sort(nodes)
 
     # Note: here sorted(reverse=True) is not granted to answer
     # the same order as sorted().reverse().
-    sorted_sortable = sorted(
-        sortable, key=lambda x: max(reg.size for reg in x.registers)
-    )
+    sorted_sortable = sorted(sortable, key=lambda x: max(reg.size for reg in x.registers))
     sorted_sortable.reverse()
     unsortable.reverse()
     assert [*unsortable, *sorted_sortable] == sorter.sort(nodes, reverse=True)
@@ -479,8 +460,8 @@ def test_dtnodesorter_by_cb_depth() -> None:
     nodes = list(dtmodel)
     sorter = DTNodeSortByBindingDepth()
 
-    sortable: List[DTNode] = []
-    unsortable: List[DTNode] = []
+    sortable: list[DTNode] = []
+    unsortable: list[DTNode] = []
     for node in nodes:
         if node.binding:
             sortable.append(node)
@@ -500,7 +481,7 @@ def test_dtnodecriterion_text_pattern() -> None:
     nodes = list(dtmodel)
 
     # Criteria with the attributes they depend on.
-    cls_criteria: List[Tuple[Type[DTNodeTextCriterion], str]] = [
+    cls_criteria: list[tuple[type[DTNodeTextCriterion], str]] = [
         (DTNodeWithPath, "path"),
         (DTNodeWithName, "name"),
         (DTNodeWithUnitName, "unit_name"),
@@ -516,12 +497,11 @@ def test_dtnodecriterion_text_pattern() -> None:
         (DTNodeWithDescription, "description"),
     ]
 
-    criterion_by_attr: List[Tuple[DTNodeTextCriterion, str]] = [
+    criterion_by_attr: list[tuple[DTNodeTextCriterion, str]] = [
         (cls_criterion("*"), attr) for cls_criterion, attr in cls_criteria
     ]
-    criterion_by_attr_re: List[Tuple[DTNodeTextCriterion, str]] = [
-        (cls_criterion(".*", re_strict=True), attr)
-        for cls_criterion, attr in cls_criteria
+    criterion_by_attr_re: list[tuple[DTNodeTextCriterion, str]] = [
+        (cls_criterion(".*", re_strict=True), attr) for cls_criterion, attr in cls_criteria
     ]
 
     with_any_label_or_alias = DTNodeAlsoKnownAs("*")
@@ -572,9 +552,7 @@ def test_dtnodecriterion_with_path() -> None:
 
     # Strict RE.
     assert not DTNodeWithPath(".*Controller.*", re_strict=True).match(node)
-    assert DTNodeWithPath(
-        ".*Controller.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithPath(".*Controller.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_name() -> None:
@@ -594,9 +572,7 @@ def test_dtnodecriterion_with_name() -> None:
 
     # Strict RE.
     assert not DTNodeWithName(".*Controller.*", re_strict=True).match(node)
-    assert DTNodeWithName(
-        ".*Controller.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithName(".*Controller.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_unit_name() -> None:
@@ -615,15 +591,13 @@ def test_dtnodecriterion_with_unit_name() -> None:
 
     # Strict RE.
     assert not DTNodeWithUnitName(".*Controller.*", re_strict=True).match(node)
-    assert DTNodeWithUnitName(
-        ".*Controller.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithUnitName(".*Controller.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_compatible() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/egu@40014000"]
-    assert ["nordic,nrf-egu", "nordic,nrf-swi"] == node.compatibles
+    assert node.compatibles == ["nordic,nrf-egu", "nordic,nrf-swi"]
 
     # Plain text search.
     assert DTNodeWithCompatible("egu").match(node)
@@ -641,19 +615,17 @@ def test_dtnodecriterion_with_compatible() -> None:
     assert DTNodeWithCompatible(".*egu", re_strict=True).match(node)
     assert DTNodeWithCompatible(".*swi", re_strict=True).match(node)
     assert not DTNodeWithCompatible(".*nRF.*", re_strict=True).match(node)
-    assert DTNodeWithCompatible(
-        ".*nRF.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithCompatible(".*nRF.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_binding() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000/bme680@76"]
     assert node.binding
-    assert "bosch,bme680" == node.binding.compatible
+    assert node.binding.compatible == "bosch,bme680"
     assert (
-        "The BME680 is an integrated environmental sensor that measures"
-        == node.binding.get_headline()
+        node.binding.get_headline()
+        == "The BME680 is an integrated environmental sensor that measures"
     )
 
     # Plain text search.
@@ -671,17 +643,15 @@ def test_dtnodecriterion_with_binding() -> None:
     assert DTNodeWithBinding("bosch.*", re_strict=True).match(node)
     assert DTNodeWithBinding(".*bme680", re_strict=True).match(node)
     assert not DTNodeWithBinding(".*Sensor.*", re_strict=True).match(node)
-    assert DTNodeWithBinding(
-        ".*Sensor.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithBinding(".*Sensor.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_vendor() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000/bme680@76"]
     assert node.vendor
-    assert "bosch" == node.vendor.prefix
-    assert "Bosch Sensortec GmbH" == node.vendor.name
+    assert node.vendor.prefix == "bosch"
+    assert node.vendor.name == "Bosch Sensortec GmbH"
 
     # Plain text search.
     assert DTNodeWithVendor("bosch").match(node)
@@ -696,15 +666,13 @@ def test_dtnodecriterion_with_vendor() -> None:
     # Strict RE.
     assert DTNodeWithVendor("bosch.*", re_strict=True).match(node)
     assert not DTNodeWithVendor(".*sensor.*", re_strict=True).match(node)
-    assert DTNodeWithVendor(
-        ".*sensor.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithVendor(".*sensor.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_device_label() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/leds/led_0"]
-    assert "Green LED 0" == node.label
+    assert node.label == "Green LED 0"
 
     # Plain text search.
     assert DTNodeWithDeviceLabel("LED").match(node)
@@ -719,15 +687,13 @@ def test_dtnodecriterion_with_device_label() -> None:
     # Strict RE.
     assert DTNodeWithDeviceLabel("Green.*", re_strict=True).match(node)
     assert not DTNodeWithDeviceLabel(".*led.*", re_strict=True).match(node)
-    assert DTNodeWithDeviceLabel(
-        ".*led.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithDeviceLabel(".*led.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_node_label() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000"]
-    assert ["i2c0", "arduino_i2c"] == node.labels
+    assert node.labels == ["i2c0", "arduino_i2c"]
 
     # Plain text search.
     assert DTNodeWithNodeLabel("i2c").match(node)
@@ -742,15 +708,13 @@ def test_dtnodecriterion_with_node_label() -> None:
     # Strict RE.
     assert DTNodeWithNodeLabel(".*i2c.*", re_strict=True).match(node)
     assert not DTNodeWithNodeLabel("Arduino.*", re_strict=True).match(node)
-    assert DTNodeWithNodeLabel(
-        "Arduino.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithNodeLabel("Arduino.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_alias() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/leds/led_0"]
-    assert ["led0", "mcuboot-led0"] == node.aliases
+    assert node.aliases == ["led0", "mcuboot-led0"]
 
     # Plain text search.
     assert DTNodeWithAlias("led").match(node)
@@ -766,15 +730,13 @@ def test_dtnodecriterion_with_alias() -> None:
     # Strict RE.
     assert DTNodeWithAlias("led.*", re_strict=True).match(node)
     assert not DTNodeWithAlias("MCU.*", re_strict=True).match(node)
-    assert DTNodeWithAlias("MCU.*", re_strict=True, ignore_case=True).match(
-        node
-    )
+    assert DTNodeWithAlias("MCU.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_chosen() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/random@4000d000"]
-    assert ["zephyr,entropy"] == node.chosen
+    assert node.chosen == ["zephyr,entropy"]
 
     # Plain text search.
     assert DTNodeWithChosen("entropy").match(node)
@@ -789,15 +751,13 @@ def test_dtnodecriterion_with_chosen() -> None:
     # Strict RE.
     assert DTNodeWithChosen(".*entropy", re_strict=True).match(node)
     assert not DTNodeWithChosen("Zephyr.*", re_strict=True).match(node)
-    assert DTNodeWithChosen("Zephyr.*", re_strict=True, ignore_case=True).match(
-        node
-    )
+    assert DTNodeWithChosen("Zephyr.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_bus() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000"]
-    assert ["i2c"] == node.buses
+    assert node.buses == ["i2c"]
 
     # Plain text search.
     assert DTNodeWithBus("i2c").match(node)
@@ -812,15 +772,13 @@ def test_dtnodecriterion_with_bus() -> None:
     # Strict RE.
     assert DTNodeWithBus(r"i[\d]c", re_strict=True).match(node)
     assert not DTNodeWithBus(r"I[\d]C", re_strict=True).match(node)
-    assert DTNodeWithBus(r"I[\d]C", re_strict=True, ignore_case=True).match(
-        node
-    )
+    assert DTNodeWithBus(r"I[\d]C", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_on_bus() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/i2c@40003000/bme680@76"]
-    assert "i2c" == node.on_bus
+    assert node.on_bus == "i2c"
 
     # Plain text search.
     assert DTNodeWithOnBus("i2c").match(node)
@@ -835,9 +793,7 @@ def test_dtnodecriterion_with_on_bus() -> None:
     # Strict RE.
     assert DTNodeWithOnBus(r"i[\d]c", re_strict=True).match(node)
     assert not DTNodeWithOnBus(r"I[\d]C", re_strict=True).match(node)
-    assert DTNodeWithOnBus(r"I[\d]C", re_strict=True, ignore_case=True).match(
-        node
-    )
+    assert DTNodeWithOnBus(r"I[\d]C", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_desc() -> None:
@@ -845,8 +801,8 @@ def test_dtnodecriterion_with_desc() -> None:
     node = dtmodel["/soc/i2c@40003000/bme680@76"]
     assert node.binding
     assert (
-        "The BME680 is an integrated environmental sensor that measures"
-        == node.binding.get_headline()
+        node.binding.get_headline()
+        == "The BME680 is an integrated environmental sensor that measures"
     )
 
     # Plain text search.
@@ -855,23 +811,19 @@ def test_dtnodecriterion_with_desc() -> None:
 
     # Wild-card substitution.
     assert not DTNodeWithDescription("*Environmental*").match(node)
-    assert DTNodeWithDescription("*Environmental*", ignore_case=True).match(
-        node
-    )
+    assert DTNodeWithDescription("*Environmental*", ignore_case=True).match(node)
 
     # Strict RE.
     assert not DTNodeWithDescription(".*Sensor.*", re_strict=True).match(node)
-    assert DTNodeWithDescription(
-        ".*Sensor.*", re_strict=True, ignore_case=True
-    ).match(node)
+    assert DTNodeWithDescription(".*Sensor.*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_with_aka() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/leds/led_0"]
-    assert "Green LED 0" == node.label
-    assert ["led0"] == node.labels
-    assert ["led0", "mcuboot-led0"] == node.aliases
+    assert node.label == "Green LED 0"
+    assert node.labels == ["led0"]
+    assert node.aliases == ["led0", "mcuboot-led0"]
 
     # Plain text search.
     assert DTNodeAlsoKnownAs("LED").match(node)
@@ -886,9 +838,7 @@ def test_dtnodecriterion_with_aka() -> None:
     # Strict RE.
     assert DTNodeAlsoKnownAs(".*LED.*", re_strict=True).match(node)
     assert not DTNodeAlsoKnownAs("MCU*", re_strict=True).match(node)
-    assert DTNodeAlsoKnownAs("MCU*", re_strict=True, ignore_case=True).match(
-        node
-    )
+    assert DTNodeAlsoKnownAs("MCU*", re_strict=True, ignore_case=True).match(node)
 
 
 def test_dtnodecriterion_integer_expr() -> None:
@@ -897,7 +847,7 @@ def test_dtnodecriterion_integer_expr() -> None:
 
     # Criteria with the attributes they depend on.
     # Would be "*" command argument value.
-    criterion_by_attr: List[Tuple[DTNodeIntCriterion, str]] = [
+    criterion_by_attr: list[tuple[DTNodeIntCriterion, str]] = [
         (DTNodeWithUnitAddr(None, None), "unit_addr"),
         (DTNodeWithIrqNumber(None, None), "interrupts"),
         (DTNodeWithIrqPriority(None, None), "interrupts"),
@@ -919,7 +869,7 @@ def test_dtnodecriterion_integer_expr() -> None:
 def test_dtnodecriterion_with_unit_addr() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/timer@4000a000"]
-    assert 0x4000A000 == node.unit_addr
+    assert node.unit_addr == 0x4000A000
 
     # Strict equality without operator.
     assert DTNodeWithUnitAddr(None, 0x4000A000).match(node)
@@ -938,7 +888,7 @@ def test_dtnodecriterion_with_irq_number() -> None:
     node = dtmodel["/soc/timer@4000a000"]
     assert node.interrupts
     irq_n = node.interrupts[0].number
-    assert 10 == irq_n
+    assert irq_n == 10
 
     # Strict equality without operator.
     assert DTNodeWithIrqNumber(None, irq_n).match(node)
@@ -957,7 +907,7 @@ def test_dtnodecriterion_with_irq_priority() -> None:
     node = dtmodel["/soc/timer@4000a000"]
     assert node.interrupts
     irq_prio = node.interrupts[0].priority
-    assert 1 == irq_prio
+    assert irq_prio == 1
 
     # Strict equality without operator.
     assert DTNodeWithIrqPriority(None, irq_prio).match(node)
@@ -974,7 +924,7 @@ def test_dtnodecriterion_with_irq_priority() -> None:
 def test_dtnodecriterion_with_reg_addr() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/gpio@50000000"]
-    assert [0x50000000, 0x50000500] == [reg.address for reg in node.registers]
+    assert [reg.address for reg in node.registers] == [0x50000000, 0x50000500]
 
     # Strict equality without operator.
     assert DTNodeWithRegAddr(None, 0x50000000).match(node)
@@ -998,7 +948,7 @@ def test_dtnodecriterion_with_reg_addr() -> None:
 def test_dtnode_with_reg_size() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/soc/gpio@50000000"]
-    assert [512, 768] == [reg.size for reg in node.registers]
+    assert [reg.size for reg in node.registers] == [512, 768]
 
     # Strict equality without operator.
     assert DTNodeWithRegSize(None, 512).match(node)
@@ -1025,7 +975,7 @@ def test_dtnode_with_cb_depth() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     node = dtmodel["/pin-controller/uart0_default/group1"]
     assert node.binding
-    assert 2 == node.binding.cb_depth
+    assert node.binding.cb_depth == 2
 
     # Strict equality without operator.
     assert DTNodeWithBindingDepth(None, 2).match(node)
@@ -1046,7 +996,7 @@ def test_dtwalkable_comb() -> None:
     N = 0
     for _ in walkable.walk():
         N += 1
-    assert 0 == N
+    assert N == 0
 
     dt_soc = dtmodel["/soc"]
     dt_flashctrl = dt_soc.get_child("flash-controller@4001e000")
@@ -1108,59 +1058,60 @@ def test_dtwalkable_comb() -> None:
 
 
 def test_dtsutil_mk_boolean() -> None:
-    assert "true" == DTSUtil.mk_boolean(True)
-    assert "false" == DTSUtil.mk_boolean(False)
+    assert DTSUtil.mk_boolean(True) == "true"
+    assert DTSUtil.mk_boolean(False) == "false"
 
 
 def test_dtsutil_mk_int() -> None:
-    assert "0x01" == DTSUtil.mk_int(1, as_cell=False)
-    assert "< 0x01 >" == DTSUtil.mk_int(1, as_cell=True)
-    assert "< 0xff >" == DTSUtil.mk_int(255, as_cell=True)
-    assert "0x0100" == DTSUtil.mk_int(256, as_cell=False)
+    assert DTSUtil.mk_int(1, as_cell=False) == "0x01"
+    assert DTSUtil.mk_int(1, as_cell=True) == "< 0x01 >"
+    assert DTSUtil.mk_int(255, as_cell=True) == "< 0xff >"
+    assert DTSUtil.mk_int(256, as_cell=False) == "0x0100"
 
 
 def test_dtsutil_mk_string() -> None:
-    assert '"str"' == DTSUtil.mk_string("str")
+    assert DTSUtil.mk_string("str") == '"str"'
 
 
 def test_dtsutil_mk_bytes() -> None:
-    assert "[ 01 10 FF ]" == DTSUtil.mk_bytes(bytes([0x01, 0x010, 0xFF]))
-    assert "[  ]" == DTSUtil.mk_bytes(bytes([]))
+    assert DTSUtil.mk_bytes(bytes([0x01, 0x010, 0xFF])) == "[ 01 10 FF ]"
+    assert DTSUtil.mk_bytes(bytes([])) == "[  ]"
 
 
 def test_dtsutil_mk_phandle() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     dt_i2c = dtmodel["/soc/i2c@40003000"]
     # Should be the first DT label when available.
-    assert "&i2c0" == DTSUtil.mk_phandle(dt_i2c, as_cell=False)
-    assert "< &i2c0 >" == DTSUtil.mk_phandle(dt_i2c, as_cell=True)
+    assert DTSUtil.mk_phandle(dt_i2c, as_cell=False) == "&i2c0"
+    assert DTSUtil.mk_phandle(dt_i2c, as_cell=True) == "< &i2c0 >"
     # Otherwise, the node's path (very few nodes don't have at least one label).
-    assert "/chosen" == DTSUtil.mk_phandle(dtmodel["/chosen"], as_cell=False)
+    assert DTSUtil.mk_phandle(dtmodel["/chosen"], as_cell=False) == "/chosen"
 
 
 def test_dtsutil_mk_array() -> None:
-    assert "< 0x01 >" == DTSUtil.mk_array([1])
-    assert "< 0x01 0x0100 >" == DTSUtil.mk_array([1, 256])
-    assert "< 0x01 0x0100 >" == DTSUtil.mk_array([1, 256], as_cell=True)
+    assert DTSUtil.mk_array([1]) == "< 0x01 >"
+    assert DTSUtil.mk_array([1, 256]) == "< 0x01 0x0100 >"
+    assert DTSUtil.mk_array([1, 256], as_cell=True) == "< 0x01 0x0100 >"
 
 
 def test_dtsutil_mk_string_array() -> None:
-    assert '"str1", "str2"' == DTSUtil.mk_string_array(["str1", "str2"])
+    assert DTSUtil.mk_string_array(["str1", "str2"]) == '"str1", "str2"'
 
 
 def test_dtsutil_mk_phandles() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     dt_i2c = dtmodel["/soc/i2c@40003000"]
     dt_timer = dtmodel["/soc/timer@40008000"]
-    assert "< &i2c0 &timer0 >" == DTSUtil.mk_phandles([dt_i2c, dt_timer])
+    assert DTSUtil.mk_phandles([dt_i2c, dt_timer]) == "< &i2c0 &timer0 >"
 
 
 def test_dtsutil_mk_phandle_array() -> None:
     dtmodel = DTShTests.get_sample_dtmodel()
     dt_led0 = dtmodel["/leds/led_0"]
     prop_gpios = dt_led0.dtproperty("gpios")
-    assert "< &gpio0 0x0d 0x01 >" == DTSUtil.mk_phandle_array(
-        cast(List[DTNodePHandleData], prop_gpios.value)
+    assert (
+        DTSUtil.mk_phandle_array(cast(list[DTNodePHandleData], prop_gpios.value))
+        == "< &gpio0 0x0d 0x01 >"
     )
 
 
@@ -1169,55 +1120,55 @@ def test_dtsutil_mk_property_value() -> None:
 
     # bool:
     prop = dt["/soc/pwm@4001c000"].dtproperty("center-aligned")
-    assert "boolean" == prop.dttype
+    assert prop.dttype == "boolean"
     assert isinstance(prop.value, bool)
     assert prop.value is False
-    assert "false" == DTSUtil.mk_property_value(prop)
+    assert DTSUtil.mk_property_value(prop) == "false"
 
     # int:
     prop = dt["/soc/timer@40008000"].dtproperty("cc-num")
-    assert "int" == prop.dttype
+    assert prop.dttype == "int"
     assert isinstance(prop.value, int)
-    assert 0x4 == prop.value
-    assert "< 0x04 >" == DTSUtil.mk_property_value(prop)
+    assert prop.value == 0x4
+    assert DTSUtil.mk_property_value(prop) == "< 0x04 >"
 
     # array:
     prop = dt["/soc/pwm@4001c000"].dtproperty("interrupts")
-    assert "array" == prop.dttype
+    assert prop.dttype == "array"
     assert isinstance(prop.value, list)
-    assert [0x1C, 0x1] == prop.value
-    assert "< 0x1c 0x01 >" == DTSUtil.mk_property_value(prop)
+    assert prop.value == [0x1C, 0x1]
+    assert DTSUtil.mk_property_value(prop) == "< 0x1c 0x01 >"
 
     # string:
     prop = dt["/soc/clock@40000000"].dtproperty("status")
-    assert "string" == prop.dttype
+    assert prop.dttype == "string"
     assert isinstance(prop.value, str)
-    assert "okay" == prop.value
-    assert '"okay"' == DTSUtil.mk_property_value(prop)
+    assert prop.value == "okay"
+    assert DTSUtil.mk_property_value(prop) == '"okay"'
 
     # string-array:
     prop = dt["/soc/i2c@40003000"].dtproperty("pinctrl-names")
-    assert "string-array" == prop.dttype
+    assert prop.dttype == "string-array"
     assert isinstance(prop.value, list)
-    assert ["default", "sleep"] == prop.value
-    assert '"default", "sleep"' == DTSUtil.mk_property_value(prop)
+    assert prop.value == ["default", "sleep"]
+    assert DTSUtil.mk_property_value(prop) == '"default", "sleep"'
 
     # bytes:
     prop = dt["/soc/qspi@40029000/mx25r6435f@0"].dtproperty("jedec-id")
-    assert "uint8-array" == prop.dttype
+    assert prop.dttype == "uint8-array"
     assert isinstance(prop.value, bytes)
     assert bytes([0xC2, 0x28, 0x17]) == prop.value
-    assert "[ C2 28 17 ]" == DTSUtil.mk_property_value(prop)
+    assert DTSUtil.mk_property_value(prop) == "[ C2 28 17 ]"
 
     # phandle:
     prop = dt["/sw-pwm"].dtproperty("generator")
-    assert "phandle" == prop.dttype
+    assert prop.dttype == "phandle"
     assert isinstance(prop.value, DTNode)
     assert dt["/soc/timer@40009000"] == prop.value
-    assert "< &timer1 >" == DTSUtil.mk_property_value(prop)
+    assert DTSUtil.mk_property_value(prop) == "< &timer1 >"
 
     # phandle-array:
     prop = dt["/leds/led_0"].dtproperty("gpios")
-    assert "phandle-array" == prop.dttype
+    assert prop.dttype == "phandle-array"
     assert isinstance(prop.value, list)
-    assert "< &gpio0 0x0d 0x01 >" == DTSUtil.mk_property_value(prop)
+    assert DTSUtil.mk_property_value(prop) == "< &gpio0 0x0d 0x01 >"

@@ -7,13 +7,10 @@
 # Relax pylint a bit for unit tests.
 # pylint: disable=missing-function-docstring
 
-
-from typing import List
-
+from dtsh.builtins.find import DTShBuiltinFind
 from dtsh.io import DTShOutput
 from dtsh.shell import DTSh
 from dtsh.shellutils import DTSH_ARG_NODE_CRITERIA, DTShArgCriterion
-from dtsh.builtins.find import DTShBuiltinFind
 
 from .dtsh_uthelpers import DTShTests
 
@@ -47,7 +44,7 @@ def test_dtsh_builtin_find_arg_criteria() -> None:
     cmd = DTShBuiltinFind()
     sh = DTSh(DTShTests.get_sample_dtmodel(), [cmd])
 
-    args: List[DTShArgCriterion] = [
+    args: list[DTShArgCriterion] = [
         cmd.option(
             f"-{opt.sh}" if opt.shortname else f"--{opt.longname}"  # type: ignore
         )
@@ -58,11 +55,9 @@ def test_dtsh_builtin_find_arg_criteria() -> None:
         assert not arg.isset
         assert not arg.get_criterion()
 
-    argv: List[str] = []
+    argv: list[str] = []
     for opt in args:
-        argv.append(
-            f"-{opt.shortname}" if opt.shortname else f"--{opt.longname}"
-        )
+        argv.append(f"-{opt.shortname}" if opt.shortname else f"--{opt.longname}")
         # "*" is valid for both text-based and int-based criteria.
         argv.append("*")
 
